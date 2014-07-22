@@ -259,7 +259,7 @@ class ResourceController extends SecureController   {
 		$user = new UserAccount();
 		$user->populate($userid);
 		
-		$country = $formvalues['country'];
+		$country = $this->_getParam('country');
 		$q = $formvalues['searchword'];
 		$type = $user->getType();
 		$grp = '';
@@ -270,7 +270,7 @@ class ResourceController extends SecureController   {
 		}
 		$typequery = '';
 		if($type == 3 && !isArrayKeyAnEmptyString('grp', $formvalues)){
-			$typequery = ' AND f.farmgroupid = '.$grp;
+			$typequery = ' AND u.farmgroupid = '.$grp;
 			$groupjoin = ' inner ';
 		}
 		$hasdata = false;
@@ -534,7 +534,7 @@ class ResourceController extends SecureController   {
 		# search for farmers by admins 
 		if($type != 2){
 			$query_farmers = "SELECT u.*, u.id as uid, l.name as district, fg.orgname FROM useraccount as u 
-				".$groupjoin." join farmgroup as fg on (f.farmgroupid = fg.id ".$typequery.")
+				".$groupjoin." join farmgroup as fg on (u.farmgroupid = fg.id ".$typequery.")
 				left join location as l on (u.locationid = l.id)
 				WHERE 
 				u.country = UPPER('".$country."') AND 
@@ -563,7 +563,7 @@ class ResourceController extends SecureController   {
 					$email=$row['email'];
 					$phone= $user->getFormattedPhone();
 					$media= $user->getThumbnailPicturePath();
-					$district=$user->getAddress()->getDistrict()->getName();
+					$district=$user->getLocation()->getName();
 					$b_name='<b>'.$q.'</b>';
 					$b_email='<b>'.$q.'</b>';
 					$b_phone='<b>'.$q.'</b>';
@@ -572,16 +572,16 @@ class ResourceController extends SecureController   {
 					$final_phone = str_ireplace($q, $b_phone, $phone);
 					$contacts = ''; $group = '';
 					if(!isEmptyString($phone)){
-						$contacts .= 'Phone: '.$final_phone.' ';
+						$contacts .= '<b>Phone</b>: '.$final_phone.' ';
 					}
 					if(!isEmptyString($email)){
-						$contacts .= ', Email:'.$final_email.' ';
+						$contacts .= ', <b>Email</b>:'.$final_email.' ';
 					}
 					if(!isEmptyString($contacts)){
 						$contacts = '<span class="blocked">'.$contacts.'</span>';
 					}
 					if(!isEmptyString($user->hasFarmGroup())){
-						$group = '<span class="blocked">Group: '.$user->getFarmGroup()->getName().'</span>';
+						$group = '<span class="blocked"><b>DNA</b> '.$user->getFarmGroup()->getName().'</span>';
 					}
 					$viewurl = $this->view->baseUrl('profile/view/id/'.encode($user->getID()));
 					$html .= '
@@ -589,7 +589,7 @@ class ResourceController extends SecureController   {
 						<img src="'.$media.'" style="width:60px; height:60px; float:left; margin-right:6px;" />
 						<span class="name blocked">'.$final_username.'</span>
 						'.$contacts.'
-						<span class="blocked">District: '.$district.'</span>
+						<span class="blocked"><b>District</b>: '.$district.'</span>
 						'.$group.'
 					</li>';
 				}
@@ -608,7 +608,7 @@ class ResourceController extends SecureController   {
 			// debugMessage($result);
 			if(count($result_groups) > 0){
 				$hasdata = true;
-				$html .= '<li class="separator"><span>Group Profiles</span></li>';
+				$html .= '<li class="separator"><span>DNA Profiles</span></li>';
 				foreach ($result_groups as $row){
 					$group = new FarmGroup();
 					$group->populate($row['id']);
@@ -616,7 +616,7 @@ class ResourceController extends SecureController   {
 					$email = $row['email'];
 					$phone = getShortPhone($row['phone']);
 					$media = $this->view->baseUrl('images/farmgroup.png');
-					$district = $group->getAddress()->getDistrict()->getName();
+					$district = $group->getDistrict()->getName();
 					
 					$b_name='<b>'.$q.'</b>';
 					$b_email='<b>'.$q.'</b>';

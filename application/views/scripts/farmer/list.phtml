@@ -1,0 +1,413 @@
+<?php
+	require_once APPLICATION_PATH.'/includes/header.php';
+	
+	$title = "Farmer Directory";	
+	$this->headTitle($title);
+	
+	$loggedinuser = new UserAccount();
+	$loggedinuser->populate($userid);
+	
+	$country = 'UG';
+	$location_label = 'District';
+	$locations_label = 'Districts';
+	$countrycode = COUNTRY_CODE_UG;
+	$county_label = $this->translate("global_county_label");
+	$subcounty_label = $this->translate("global_subcounty_label");
+	
+	if(isKenya()){
+		$country = 'KE';
+		$session->setVar('country', 'ke');
+		$location_label = 'County';
+		$locations_label = 'Counties';
+		$countrycode = COUNTRY_CODE_KE;
+		$county_label = $this->translate("global_subcounty_label");
+		$subcounty_label = $this->translate("global_ward_label");
+	}
+	$countryreq = strtolower($request->country); 
+	
+	$searchnames = '';
+	if(!isEmptyString($request->firstname)){
+		$searchnames .= $request->firstname;
+	}
+	if(!isEmptyString($request->lastname)){
+		$searchnames .= " ".$request->lastname;
+	}
+	
+	if (!isEmptyString($request->letter)){
+		$searchnames .= "Browse By: <b>".strtoupper($request->letter)."</b><br />";
+	}
+	
+	$paginate = new Pagination();	
+	$paginate->setView($this);
+	# set the search columns to be used on this list
+	$paginate->setSearchColumns(array("u.firstname","u.lastname","u.othernames","u.username","u.email","u.phone","u.phone2","u.refno","u.regno", "concat(u.firstname,' ',u.lastname)"));
+	$paginate->setFilterColumns(array("u.gender","u.locationid","u.farmgroupid"));
+	// $paginate->setDefaultSortBy("u.datecreated");	
+	// $paginate->setDefaultSortOrder("DESC");
+	$paginate->setItemCountPerPage("25");
+	
+	# define the letter to be clicked to ease navigation 
+	$where_query = " WHERE u.id <> '' ";
+	
+	if(!isEmptyString($request->letter)){
+		$where_query .= " AND (u.`firstname` LIKE '".$request->letter."%' OR u.`lastname` LIKE '".$request->letter."%') ";
+	}
+	
+	$customwhere = " ";
+	if(!isEmptyString($request->searchterm)){
+		$customwhere = " OR CONCAT_WS (' ', u.firstname, u.lastname) LIKE '%" .trim($request->searchterm). "%' OR CONCAT_WS (' ', u.lastname, u.firstname) LIKE '%" .trim($request->searchterm). "%'  ";
+	}
+		
+	$addfarmerurl = $this->baseUrl('farmer/add/country/'.$country); 
+	$listurl = $this->baseUrl('farmer/list');
+	if(!isEmptyString($request->country)){
+		$listurl = $this->baseUrl('farmer/list/country/'.$country); 
+	}
+	$farmgroup = new FarmGroup();
+	$groupid = trim($request->farmgroupid);
+	$groupstring = ""; $dnastring = "";
+	if(!isEmptyString($groupid)){
+		if($groupid == 0){
+			$where_query .= " AND (u.`farmgroupid` IS NULL) ";
+		} else {
+			$where_query .= " AND (u.`farmgroupid` = '".$groupid."') ";
+		}
+		$farmgroup->populate($groupid);
+		$groupstring = "<span class='namelabel'> [".$farmgroup->getName()."]</span>";
+		$dnastring = ' [from '.$farmgroup->getName().']';
+		$listurl = $this->baseUrl('farmer/list/farmgroupid/'.$groupid);
+		if(!isEmptyString($request->country)){
+			$listurl = $this->baseUrl('farmer/list/farmgroupid/'.$groupid.'/country/'.$country); 
+		}
+		$addfarmerurl = $this->baseUrl('farmer/add/farmgroupid/'.$farmgroup->getID().'/country/'.$country);
+	}
+	
+	$locationstring = '';
+	$locationid = $request->locationid;
+	if(!isEmptyString($locationid)){
+		$where_query .= " AND (u.`locationid` = '".$locationid."') ";
+		$district = new Location();
+		$district->populate($locationid);
+		$locationstring = ' [from '.$district->getName().']';
+	}
+	
+	$subgroup = $request->subgroupid;
+	if(!isEmptyString($subgroup)){
+		$where_query .= " AND (u.`subgroupid` = '".$subgroup."') ";
+	}
+	
+	$profiledby = $request->profiledby;
+	$currentprofiler = '';
+	if(!isEmptyString($profiledby)){
+		$profiler = new UserAccount();
+		$profiler->populate($profiledby);
+		$currentprofiler = $profiler->getName();
+	}
+	if($loggedinuser->isDataClerk()){
+		$profiledby = $loggedinuser->getID();
+		$request->setParam('profiledby', $profiledby);
+		$currentprofiler = $loggedinuser->getName();
+	}
+	if(!isEmptyString($profiledby) || $loggedinuser->isDataClerk()){
+		$where_query .= " AND (u.`createdby` = '".$profiledby."') ";
+		$searchnames .= 'Farmers Profiled By '.$currentprofiler;
+	}
+	
+	$startdate = $request->getParam('startdate');
+	if(!isEmptyString($startdate)){
+		$startdate = changeDateFromPageToMySQLFormat($startdate);
+	}
+	$enddate = $request->getParam('enddate');
+	if(!isEmptyString($enddate)){
+		$enddate = changeDateFromPageToMySQLFormat($enddate);
+	}
+	
+	if(!isEmptyString($startdate)){
+		$where_query .= " AND (TO_DAYS(u.datecreated) >= TO_DAYS('".$startdate."')) ";
+	}
+	if(!isEmptyString($enddate)){
+		$where_query .= " AND (TO_DAYS(u.datecreated) <= TO_DAYS('".$enddate."')) ";
+	}
+	
+	$order = trim($request->order);
+	$order_query = " ";
+	if(isEmptyString($order)){
+		$order = 1;
+	}
+	if($order == 1){
+		$order_query = " ORDER BY u.datecreated DESC ";
+	}
+	if($order == 2){
+		$order_query = " ORDER BY u.firstname ASC ";
+	}
+	if($order == 3){
+		$order_query = " ORDER BY u.lastname ASC ";
+	}
+	if($order == 4){
+		$order_query = " ORDER BY u.datecreated ASC ";
+	}
+	
+	$paginate->processPost($request->getParams());
+	$all_results_query = "SELECT u.id as id, u.id as userid, u.farmgroupid as fmgroupid, u.firstname, u.lastname, u.othernames, u.subgroupid, u.gender, u.isactive, u.locationid as districtid, u.email as email, u.email as femail, u.refno, u.regno as regno, u.phone as phone, u.regdate as fregdate, u.profilephoto as profilephoto, fg.orgname as orgname, fgs.orgname as sorgname, l.name as district, u.isphoneinvited, u.hasacceptedinvite, u.isinvited, u.selfregistered, concat(ua.firstname, ' ', ua.lastname) as addedby, u.datecreated as dateadded FROM useraccount u LEFT JOIN farmgroup as fg on (u.farmgroupid = fg.id) LEFT JOIN location l on (u.locationid = l.id AND l.locationtype = 2) INNER JOIN useraccount ua on (u.createdby = ua.id) LEFT JOIN farmgroup as fgs on (u.subgroupid = fgs.id) ".$where_query." AND u.type = 2 AND u.country = UPPER('".$session->getVar('country')."') ".$paginate->getSearchAndFilterSQL($customwhere)." GROUP BY u.id ".$order_query;
+	
+	// debugMessage($all_results_query); // exit();
+	
+	// determine total number of records found
+	$conn = Doctrine_Manager::connection(); 
+	$count_query = "SELECT count(u.id) as total FROM useraccount u LEFT JOIN farmgroup as fg on (u.farmgroupid = fg.id) LEFT JOIN location l on (u.locationid = l.id AND l.locationtype = 2) INNER JOIN useraccount ua on (u.createdby = ua.id) LEFT JOIN farmgroup as fgs on (u.subgroupid = fgs.id) ".$where_query." AND u.type = 2 AND u.country = UPPER('".$session->getVar('country')."') ".$paginate->getSearchAndFilterSQL($customwhere);
+	$total = $conn->fetchOne($count_query);
+	$paginate->setItemCount($total); // debugMessage('>> '.$total);	
+	$current_results_query = $all_results_query." ".$paginate->getSQLLimit();
+	
+	$conn = Doctrine_Manager::connection(); 
+	$result = $conn->fetchAll($current_results_query);
+	$has_no_data = (count($result) == 0) ? true : false; 
+	
+?>
+<script>
+$(document).ready(function() {
+	$("#levelone_icon").addClass('icon-user');
+	$("#levelone_link").attr('href', '<?php echo $listurl; ?>').html('Farmers');
+	$("#leveltwo_link").html('');
+	
+	// set hidden field for the alphabet and submit the form
+	$(".alphabet").click(function(){
+		var letter = $(this).attr('id');
+		// alert(letter);
+		$('#letter').val(letter);
+		$("#listform").submit();
+	});
+	
+	//when button is clicked  
+	$('#check_email_availability').click(function(){ 
+		check_email_availability();  
+	});
+	$('#email').change(function(){ 
+		check_email_availability();  
+	});  
+	$('#email').keyup(function(){
+		this.value = this.value.toLowerCase();
+	});
+	
+	//function to check email availability  
+	function check_email_availability(){  
+		//get the username
+		var checking_html = 'Checking availability...';   
+		var email = $('#email').val();  
+		if(!isEmptyString(email) && validateEmail(email)){
+			$('#email_availability_result').html(checking_html);  
+			
+			//use ajax to run the check  
+			$.post("<?php echo $this->baseUrl('signup/checkemail'); ?>", { email: email },  
+				function(result){  
+					//if the result is 1  
+					// alert(result); // return false;
+					if(result == 1){  
+						//show that the email is available
+						$('#email_availability_result').html(email + ' is NOT available!').addClass('alert').addClass('alert-error').removeClass('alert-success'); 
+					} else {  
+						//show that the email is NOT available  
+						$('#email_availability_result').html(email + ' is available').addClass('alert').addClass('alert-success').removeClass('alert-error');
+					}  
+			});  
+		}
+	}
+	
+	datepickerOpts.dateFormat = '<?php echo $config->dateandtime->javascriptmediumformat; ?>'; 
+	$("#startdate, #enddate").datepicker(datepickerOpts); 
+	
+	<?php if($loggedinuser->isDataClerk()){?>
+		$('#profiledby').attr('readonly', true).attr('disabled', true);
+	<?php } ?>
+}); 
+</script>
+<style>		
+.alert.alert-success {
+	clear:both;
+}
+.namelabel {
+	font-weight:normal;
+	font-size:14px;
+}
+img.ui-datepicker-trigger {
+	margin-top:10px;
+}
+</style>
+<div>
+	<?php require APPLICATION_PATH."/views/scripts/index/leftcolumn.phtml"; ?>
+    <div id="centercolumn">
+        <div class="container-fluid">
+            <div class="row margin0 maxwidth" style="margin-bottom:0;">
+            	<form action="<?php echo $this->baseUrl("farmer/listsearch"); ?>" method="get" id="listform" class="form-search" style="padding-left:0">
+                    <h1><?php echo $title; ?><?php echo $groupstring; ?></h1>
+                    <div class="wellcontent" style=" margin-top:-10px;">
+                        <div class=" blocked clear" style="position:relative; margin-top:25px;">
+                            <div class="advsearch" style="display:block; float:right; text-align:right; position:absolute; right:0; top:10px; width:60px;">
+                                <a href="<?php echo $listurl; ?>" id="reset" class="btn btn-primary btn-mini pull-left" title="Reset list or clear all filters">Reset</a>&nbsp;&nbsp;
+                            </div>
+                            <ul class="peoplegroup" style="border:1px solid #DDDDDD; padding:5px;">
+                                <li>
+                                    <?php if(isAdmin() || isManagement() || isDataClerk()){ ?>
+                                        <a href="<?php echo $addfarmerurl; ?>" class="farmerpopup addpopup btn btn-primary" title="New Farmer" rel="New Farmer" id="newfarmer" formtitle="indexform" successurl="<?php echo $listurl; ?>" action="<?php echo $this->baseUrl("mobile/create"); ?>"><i class="icon-plus icon-white"></i> New Farmer</a>
+                                    <?php } ?>     
+                                    <?php if(isFarmGroupAdmin()){ ?>
+                                        <a class="addpopup addfarmer btn btn-primary" style="margin-bottom: 10px;" href="<?php echo $addfarmerurl; ?>" rel="Add Farmer | <?php echo $farmgroup->getName(); ?>" title="Add Farmer" id="addfarmer" formtitle="indexform" successurl="<?php echo $listurl; ?>" action="<?php echo $this->baseUrl("profile/create"); ?>"><i class="icon-plus icon-white"></i> New Farmer</a>
+                                    <?php } ?>
+                                    <?php if($loggedinuser->isUgandan() && isUganda() && (isAdmin() || isManagement())){ ?>
+                                        <?php if(isEmptyString($request->country) || $countryreq == 'ug'){ ?>
+                                            <a class="btn btn-mini" style="margin-top: 10px; display:block;" href="<?php echo $this->baseUrl('farmer/list/country/ke'); ?>" title="Browse Kenya Directory"><i class="icon-list"></i> Browse Kenya</a>
+                                        <?php } ?>
+                                    <?php } ?>
+                                    <?php if($loggedinuser->isUgandan() && isKenya() && (isAdmin() || isManagement())){ ?>
+                                        <?php if(!isEmptyString($request->country) && $countryreq == 'ke'){ ?>
+                                            <a class="btn btn-mini" style="margin-top: 10px; display:block;" href="<?php echo $this->baseUrl('farmer/list/country/ug'); ?>" title="Browse Uganda Directory"><i class="icon-list"></i> Browse Uganda</a>
+                                        <?php } ?>
+                                    <?php } ?>
+                                </li>
+                                <li style="width:140px;">
+                                    <?php
+                                        $districts = getDistricts($session->getVar('country'));
+                                        $districtdropdown = new Zend_Form_Element_Select('locationid',
+                                                            array(
+                                                                'multiOptions' => array_merge_maintain_keys(array('' => 'All '.$locations_label), $districts),								
+                                                                'view' => new Zend_View(),
+                                                                'decorators' => array('ViewHelper'),
+                                                                'class' => array('span2','autofilter')
+                                                            )
+                                                        );
+                                        $districtdropdown->setValue($request->getParam('locationid')); 
+                                        echo $districtdropdown->render(); 
+                                      ?>
+                                      <input name="startdate"  id="startdate" type="text" class="datefield startdate inline form-control input-width-small width100" style="margin-top:10px;" placeholder="From" value="<?php echo $request->startdate; ?>" />
+                                </li>
+                                <?php if(isAdmin() || isManagement() || isDataClerk()){ ?>
+            
+                                    <li style="width:220px;">
+                                        <?php
+                                            $groupdropdown = new Zend_Form_Element_Select('farmgroupid',
+                                                                array(
+                                                                    'multiOptions' => array_merge_maintain_keys(array('' => 'All DNAs'.$locationstring, '0'=> 'All Individual Farmers'), getAllFarmGroups($request->getParam('locationid'), $session->getVar('country'))),								
+                                                                    'view' => new Zend_View(),
+                                                                    'decorators' => array('ViewHelper'),
+                                                                    'class' => array('span3','autofilter')
+                                                                )
+                                                            );
+                                            $groupdropdown->setValue($request->getParam('farmgroupid')); 
+                                            echo $groupdropdown->render(); 
+                                       ?>
+                                       <input name="enddate" id="enddate" type="text" class="datefield form-control input-width-small width100 autofilter" style="margin-top:10px;" placeholder="To" value="<?php echo $request->enddate; ?>" />
+                                    </li>
+                                <?php } else { ?>
+                                    <input type="hidden" name="farmgroupid" id="farmgroupid" value="<?php echo $request->getParam('farmgroupid'); ?>" />
+                                <?php } ?>
+                                <?php if($farmgroup->hasSubGroups()){ ?>
+                                    <li>
+                                        <?php
+                                            $groupdropdown = new Zend_Form_Element_Select('subgroupid',
+                                                                array(
+                                                                    'multiOptions' => array_merge_maintain_keys(array('' => 'All Groups'.$dnastring), getAllFarmGroupsInDNA($request->getParam('farmgroupid'), $session->getVar('country'))),								
+                                                                    'view' => new Zend_View(),
+                                                                    'decorators' => array('ViewHelper'),
+                                                                    'class' => array('span3','autofilter')
+                                                                )
+                                                            );
+                                            $groupdropdown->setValue($request->getParam('subgroupid')); 
+                                            echo $groupdropdown->render(); 
+                                       ?>
+                                    </li>
+                                <?php } else { ?>
+                                    <input type="hidden" name="subgroupid" id="subgroupid" value="<?php echo $request->getParam('subgroupid'); ?>" />
+                                <?php } ?>
+                                <li style="width:140px;">
+                                    <?php
+                                        $allgenders = array('' => 'All Genders','1'=>'Male','2'=>'Female');
+                                        $genderdropdown = new Zend_Form_Element_Select('u'.HTML_TABLE_COLUMN_SEPARATOR.'gender',
+                                                            array(
+                                                                'multiOptions' => $allgenders,
+                                                                'view' => new Zend_View(),
+                                                                'decorators' => array('ViewHelper'),
+                                                                'class' => array('gender','span2','autofilter'),
+                                                                'title' => 'Filter People By Gender'		
+                                                            )
+                                        );  
+                                        $genderdropdown->setValue($request->getParam('u'.HTML_TABLE_COLUMN_SEPARATOR.'gender')); 
+                                        echo $genderdropdown->render();
+                                    ?>
+                                    <?php
+                                        $users = getProfilingUsers($session->getVar('country'));
+                                        $dropdown = new Zend_Form_Element_Select('profiledby',
+                                                            array(
+                                                                'multiOptions' => array_merge_maintain_keys(array('' => 'All Profiling Users'), $users),								
+                                                                'view' => new Zend_View(),
+                                                                'decorators' => array('ViewHelper'),
+                                                                'class' => array('span2','autofilter'),
+                                                                'style' => 'margin-top:10px;'
+                                                            )
+                                                        );
+                                        $dropdown->setValue($request->getParam('profiledby')); 
+                                        echo $dropdown->render(); 
+                                      ?>
+                                </li>
+                                <li>
+                                    <?php
+                                        $allorders = array('1' => 'Latest First', '2'=>'Alphabetical (Firstname)','3'=>'Alphabetical (Lastname)', '4'=>'Earliest First');
+                                        $ordersdropdown = new Zend_Form_Element_Select('order',
+                                                            array(
+                                                                'multiOptions' => $allorders,
+                                                                'view' => new Zend_View(),
+                                                                'decorators' => array('ViewHelper'),
+                                                                'class' => array('gender','span2','autofilter'),
+                                                                'title' => 'Order list by'		
+                                                            )
+                                        );  
+                                        $ordersdropdown->setValue($request->getParam('order')); 
+                                        echo $ordersdropdown->render();
+                                    ?>
+                                </li>
+                                <li style="float:right;"><input name="searchterm" id="searchterm" value="<?php echo $request->searchterm; ?>" type="text" class="input-medium span3" style="margin-bottom:5px;" placeholder="Search Farmers">
+                                    <button type="submit" id="searchbutton" class="btn btn-primary" style="vertical-align:top; margin-left:-2px;"><i class="icon-search icon-white"></i> Search or Filter</button>
+                                    <input type="hidden" name="letter" id="letter" value="<?php echo $request->getParam('letter'); ?>" />
+                                    <?php if($loggedinuser->isDataClerk()){?>
+                                       <input type="hidden" name="profiledby" id="profiledby" value="<?php echo $profiledby; ?>" />
+                                    <?php } ?>
+                                </li>
+                            </ul>
+                      	</div>
+                        <?php if(!isEmptyString($session->getVar('duplicates'))){ ?>
+                            <div class="alert alert-success clear"><a class="close" data-dismiss="alert">×</a><?php echo $session->getVar('duplicates'); ?></div>
+                        <?php } ?>
+                        <?php if(!isEmptyString($session->getVar(SUCCESS_MESSAGE))){ ?>
+                            <div class="alert alert-success clear"><a class="close" data-dismiss="alert">×</a><?php echo $session->getVar(SUCCESS_MESSAGE); ?></div>
+                        <?php } ?>
+                        <?php if(!isEmptyString($session->getVar(ERROR_MESSAGE))){ ?>
+                            <div class="alert alert-error clear"><?php echo $session->getVar(ERROR_MESSAGE); ?></div>
+                        <?php } ?>
+                        <?php if(!isEmptyString($session->getVar("custommessage")) ){ ?>
+                            <div class="alert alert-success"><a class="close" data-dismiss="alert">×</a><?php echo $session->getVar("custommessage"); ?></div>
+                        <?php } ?>
+                        <div class="makerelative">
+                        	<div class="alphabetlist pull-left"><a href="<?php echo $listurl; ?>" title="All Farmers">All</a>&nbsp;&nbsp;|&nbsp;&nbsp;<?php echo $paginate->getAlphabetString(); ?></div>
+                            <?php if(!isEmptyString($searchnames)){ ?>
+                        		<label style="text-align:left;" class="searchedterm control-label pull-left leftalign"><?php echo $searchnames; ?></label>
+                            <?php } ?>
+                        	<div style="top:5px; right:5px; left:auto;" class="paginatecustom"><?php echo sprintf($this->translate("farmgroup_list_counter"), $paginate->getItemCounterText()); ?></div>
+                       	</div>
+                        <?php if ($has_no_data) { ?>
+                            <div style="clear:both;" class="alert alert-info margin5"><?php echo $this->translate("farmer_list_norecords"); ?></div>
+                        <?php } else { ?>
+                            <div class="divider2"></div>
+                            <div class="container-fluid makerelative">
+                            	<div class="row" style="margin-left:-12px; margin-right:-12px;">
+                                	<?php require APPLICATION_PATH."/views/scripts/farmer/contentloop.phtml"; ?>
+                                </div>
+                            </div>
+                     	<?php } ?>
+                	</div>
+             	</form>
+            </div>
+       	</div>
+    </div>
+</div>
+<?php
+	require_once APPLICATION_PATH.'/includes/footer.php';
+?>  

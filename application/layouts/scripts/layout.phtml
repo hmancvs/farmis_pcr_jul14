@@ -965,7 +965,7 @@ function numberWithCommas(x) {
 $(window).load(function() {
 	//Make columns equal
 	equalHeight($("#leftcolumn, #centercolumn"));
-	$("#contentcolumn, #centercolumn").css({'height':'auto'});
+	// $("#contentcolumn, #centercolumn").css({'height':'auto'});
 	
 	$('.ui-datepicker-div').css({'z-index':'1500'});
 }); 
@@ -1013,7 +1013,12 @@ $(window).load(function() {
 <div class="container prettyprint linenums" id="maincontainer">
 	<?php require_once APPLICATION_PATH.'/views/scripts/index/navigation.phtml'; ?>	
 	<div class="row-fluid" id="contentwrapper">
-		<div class="" id="contentcolumn"><?php echo $this->layout()->content; ?></div>
+		<div id="contentcolumn">
+        	<?php if($isloggedin){ ?>
+        		<?php require_once APPLICATION_PATH.'/views/scripts/index/breadcrumb.phtml'; ?>	
+            <?php } ?>
+			<?php echo $this->layout()->content; ?>
+       	</div>
     </div>
 </div>
 <footer class="footer well <?php echo $bodyclassonly; ?>"><?php require_once APPLICATION_PATH.'/views/scripts/index/footer.phtml'; ?></footer>

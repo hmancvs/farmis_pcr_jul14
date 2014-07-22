@@ -2017,7 +2017,8 @@ img#refresh{
 	margin-top:1px;
 }
 .listform, #listform {
-	padding-left:10px;
+	/*padding-left:10px;*/
+	padding-top:10px;
 }
 .discussion ul.comments {
 	width:97%;
@@ -2353,15 +2354,16 @@ span.green, .green {
 	width:auto;
 	margin:0 auto;
 	z-index:1000;
+	margin-top:-2px;
 }
 #inputSearch {
-	width:80%;
-	padding:5px;
+	width:98%;
+	padding:7px;
 }
 #divResult {
 	position:absolute;
-	/*width:360px;*/
-	width:57%;
+	width:335px;
+	/*width:57%;*/
 	display:none;
 	margin-top:-1px;
 	border:solid 1px #dedede;
@@ -2379,6 +2381,9 @@ span.green, .green {
 	z-index:1200;
 	max-height:500px;
 	overflow-y:scroll;
+	list-style:none; 
+	margin-left:0; 
+	margin-top:-10px;
 }
 .display_box {
 	padding:4px; 
@@ -2511,23 +2516,22 @@ fieldset p {margin:0} /* Remove margins from p elements inside fieldsets */
     margin: 5px 0 25px 0;
 }
 .peoplelist .peoplewrapper {
-    /*background: none repeat scroll 0 0 #FFFFFF;*/
 	background-color: #fbfbfb;
     border: 1px solid #CCCCCC;
     height: auto;
     margin-bottom: 15px;
     padding: 15px;
-	padding-top:0;
-	padding-left:10px;
+	/*padding-top:15px;
+	padding-left:10px;*/
 }
 .peoplelist .peoplewrapper .thumbwrapper {
 	height:150px; 
-	width:85px; 
+	width:95px; 
 	float:left;
 }
 .peoplelist .thumb {
     float: left;
-	margin-top:15px;
+	margin-top:0;
 }
 .peoplelist .thumb img {
     display: block;
@@ -2882,14 +2886,14 @@ fieldset p {margin:0} /* Remove margins from p elements inside fieldsets */
 ================================================== */
 .crumbs {
   /*margin: 0 -20px;*/
-  margin: 0 -5px;
+ /* margin: 0 -5px;*/
   height: 40px;
-  background: #f9f9f9;
+  background: none repeat scroll 0 0 #CFF3C4;
   border-bottom: 1px solid #d9d9d9;
 }
 .crumbs .breadcrumb {
   float: left;
-  background-color: #f9f9f9;
+  /*background-color: #f9f9f9;*/
   height: 0;
   margin-top: 1px;
 }
@@ -2900,7 +2904,7 @@ fieldset p {margin:0} /* Remove margins from p elements inside fieldsets */
   padding-right: 5px;
 }
 .crumbs .breadcrumb li a {
-  color: #555555;
+  /*color: #555555;*/
 }
 .crumbs .breadcrumb li a:hover {
   text-decoration: none;
@@ -2908,7 +2912,7 @@ fieldset p {margin:0} /* Remove margins from p elements inside fieldsets */
 }
 .crumbs .breadcrumb li i {
   color: #6f6f6f;
-  padding: 0 5px;
+  padding: 0 3px;
 }
 .crumbs .breadcrumb li.current a {
   color: #949494 !important;
@@ -2916,7 +2920,7 @@ fieldset p {margin:0} /* Remove margins from p elements inside fieldsets */
 .crumbs .crumb-buttons {
   float: right;
   list-style: none;
-  margin-right: 21px;
+  margin-right: 15px;
   margin-left: 0;
   height: 0;
 }
@@ -3111,7 +3115,7 @@ table.table tbody.monitorbody tr td.last label {
 .header .headmenu > li.right {
     border-right: 0 none;
     float: right;
-	width:320px;
+	width:340px;
 }
 .header .userloggedinfo {
     color: #FFFFFF;

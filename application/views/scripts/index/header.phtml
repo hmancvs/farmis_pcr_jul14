@@ -37,8 +37,8 @@
                     </li>
                 <?php } ?>
                 <?php if($acl->checkPermission('Farmer', ACTION_LIST)) { ?>	
-                    <li class="<?php echo ($controllername == 'profile') ? 'active' : ''; ?>">
-                        <a href="<?php echo $this->baseUrl('profile/list'); ?>">
+                    <li class="<?php echo ($controllername == 'farmer') ? 'active' : ''; ?>">
+                        <a href="<?php echo $this->baseUrl('farmer/list'); ?>">
                             <span class="head-icon head-icon2"></span>
                             <span class="headmenu-label">Farmers</span>
                         </a>

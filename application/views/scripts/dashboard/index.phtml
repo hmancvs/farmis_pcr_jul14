@@ -139,6 +139,9 @@
 <?php } ?>
 <script>
 $(document).ready(function(){
+	$("#levelone_icon").addClass('icon-home');
+	$("#levelone_link").attr('href', '<?php echo $this->baseUrl('dashboard'); ?>').html('Dashboard');
+	$("#leveltwo_link").html('');
 	
 	var location = $("#location").val();
 	var locationid = $("#locationid").val();
@@ -509,18 +512,6 @@ $(document).ready(function(){
 <div class="blocked clear maxwidth">
 	<?php require APPLICATION_PATH."/views/scripts/index/leftcolumn.phtml"; ?>
     <div id="centercolumn">
-    	<div class="crumbs">
-            <ul class="breadcrumb" id="breadcrumbs">
-                <li><i class="icon-home"></i><a href="<?php echo $this->baseUrl('dashboard'); ?>">Dashboard</a></li>
-                <li class="current"> > <!--<a href="pages_calendar.html">Calendar</a>--></li>
-            </ul>
-            <ul class="crumb-buttons">
-                <li class="first"><a href="<?php echo $this->baseUrl('profile/add'); ?>"><i class="icon-plus"></i><span>Add New Farmer</span></a></li>
-                <li></li>
-                <li><a href="#"><i class="icon-calendar"></i> <span>June 19, 2014 - July 18, 2014</span> <i class="icon-angle-down"></i></a></li>
-                
-            </ul>
-        </div>
         <div class="container-fluid">
             <div class="page-header">
                 <div class="page-title">
