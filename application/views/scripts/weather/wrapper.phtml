@@ -1,0 +1,47 @@
+<?php
+	require_once APPLICATION_PATH.'/includes/header.php';
+	// require_once APPLICATION_PATH.'/includes/lib/Forecast.php';
+	include(APPLICATION_PATH.'/includes/forecast.io.php');
+	
+	$title = "Forecast Wrapper Example";
+	$this->headTitle($title.$browserappend); 
+	
+	
+	// Forecast.io API key from http://developer.forecast.io/
+	$api_key = $config->api->weather_forecast_apikey; 
+	$latitude = '0.350110';
+	$longitude = '32.571910';
+	$forecast = new ForecastIO($api_key);
+	
+	/*
+	 * GET CURRENT CONDITIONS
+	 */
+	$condition = $forecast->getCurrentConditions($latitude, $longitude, mktime(), 'minutely,hourly,daily');
+	// debugMessage($condition->getMinTemperature().' at ['.date('H:i a', strtotime($condition->getMinTemperatureTime())).'] - '.$condition->getMaxTemperature().' at ['.date('H:i a', strtotime($condition->getMaxTemperatureTime())).']');
+	// debugMessage($condition->getSummary());
+	// $url = 'http://api.forecast.io/forecast/'.$api_key.'/'.$location.'?units=auto';
+	// debugMessage(curlContents($url, 'GET', false, false, false)); 
+	
+	/*$conditions_today = $forecast->getForecastToday($latitude, $longitude);
+	foreach($conditions_today as $cond) {
+	  debugMessage($cond->getTime('H:i:s') . ': ' . $cond->getTemperature());
+	}
+	
+	$conditions_week = $forecast->getForecastWeek($latitude, $longitude);
+	foreach($conditions_week as $conditions) {
+		debugMessage($conditions->getTime('Y.m.d') . ': ' . $conditions->getMaxTemperature());
+	}*/
+
+	exit();
+?>
+
+<script>
+$(document).ready(function() {
+
+});
+</script>
+<div class="divider30"></div>
+
+<?php
+	require_once APPLICATION_PATH.'/includes/footer.php';
+?>

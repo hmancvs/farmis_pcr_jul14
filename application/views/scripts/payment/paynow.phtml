@@ -1,0 +1,209 @@
+<?php
+	require_once APPLICATION_PATH.'/includes/header.php';
+	
+	$user = new UserAccount();
+	
+	$theid = decode($request->id);
+	if(isEmptyString($theid)){
+		$theid = $userid;
+	}
+	$user->populate($theid);
+	$id = $user->getID();
+	
+	$id = $user->getID();	
+	$name = $user->getName();
+	$firstname = $user->getFirstName();
+	
+	# profile for one viewing
+	$isme = false;
+	if($userid == $user->getID()){
+		$isme = true;
+	}
+	
+	$request->setParam('tab', 'subscription');
+	
+	$isfarmer = false;
+	$isfarmgroup = false;
+	$type = $request->self;
+	
+	$payment = new Payment();
+	$payment->setTrxDate(date('Y-m-d'));
+	$payment->setUserID($user->getID());
+	$payment->setPhone($user->getPhone());
+	$payment->setStem(2);	
+	$payment->setItem(2);
+	$payment->setAmount($payment->getDefaultFarmerAmount());
+	
+	$plan = new MembershipPlan(); 
+	$plan->populate(2); 
+	
+	$posturl= '';
+	$step = $request->step;
+	if(isEmptyString($step)){
+		$step = 1;
+	}
+		
+	$title = $payment->getUser()->getName();
+	$formtitle = "New Payment";	
+	$this->headTitle($title);
+	
+?>
+<script>
+$(document).ready(function() {
+	
+	var subscriptionmount = '<?php echo $payment->getAmount(); ?>';
+	var halfpay = subscriptionmount/2 ;
+	$("#period").change(function(){
+		var period = $(this).val();
+		if(period  == 180){
+			$("#amount").val(halfpay);
+			$('span#computedtotal').html(addCommas(parseInt(halfpay)));
+		}
+		if(period  == 365){
+			$("#amount").val(subscriptionmount);
+			$('span#computedtotal').html(addCommas(parseInt(subscriptionmount)));
+		}
+	});
+	$("#period").trigger('change');
+}); 
+</script>
+<style>
+.button-next, .finish {
+	float:left;
+	margin-left:15px;
+}
+.stepy-titles li {
+	padding: 10px 10px 10px 5px;
+	font-size:13px;	
+	width: 22%;
+	color:#ccc;
+}
+.stepy-titles li span {
+	margin-top:15px;
+	font-size:14px;
+}
+</style>
+<?php if(!isFarmer()){ ?>
+<h1><?php echo $title; ?></h1>
+<?php } ?>
+<div id="tabs">
+    <?php require APPLICATION_PATH."/views/scripts/profile/profileleftcolumn.phtml"; ?>
+    <div class="span9 tab-content" id="center">
+    	<?php require APPLICATION_PATH."/views/scripts/profile/tabstop.phtml"; ?>
+		<div id="subscription" class="makerelative">
+        	<h2><?php echo $formtitle; ?></h2>
+            <form class="form-horizontal well" id="paynowform" action="<?php echo $posturl; ?>" method="post" style="width:97%;">
+				<?php if(!isEmptyString($session->getVar(SUCCESS_MESSAGE)) ){ ?>
+                    <div class="alert alert-success"><?php echo $session->getVar(SUCCESS_MESSAGE); ?></div>
+                <?php } ?>	
+                <fieldset title="Payment Summary" id="summary">
+                    <legend>Step 1</legend>
+                    <div class="well lighter row marginleft0" style="min-height:100px; width:94%; margin:10px; background-color:#fff;">
+                        <h3 class="well-legend">Account Details</h3>
+                        <table class="table">                       
+                            <tr>
+                                <td width="20%"><label class="control-label">Name:</label></td>
+                                <td><?php echo $payment->getUser()->getName(); ?></td>
+                            </tr>
+                            <tr>     
+                                <td><label class="control-label">Phone:</label></td>
+                                <td><?php echo $payment->getUser()->getPhone(); ?></td>
+                            </tr>
+                            <tr>     
+                                <td><label class="control-label">Email:</label></td>
+                                <td><?php echo $payment->getUser()->getEmail(); ?></td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="well lighter row marginleft0" style="min-height:100px; width:94%; margin:10px; background-color:#fff;">
+                        <h3 class="well-legend">Payment Summary</h3>
+                        <table class="table">                       
+                            <tr>
+                                <td width="20%"><label class="control-label">Subject:</label></td>
+                                <td><?php
+										$types = getPaymentSubjects();
+										$typesdropdown = new Zend_Form_Element_Select('item',
+															array(
+																'multiOptions' => array_merge_maintain_keys(array('' => '<Select One>'), $types),								
+																'view' => new Zend_View(),
+																'decorators' => array('ViewHelper'),
+																'class' => array('hastooltip', 'span3'),
+																'title' => $this->translate("payment_type_tooltip")
+															)
+														);
+										$typesdropdown->setValue($payment->getItem()); 
+										echo $typesdropdown->render(); 
+								   ?><div id="item_error"></div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><label class="control-label">Subscription Period: <?php echo $this->translate("global_required_field_marker"); ?></label></td>
+                                <td><?php
+                                        $univalues = array('12'=>'12 Months', '6'=>'6 Months');
+                                        $unitdropdown = new Zend_Form_Element_Select('period',
+                                                            array(
+                                                                'multiOptions' => array_merge_maintain_keys(array('' => '<Select>'), $univalues),								
+                                                                'view' => new Zend_View(),
+                                                                'decorators' => array('ViewHelper'),
+                                                                'class' => array('span2','width100','hastooltip', 'selectrequired'),
+                                                                'title' => $this->translate("payment_renewed_period_tooltip")
+                                                            )
+                                                        );
+                                        $unitdropdown->setValue('12'); 
+                                        echo $unitdropdown->render(); 
+                                    ?><div id="period_error"></div></td>
+                            </tr>
+                            <tr>
+                                <td><label class="control-label">Amount Due (UGX):</label></td>
+                                <td><span id="computedtotal">0</span><input type="hidden" class="hidden" name="amount" id="amount" value="0" /></td>
+                            </tr>
+                        </table>
+                    </div>
+                </fieldset>
+                <fieldset title="Send Mobile Money" id="validateaccount" class="makerelative">
+                    <legend>Step 2</legend>
+                    <table class="table nohover">
+                        <tr>
+                           <td colspan="2" style="padding-bottom:30px;">
+                           		<div style="padding:10px 10px; width:80%; font-size:14px;" class="alert alert-info margin5">
+                                    Specify your Trading Platform PIN Code and click validate.
+                                </div>
+                           </td>
+                        </tr>
+                        <tr>
+                           <td style="width:20%; padding-bottom:30px;"><label class="control-label">Phone Number:</label></td>
+                           <td><?php echo $user->getPhone(); ?><input type="hidden" id="phone" name="phone" value="<?php echo $user->getPhone(); ?>" /><div id="phone_error"></div></td>
+                        </tr>
+                        <tr>
+                           <td style="padding-bottom:70px;"><label class="control-label">Trading Platform PIN:</label><span class="pagedescription">(4 digits)</span></td>
+                           <td><input name="pin" id="pin" type="password" autocomplete="off" maxlength="4" class="width75 xhastooltip" ssssvalue="" title="<?php //echo $this->translate("farmer_password_tooltip"); ?>" /><div id="pin_error"></div></td>
+                        </tr>
+                    </table>  
+                </fieldset>
+                <fieldset title="Confirmation" id="confirmation">
+                    <legend>Step 3</legend>
+                    <table class="table nohover">
+                        <tr>
+                           <td colspan="2"></td>
+                        </tr>
+                    </table>  
+                </fieldset>
+                <button type="button" class="btn btn-primary btn-large step2auth hidden" id="step2auth" style="position:absolute; left:160px; bottom:55px;"><i class="icon-arrow-right icon-white"></i> Validate</button>
+                <button type="button" class="btn btn-primary btn-large step3pay hidden" id="step3pay" style="position:absolute; left:160px; bottom:55px;"><i class="icon-arrow-right icon-white"></i> Pay Now</button>
+                <input type="hidden" id="step2_successurl" name="step2_successurl" value="<?php echo encode($this->baseUrl('payment/paynow/id/'.encode($payment->getUserID()).'/step/3')); ?>" />
+                <input type="hidden" id="step3_successurl" name="step3_successurl" value="<?php echo encode($this->baseUrl('payment/paynow/id/'.encode($payment->getUserID()).'/step/4')); ?>" />
+                <button type="submit" class="btn btn-primary btn-large finish" id="complete"><i class="icon-arrow-right icon-white"></i> Complete</button>
+                <input type="hidden" id="id" name="id" value="<?php echo encode($payment->getID()); ?>" />
+                <input type="hidden" id="stem" name="stem" value="<?php echo $payment->getStem(); ?>" />
+                <input type="hidden" id="farmgroupid" name="farmgroupid" value="<?php echo $payment->getFarmGroupID(); ?>" />
+                <input type="hidden" id="userid" name="userid" value="<?php echo $payment->getUserID(); ?>" />
+                <input type="hidden" name="<?php echo SUCCESS_MESSAGE; ?>" value="global_save_success" />
+                
+            </form>
+        </div>
+        <?php require APPLICATION_PATH."/views/scripts/profile/tabsbottom.phtml"; ?> 
+    </div>
+</div>    
+<?php
+	require_once APPLICATION_PATH.'/includes/footer.php';
+?>

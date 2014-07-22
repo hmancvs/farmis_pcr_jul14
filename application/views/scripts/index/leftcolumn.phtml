@@ -1,0 +1,67 @@
+<?php 
+	$user = new UserAccount();
+	$user->populate($userid);
+	
+	$latest_discussions = getLatestForumDiscussions(3);
+?>
+<div id="leftcolumn">
+	<div id="button">
+    	<h2 id="quicklink">Quick Links</h2>
+        <ul class="nav nav-tabs nav-stacked leftnav" id="leftnav">
+        	<li><a href="<?php echo $this->baseUrl('dashboard'); ?>"><i class="icon-home icon-white"></i> Dashboard</a></li>
+            <?php if($acl->checkPermission('Farmer', ACTION_LIST)) { ?>
+                <li><a href="<?php echo $this->baseUrl('farmer/list'); ?>"><i class="icon-user icon-white"></i> Farmers</a></li>
+            <?php } ?>  
+            <?php if($acl->checkPermission('DNA', ACTION_LIST)) { ?>  
+                <li><a href="<?php echo $this->baseUrl('farmgroup/list'); ?>"><i class="icon-th icon-white"></i> DNA Profiles</a></li>
+            <?php } ?>
+            <?php if(isFarmGroupAdmin()){ ?>
+                <li><a href="<?php echo $this->baseUrl('farmgroup/view/id/'.encode($user->getFarmGroupID())); ?>"><i class="icon-list icon-white"></i> DNA Profile</a></li>
+            <?php } ?>
+            <?php if(isFarmer()){ ?>
+                <li><a href="<?php echo $this->baseUrl('profile/view/id/'.encode($user->getID()).'/tab/farm'); ?>"><i class="icon-list icon-white"></i> Manage Farm</a></li>
+                <li><a href="<?php echo $this->baseUrl('profile/view/id/'.encode($user->getID()).'/tab/seasons'); ?>" title="Manage Seasons"><i class="icon-list icon-white"></i> Manage Seasons</a></li>
+            <?php } ?>
+            <?php if($acl->checkPermission('Weather', ACTION_VIEW)) { ?>
+            	<li><a href="<?php echo $this->baseUrl('contact/list'); ?>"><i class="icon-globe icon-white"></i> Weather Forecast</a></li>
+            <?php } ?>
+			<?php if($acl->checkPermission('Business Directory', ACTION_LIST)) { ?>
+            	<li><a href="<?php echo $this->baseUrl('contact/list'); ?>"><i class="icon-folder-open icon-white"></i> Business Directory</a></li>
+            <?php } ?>
+            <?php if($acl->checkPermission('Market Prices', ACTION_VIEW)) { ?>
+            	<li><a href="<?php echo $this->baseUrl('contact/list'); ?>"><i class="icon-tags icon-white"></i> Market Prices</a></li>
+            <?php } ?>
+            <?php if($acl->checkPermission('Commodities', ACTION_LIST)) { ?>
+                <li><a href="<?php echo $this->baseUrl('commodity/list'); ?>"><i class="icon-star-empty icon-white"></i> Commodities</a></li>
+            <?php } ?>
+            <?php if($acl->checkPermission('Locations', ACTION_LIST)) { ?>
+                <li><a href="<?php echo $this->baseUrl('location/list'); ?>"><i class="icon-map-marker icon-white"></i> Locations</a></li>
+            <?php } ?>            
+            <?php if($acl->checkPermission('Mass Mail', ACTION_VIEW)) { ?>
+                <li><a href="<?php echo $this->baseUrl('resource/massmail'); ?>"><i class="icon-envelope icon-white"></i> Mass Mailing</a></li>
+            <?php } ?>
+            <?php if($acl->checkPermission('Bulk SMS', ACTION_VIEW)) { ?>
+                <li><a href="<?php echo $this->baseUrl('resource/bulksms'); ?>"><i class="icon-comment icon-white"></i> Bulk SMS</a></li>
+            <?php } ?>
+            <?php if($acl->checkPermission('Report Dashboard', ACTION_VIEW)) { ?>
+                <li><a href="<?php echo $this->baseUrl('reports/overview'); ?>"><i class="icon-flag icon-white"></i> Reports</a></li>
+            <?php } ?>
+			<?php if($acl->checkPermission('Lookup Value', ACTION_VIEW)) { ?>
+                <li><a href="<?php echo $this->baseUrl('resource/variables'); ?>"><i class="icon-cog icon-white"></i> System Variables</a></li>
+            <?php } ?>
+            <?php if($acl->checkPermission('Role', ACTION_LIST)) { ?>
+                <li><a href="<?php echo $this->baseUrl('resource/variables'); ?>"><i class="icon-lock icon-white"></i> System Roles</a></li>
+            <?php } ?>
+            <?php if($acl->checkPermission('Application Settings', ACTION_VIEW)) { ?>
+                <li><a href="<?php echo $this->baseUrl('resource/config'); ?>"><i class="icon-cog icon-white"></i> Global Config</a></li>
+            <?php } ?>
+            <?php if($acl->checkPermission('User Account', ACTION_VIEW)) { ?>  
+            	<li><a href="<?php echo $this->baseUrl('profile/view/id/'.encode($user->getID())); ?>"><i class="icon-user icon-white"></i> My Account</a></li>
+            <?php } ?>
+        </ul>
+    </div>
+    <div class="divider10"></div>
+    <div style="text-align:center; width:100%; padding:0; margin:0; margin-bottom:15px;">
+    	<img class="img-responsive" src="<?php echo $this->baseUrl('uploads/ads/Infotrade_banner_vertical.jpg'); ?>" />
+    </div>
+</div>

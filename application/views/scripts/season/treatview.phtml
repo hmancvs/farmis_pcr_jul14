@@ -1,0 +1,127 @@
+<?php
+	require_once APPLICATION_PATH.'/includes/header.php';
+	
+	$treat = new SeasonTracking();
+	$treat->populate(decode($request->id));	
+	$request->setParam('tab', 'seasons');
+	$user = $treat->getUser();
+	
+	$title = "Activity: ".$treat->getActivityName(); 
+	$farmtitle = $treat->getUser()->getName();
+	$this->headTitle($title.$browserappend);  
+?>
+<script>
+	$(document).ready(function() {
+		
+	}); 
+</script>
+<h1><?php echo $farmtitle; ?></h1>
+<div id="tabs">
+    <?php require APPLICATION_PATH."/views/scripts/profile/profileleftcolumn.phtml"; ?>
+    <div class="span9 tab-content" id="center">
+    	<?php require APPLICATION_PATH."/views/scripts/profile/tabstop.phtml"; ?>
+		<div id="seasons">
+            <form id="viewform" class="form-horizontal seasons">
+            <?php if($request->tab == 'seasons'){ ?>
+                <?php if(!isEmptyString($session->getVar(SUCCESS_MESSAGE)) ){ ?>
+                    <div class="alert alert-success"><a class="close" data-dismiss="alert">×</a><?php echo $session->getVar(SUCCESS_MESSAGE); ?></div>
+                <?php } ?>
+                <div class="row margin0" style="padding:2px; margin-bottom:10px;">
+                    <span class="pull-left well lighter margin0" style="width:72%; min-height:160px;">
+                        <h3 class="well-legend"><?php echo $title; ?></h3>
+                        <table class="table noborder margin0" style="margin-top:15px;">
+                            <tr>
+                                <td style="width:20%;"><label class="control-label"><?php echo $this->translate("season_activitystartdate_label"); ?>:</label></td>
+                                <td style="width:30%;"><?php echo changeMySQLDateToPageFormat($treat->getStartDate()); ?></td>
+                                <td style="width:20%;"><label class="control-label"><?php echo $this->translate("season_activityenddate_label"); ?>:</label></td>
+                                <td><?php echo changeMySQLDateToPageFormat($treat->getEndDate()); ?></td>
+                            </tr>
+                            <tr>
+                                <td><label class="control-label"><?php echo $this->translate("season_activity_ref_label"); ?>:</label></td>
+                                <td><?php echo $treat->getRef(); ?></td>
+                                <td><label class="control-label"><?php echo $this->translate("season_status_label"); ?>:</label></td>
+                                <td><?php echo getStatusText($treat->getStatus()); ?></td>
+                            </tr>
+                            <tr>
+                                <td><label class="control-label">Type:</label></td>
+                                <td><?php echo $treat->getTypeName(); ?></td>
+                                <td></td>
+                                <td></td>
+                            </tr>
+                        </table>
+                    </span>
+                    <span class="pull-right padding0" style="width:24%; margin-left:5px;">
+                        <div class="well margin0" style="height:160px;">
+                            <h3 class="well-legend">Quick Links</h3>
+                            <table class="table noborder" >                       
+                               <tr>		                    
+                                    <td class="formactions">
+                                        <a class="btn btn-primary" href="<?php echo $this->baseUrl('season/treat/id/'.encode($treat->getID())); ?>" id="update"><i class="icon-pencil icon-white"></i> Update</a>  
+                                        <a href="javascript: void(0)" id="deleteline" title="Delete Entry" class="btn deleteline noimgbutton" action="<?php echo $this->baseUrl('season/delete/id/'.$treat->getID()."/entityname/SeasonTracking/successurl/".encode($this->baseUrl('season/view/id/'.encode($treat->getSeasonID())))); ?>"><i class="icon-trash"></i></a> 
+                                        <a class="btn" href="<?php echo $this->baseUrl('season/view/id/'.encode($treat->getSeasonID())); ?>" title="Return to Timeline"><i class="icon-list"></i> View Season</a>         
+                                        <?php if($treat->getUser()->getSeasons()->count() > 1){ ?>           
+                                        	<a class="btn" href="<?php echo $this->baseUrl('profile/view/id/'.encode($treat->getUserID()).'/tab/seasons'); ?>"><i class="icon-list"></i> All Seasons</a>
+                                        <?php } ?>  
+                                    </td>
+                               </tr>
+                            </table>                           
+                        </div>
+                    </span>
+            	</div>
+                <div class="row margin0" style="padding:2px; margin-bottom:10px;">
+                    <span class="pull-left" style="width:100%; margin-right:5px;">
+                        <div id="location_left" class="well lighter margin0" style="min-height:150px;"> 
+                                <h3 class="well-legend"><?php echo $treat->getTypeName(); ?> Details</h3>
+                                <table class="table noborder">
+                                    <tr>
+                                        <td style="width:45%; padding-left:0;">
+                                            <table class="table">
+                                                <tr>
+                                                    <td style="width:40%;"><label class="control-label">Name<?php //echo $this->translate("season_treat_itemname_label"); ?>:</label></td>
+                                                    <td><?php echo $treat->getItemName(); ?></td>
+                                                </tr>
+                                                <tr>
+                                                    <td><label class="control-label">Method Used<?php // echo $this->translate("season_treat_method_label"); ?>:</label></td>
+                                                    <td><?php echo $treat->getMethodText(); ?></td>
+                                                </tr>
+                                                <tr>
+                                                    <td><label class="control-label"><?php echo $this->translate("season_treat_timing_label"); ?>: </label></td>
+                                                    <td><?php echo $treat->getTimingText(); ?></td>
+                                                </tr>
+                                                
+                                            </table>
+                                        </td>
+                                        <td>
+                                            <table class="table">
+                                                <tr>
+                                                    <td style="width:40%;"><label class="control-label">Quantity Applied<?php //echo $this->translate("season_treat_quantity_label"); ?>: </label></td>
+                                                    <td><?php echo $treat->getTotalApplied()."&nbsp;<span class='pagedescription'>(".$treat->getTotalAppliedUnitText().")</span>"; ?></td>
+                                                </tr>
+                                                <tr>
+                                                    <td><label class="control-label">Rate of Application<?php //echo $this->translate("season_treat_itemrate_label"); ?>: </label></td>
+                                                    <td><?php echo $treat->getItemRate()."&nbsp;<span class='pagedescription'>(".$treat->getItemRateUnitText().")</span>"; ?></td>
+                                                </tr>
+                                                <tr>
+                                                    <td><label class="control-label"><?php echo $this->translate("season_treat_target_label"); ?>: </label></td>
+                                                    <td><?php echo $treat->getTarget(); ?></td>
+                                                </tr>
+                                            </table>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                    </span>
+                </div>
+                <?php require APPLICATION_PATH."/views/scripts/season/financeview.phtml"; ?>
+                <?php require APPLICATION_PATH."/views/scripts/season/labourview.phtml"; ?>
+                <?php require APPLICATION_PATH."/views/scripts/season/expenseview.phtml"; ?>
+                <?php require APPLICATION_PATH."/views/scripts/season/notesview.phtml"; ?>
+            <?php } ?>    
+            </form>
+		</div>
+		<?php require APPLICATION_PATH."/views/scripts/profile/tabsbottom.phtml"; ?>  
+    </div>
+</div>    
+<?php
+	require_once APPLICATION_PATH.'/includes/footer.php';
+?>

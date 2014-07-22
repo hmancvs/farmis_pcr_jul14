@@ -1,0 +1,125 @@
+<?php
+	require_once APPLICATION_PATH.'/includes/header.php';
+	
+	$sale = new Sales();
+	$sale->populate(decode($request->id));	
+	$user = $sale->getUser();
+	
+	$title = "Activity: ".$sale->getActivityName(); 
+	$farmtitle = $sale->getUser()->getName();
+	$this->headTitle($title.$browserappend);
+?>
+<script>
+	$(document).ready(function() {
+		
+	}); 
+</script>
+<h1><?php echo $farmtitle; ?></h1>
+<div id="tabs">
+    <?php require APPLICATION_PATH."/views/scripts/profile/profileleftcolumn.phtml"; ?>
+    <div class="span9 tab-content" id="center">
+    	<?php require APPLICATION_PATH."/views/scripts/profile/tabstop.phtml"; ?>
+		<div id="seasons">
+            <form id="viewform" class="form-horizontal seasons">
+            <?php if($request->tab == 'seasons'){ ?>
+                <?php if(!isEmptyString($session->getVar(SUCCESS_MESSAGE)) ){ ?>
+                    <div class="alert alert-success"><a class="close" data-dismiss="alert">×</a><?php echo $session->getVar(SUCCESS_MESSAGE); ?></div>
+                <?php } ?>
+                <div class="row margin0" style="padding:2px; margin-bottom:10px;">
+                    <span class="pull-left well lighter margin0" style="width:72%; min-height:160px;">
+                        <h3 class="well-legend"><?php echo $title; ?></h3>
+                        <table class="table noborder margin0" style="margin-top:15px;">
+                            <tr>
+                                <td style="width:20%;"><label class="control-label"><?php echo $this->translate("season_sale_startdate_label"); ?>:</label></td>
+                                <td style="width:30%;"><?php echo changeMySQLDateToPageFormat($sale->getStartDate()); ?></td>
+                                <td style="width:20%;"><label class="control-label"><?php echo $this->translate("season_activity_ref_label"); ?>:</label></td>
+                                <td><?php echo $sale->getRef(); ?></td>
+                            </tr>
+                            <tr>
+                                <td><label class="control-label"><?php echo $this->translate("season_status_label"); ?>:</label></td>
+                                <td><?php echo getStatusText($sale->getStatus()); ?></td>
+                                <td><label class="control-label"><?php echo $this->translate("season_ref_label"); ?>: </label></td>
+                                <td><a href="<?php $this->baseUrl('season/view/id/'.encode($sale->getSeasonID())); ?>" title="Season details"><?php echo $sale->getSeason()->getRef(); ?></a></td>
+                            </tr>
+                        </table>
+                    </span>
+                    <span class="pull-right padding0" style="width:24%; margin-left:5px;">
+                        <div class="well margin0" style="height:160px;">
+                            <h3 class="well-legend">Quick Links</h3>
+                            <table class="table noborder" >                       
+                               <tr>		                    
+                                    <td class="formactions">
+                                        <a class="btn btn-primary" href="<?php echo $this->baseUrl('season/sale/id/'.encode($sale->getID())); ?>" id="update"><i class="icon-pencil icon-white"></i> Update</a>  
+                                        <a href="javascript: void(0)" id="deleteline" title="Delete Entry" class="btn deleteline noimgbutton" action="<?php echo $this->baseUrl('season/delete/id/'.$sale->getID()."/entityname/Sales/successurl/".encode($this->baseUrl('season/view/id/'.encode($sale->getSeasonID())))); ?>"><i class="icon-trash"></i></a>    
+                                        <a class="btn" href="<?php echo $this->baseUrl('season/view/id/'.encode($sale->getSeasonID())); ?>" title="Return to Timeline"><i class="icon-list"></i> View Season</a>           
+                                    </td>
+                               </tr>
+                            </table>                           
+                        </div>
+                    </span>
+            </div>
+            <div class="row margin0" style="padding:2px; margin-bottom:10px;">
+                    <span class="pull-left" style="width:100%; margin-right:5px;">
+                        <div id="location_left" class="well lighter margin0" style="min-height:150px;"> 
+                            <h3 class="well-legend">Details</h3>
+                            <table class="table noborder">
+                                <tr>
+                                    <td style="width:45%; padding-left:0;">
+                                        <table class="table">
+                                            <tr>
+                                                <td style="width:30%;"><label class="control-label"><?php echo $this->translate("season_commodity_label"); ?>:</label></td>
+                                                <td><?php echo $sale->getCrop()->getName(); ?></td>
+                                            </tr>
+                                            <tr>
+                                                <td><label class="control-label"><?php echo $this->translate("season_sale_quantity_label"); ?>:</label></td>
+                                                <td><?php echo formatNumber($sale->getQuantity())."&nbsp;<span class='pagedescription'>(".$sale->getQuantityUnitText().")</span>"; ?></td>
+                                            </tr>
+                                            <tr>
+                                                <td><label class="control-label"><?php echo $this->translate("season_sale_unitprice_label"); ?>:</label></td>
+                                                <td><?php echo formatNumber($sale->getUnitPrice())."&nbsp;<span class='pagedescription'>(".getCurrencySymbol().")</span>"; ?></td>
+                                            </tr>
+                                            <tr>
+                                                <td><label class="control-label"><?php echo $this->translate("season_sale_amount_label"); ?>: </label></td>
+                                                <td><?php echo formatNumber($sale->getTotalAmount())."&nbsp;<span class='pagedescription'>(".getCurrencySymbol().")</span>"; ?></td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                    <td>
+                                        <table class="table">
+                                            <tr>
+                                                <td style="width:30%;"><label class="control-label"><?php echo $this->translate("season_sale_clientname_label"); ?>:</label></td>
+                                                <td><?php echo $sale->getClientName(); ?></td>
+                                            </tr>
+                                            <tr>
+                                                <td><label class="control-label"><?php echo $this->translate("season_sale_clienttype_label"); ?>:</label></td>
+                                                <td><?php echo $sale->getClientTypeText(); ?></td>
+                                            </tr>
+                                            <tr>
+                                                <td><label class="control-label"><?php echo $this->translate("season_sale_clientphone_label"); ?>:</label></td>
+                                                <td><?php echo $sale->getClientPhone(); ?></td>
+                                            </tr>
+                                            <tr>
+                                                <td><label class="control-label"><?php echo $this->translate("season_sale_contract_label"); ?>:</label></td>
+                                                <td><?php echo $sale->getContract(); ?></td>
+                                            </tr>
+                                            
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                    </span>
+                </div>
+                <?php require APPLICATION_PATH."/views/scripts/season/financeview.phtml"; ?>
+                <?php require APPLICATION_PATH."/views/scripts/season/labourview.phtml"; ?>
+                <?php require APPLICATION_PATH."/views/scripts/season/expenseview.phtml"; ?>
+                <?php require APPLICATION_PATH."/views/scripts/season/notesview.phtml"; ?>
+            <?php } ?>    
+            </form>
+		</div>
+		<?php require APPLICATION_PATH."/views/scripts/profile/tabsbottom.phtml"; ?>  
+    </div>
+</div>    
+<?php
+	require_once APPLICATION_PATH.'/includes/footer.php';
+?>

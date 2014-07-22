@@ -1,0 +1,107 @@
+<?php
+	require_once APPLICATION_PATH.'/includes/header.php';
+	
+	$title = "Weather";
+	$this->headTitle($title.$browserappend); 
+	$locationid = $request->getParam('locationid');
+	if(isEmptyString($locationid)){
+		$locationid = 35;
+	}
+	$location = new Location();
+	$location->populate($locationid);
+	
+	$gpslat = $location->getGpsLat();
+	$gpslng = $location->getGpsLng();
+	$locationstring = $gpslat.','.$gpslng;
+	$weatherurl_wu = "http://www.wunderground.com/cgi-bin/findweather/getForecast?brand=wxmap&query=".$locationstring."&zoom=9";
+	$timestamp = mktime();
+	$weatherurl_fc = "http://forecast.io/#/f/".$locationstring."/".$timestamp;
+	
+	$type = $request->getParam('state');
+	if(isEmptyString($type)){
+		$type = 'forecast';
+	}
+	// debugMessage($weatherurl_fc); 
+?>
+<script>
+$(document).ready(function() {
+	// breadcrumb config
+	$("#levelone_icon").addClass('icon-cloud');
+	$("#levelone_link").attr('href', '<?php echo $this->baseUrl('weather/index'); ?>').html('Weather');
+	$("#leveltwo_link").html('<?php echo $location->getName(); ?>');
+	
+	var apiKey = '507a232d6fe4c5dd408b9cda4b2b4010';
+	var url = 'https://api.forecast.io/forecast/';
+	var lati = 0.313611;
+	var longi = 32.581111;
+	var data;
+	
+	$.getJSON(url + apiKey + "/" + lati + "," + longi + "?callback=?", function(data) {
+		// alert(data);
+		// $('#weather').html(' temperature - ' + data.currently.temperature+', <br />summary - '+data.currently.summary);
+	});
+	
+	$("#locationid").change(function(){
+		var id = $(this).val();
+		var state = '<?php echo $type; ?>';
+		url = '<?php echo $this->baseUrl('weather/index/locationid/'); ?>'+id+'/state/'+state;
+		window.location.href = url;
+	});
+});
+</script>
+<div class="divider10"></div>
+<div id="addbanner" class="row margin0">
+    <div style="padding:4px; width:100%;" class="centeralign">
+    	<a class="automargin col-md-10 padding0" title="FARMIS" href="http://farmis.ug" target="_blank"><img src="<?php echo $this->baseUrl('uploads/listing/ads/farmis_banner_horizontal.jpg'); ?>" class="imagecontainer" style="margin-bottom:5px;" /></a>
+        <a class="automargin col-md-2 padding0" href="<?php echo $this->baseUrl('notifications/index/tab/advertise/position/1'); ?>" title="Advertise Your Business Here"><img src="<?php echo $this->baseUrl('uploads/default/want_to_advertise.jpg'); ?>" class="imagecontainer" style="margin-bottom:5px; height:100px;" /></a>
+   	</div>
+</div>
+<!--=== Page Header ===-->
+<div class="page-header">
+    <div class="page-title" style="padding-top:6px;">
+        <h3><?php echo $title; ?></h3>
+        <span>Weather forecast and current conditions near <?php echo $location->getName(); ?></span>
+    </div>
+</div>
+
+<!--=== Page Content ===-->
+<div class="row">
+    <div class="col-md-12">
+        <div class="widget box" style="margin-bottom:5px;">
+            <div class="widget-header">
+                <h4><i class="icon-reorder"></i> Locations: &nbsp;
+                	<?php
+						$values = getDistricts();
+						$dropdown = new Zend_Form_Element_Select('locationid',
+											array(
+												'multiOptions' => array_merge_maintain_keys(array('' => 'Search locations'), $values),								
+												'view' => new Zend_View(),
+												'decorators' => array('ViewHelper'),
+												'class' => array("form-control", 'chosen-select'),
+												'style' => 'width:180px; display:inline;'
+											)
+										);
+						$dropdown->setValue($locationid); 
+						echo $dropdown->render();
+					?>
+                    <div style="width:20px; display:inline-block;">&nbsp;</div>
+                    <a href="<?php echo $this->baseUrl('weather/index/state/current/locationid/'.$locationid); ?>" class="btn <?php echo $type != 'current' ? 'btn-primary': ''; ?> inline">Current Conditions</a> &nbsp;
+                    <a href="<?php echo $this->baseUrl('weather/index/state/forecast/locationid/'.$locationid); ?>" class="btn <?php echo $type != 'forecast' ? 'btn-primary': ''; ?> inline">Hourly Forecast</a>
+                </h4>
+            </div>
+           	<div class="widget-content" style="min-height:400px;">
+            	<?php if($type == 'current'){ ?>
+            		<iframe id="forecast_embed" type="text/html" frameborder="0" height="600" width="100%" src="<?php echo $weatherurl_wu; ?>"></iframe>
+                <?php } ?>
+                <?php if($type == 'forecast'){ ?>
+                	<iframe id="forecast_embed" type="text/html" frameborder="0" height="600" width="100%" src="<?php echo $weatherurl_fc; ?>"></iframe>
+                <?php } ?>
+            </div>    
+        </div>
+    </div> 
+</div>
+<!--<iframe id="forecast_embed" type="text/html" frameborder="0" height="600" width="100%" src="http://forecast.io/#/f/0.3136,32.5811/1392282000 1392670800"> </iframe>-->
+<!--http://forecast.io/embed/#lat=0.313611&lon=32.581111&name=Kampala-->
+<?php
+	require_once APPLICATION_PATH.'/includes/footer.php';
+?>

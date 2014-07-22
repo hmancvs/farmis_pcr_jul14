@@ -1,0 +1,128 @@
+<?php
+	require_once APPLICATION_PATH.'/includes/header.php';
+	
+	$activity = new SeasonActivity();
+	$activity->populate(decode($request->id));	
+	$request->setParam('tab', 'seasons');
+	$user = $activity->getUser();
+		
+	$title = "Activity: ".$activity->getActivityName(); 
+	$farmtitle = $activity->getUser()->getName();
+	$this->headTitle($title.$browserappend);  
+	
+?>
+<script>
+	$(document).ready(function() {
+		
+	}); 
+</script>
+<h1><?php echo $farmtitle; ?></h1>
+<div id="tabs">
+    <?php require APPLICATION_PATH."/views/scripts/profile/profileleftcolumn.phtml"; ?>
+    <div class="span9 tab-content" id="center">
+    	<?php require APPLICATION_PATH."/views/scripts/profile/tabstop.phtml"; ?>
+		<div id="seasons">
+            <form id="viewform" class="form-horizontal seasons">
+            <?php if($request->tab == 'seasons'){ ?>
+                <?php if(!isEmptyString($session->getVar(SUCCESS_MESSAGE)) ){ ?>
+                    <div class="alert alert-success"><a class="close" data-dismiss="alert">×</a><?php echo $session->getVar(SUCCESS_MESSAGE); ?></div>
+                <?php } ?>
+                <?php if($sessionhaserror) { ?>
+                    <div class="alert alert-error"><?php echo $session->getVar(ERROR_MESSAGE); ?></div>
+                <?php } ?>
+                <div class="row margin0" style="padding:2px; margin-bottom:10px;">
+                    <span class="pull-left well lighter margin0" style="width:72%; min-height:160px;">
+                        <h3 class="well-legend"><?php echo $title; ?></h3>
+                        <table class="table noborder margin0" style="margin-top:15px;">
+                            <tr>
+                                <td style="width:20%;"><label class="control-label"><?php echo $this->translate("season_activitystartdate_label"); ?>:</label></td>
+                                <td style="width:30%;"><?php echo changeMySQLDateToPageFormat($activity->getStartDate()); ?></td>
+                                <td style="width:20%;"><label class="control-label"><?php echo $this->translate("season_activityenddate_label"); ?>:</label></td>
+                                <td><?php echo changeMySQLDateToPageFormat($activity->getEndDate()); ?></td>
+                            </tr>
+                            <tr>
+                                <td><label class="control-label"><?php echo $this->translate("season_activity_ref_label"); ?>:</label></td>
+                                <td><?php echo $activity->getRef(); ?></td>
+                                <td><label class="control-label"><?php echo $this->translate("season_status_label"); ?>:</label></td>
+                                <td><?php echo getStatusText($activity->getStatus()); ?></td>
+                            </tr>
+                            <tr>
+                                <td><label class="control-label"><?php echo $this->translate("season_status_label"); ?>:</label></td>
+                                <td colspan="3"><?php echo getStatusText($activity->getStatus()); ?></td>
+                            </tr>
+                        </table>
+                    </span>
+                    <span class="pull-right padding0" style="width:24%; margin-left:5px;">
+                        <div class="well margin0" style="height:160px;">
+                            <h3 class="well-legend">Quick Links</h3>
+                            <table class="table noborder" >                       
+                               <tr>		                    
+                                    <td class="formactions">
+                                        <a class="btn btn-primary" href="<?php echo $this->baseUrl('season/activity/id/'.encode($activity->getID())); ?>" id="update"><i class="icon-pencil icon-white"></i> Update</a>
+                                        <a href="javascript: void(0)" id="deleteline" title="Delete Entry" class="btn deleteline noimgbutton" action="<?php echo $this->baseUrl('season/delete/id/'.$activity->getID()."/entityname/SeasonActivity/successurl/".encode($this->baseUrl('season/view/id/'.encode($activity->getSeasonID())))); ?>"><i class="icon-trash"></i></a>   
+                                        <a class="btn" href="<?php echo $this->baseUrl('season/view/id/'.encode($activity->getSeasonID())); ?>" title="Return to Timeline"><i class="icon-list"></i> View Season</a>
+                                        <?php if($activity->getUser()->getSeasons()->count() > 1){ ?>           
+                                        	<a class="btn" href="<?php echo $this->baseUrl('profile/view/id/'.encode($activity->getUserID()).'/tab/seasons'); ?>" title="Return to Timeline"><i class="icon-list"></i> All Seasons</a>
+                                        <?php } ?>
+                                    </td>
+                               </tr>
+                            </table>                           
+                        </div>
+                    </span>
+                </div>
+                <div class="row margin0" style="padding:2px; margin-bottom:10px;">
+                    <span class="pull-left" style="width:100%; margin-right:5px;">
+                        <div id="location_left" class="well lighter margin0" style="min-height:150px;"> 
+                                <h3 class="well-legend">Activity Details</h3>
+                                <table class="table ">
+                                    <tr>
+                                        <td style="width:45%; padding-left:0;">
+                                            <table class="table">
+                                                <tr>
+                                                    <td style="width:35%;"><label class="control-label">Activty Type:</label></td>
+                                                    <td><?php echo $activity->getTypeText(); ?></td>
+                                                </tr>
+                                                <tr>
+                                                    <td><label class="control-label"><?php echo $this->translate("season_commodity_label"); ?>:</label></td>
+                                                    <td><?php echo $activity->getSeason()->getCrop()->getName(); ?></td>
+                                                </tr>
+                                                <tr>
+                                                    <td><label class="control-label"><?php echo $this->translate("season_harvest_quantity_label").' Handled'; ?>:</label></td>
+                                                    <td><?php echo clean_num($activity->getTotalApplied())."&nbsp;<span class='pagedescription'>(".$activity->getTotalAppliedUnitText().")</span>"; ?></td>
+                                                </tr>
+                                                <tr>
+                                                    <td><label class="control-label"><?php echo $this->translate("season_activity_damage_label"); ?>:</label></td>
+                                                    <td><?php echo clean_num($activity->getDamaged())."&nbsp;<span class='pagedescription'>(".$activity->getTotalDamagedUnitText().")</span>"; ?></td>
+                                                </tr>
+                                            </table>
+                                        </td>
+                                        <td>
+                                            <table class="table">
+                                                <tr>
+                                                    <td style="width:25%;"><label class="control-label">Methods Used<?php // echo $this->translate("season_treat_target_label"); ?>: </label></td>
+                                                    <td><?php echo $activity->getMethod(); ?></td>
+                                                </tr>
+                                                <tr>
+                                                    <td><label class="control-label">Aims of Activity<?php // echo $this->translate("season_treat_target_label"); ?>: </label></td>
+                                                    <td><?php echo $activity->getTarget(); ?></td>
+                                                </tr>                                               
+                                            </table>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                    </span>
+                </div>
+                <?php require APPLICATION_PATH."/views/scripts/season/financeview.phtml"; ?>
+                <?php require APPLICATION_PATH."/views/scripts/season/labourview.phtml"; ?>
+                <?php require APPLICATION_PATH."/views/scripts/season/expenseview.phtml"; ?>
+                <?php require APPLICATION_PATH."/views/scripts/season/notesview.phtml"; ?>
+            <?php } ?>    
+            </form>
+		</div>
+		<?php require APPLICATION_PATH."/views/scripts/profile/tabsbottom.phtml"; ?>  
+    </div>
+</div>    
+<?php
+	require_once APPLICATION_PATH.'/includes/footer.php';
+?>

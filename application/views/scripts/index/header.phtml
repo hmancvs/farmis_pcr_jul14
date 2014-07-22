@@ -1,0 +1,144 @@
+<?php
+	include APPLICATION_PATH.'/includes/header.php';
+	
+	$user = new UserAccount();
+	$user->populate($session->getVar('userid'));
+	
+	//$controllername = $request->getControllerName();
+	//$controlleraction = $request->getActionName();
+	$thecontroller = $controllername;
+	$theaction = $controlleraction;
+	$publiccontrollers = array("index", "signup","aboutus","howitworks","benefits","news","help","user","tour","forum","faqs","testimonials","billing"); 
+	if(isEmptyString($userid)){
+		$publiccontrollers[] = 'contactus';
+	}
+	
+	if (in_array($thecontroller, $publiccontrollers)){
+		$logopath = $this->baseUrl('images/logopublic.png');
+	} else {
+		$logopath = $this->baseUrl('images/logo2.png');
+	}
+	
+?>
+<?php if($isloggedin){ ?>
+    <div id="header_left">
+        <div class="divider10"></div>
+        <a class="brand blocked" id="thelogo" href="<?php echo $this->baseUrl('index'); ?>" style="text-align:center;"><img src="<?php echo $logopath; ?>" /></a>
+    </div>
+    <div id="header_right">
+        <div class="headerinner">
+            <ul class="headmenu">
+                <?php if ($acl->checkPermission('Dashboard', ACTION_VIEW)) { ?>	
+                    <li class="odd <?php echo ($controllername == 'dashboard') ? 'active' : ''; ?>">
+                        <a href="<?php echo $this->baseUrl('dashboard'); ?>">
+                            <span class="head-icon head-icon1"></span>
+                            <span class="headmenu-label">Dashboard</span>
+                        </a>
+                    </li>
+                <?php } ?>
+                <?php if($acl->checkPermission('Farmer', ACTION_LIST)) { ?>	
+                    <li class="<?php echo ($controllername == 'profile') ? 'active' : ''; ?>">
+                        <a href="<?php echo $this->baseUrl('profile/list'); ?>">
+                            <span class="head-icon head-icon2"></span>
+                            <span class="headmenu-label">Farmers</span>
+                        </a>
+                    </li>
+                <?php } ?>
+                <?php if(isFarmer() && $acl->checkPermission('Farmer', ACTION_VEIW)){ ?>
+                	<li class="<?php echo ($controllername == 'profile') ? 'active' : ''; ?>">
+                        <a href="<?php echo $this->baseUrl('profile/view/id/'.encode($session->getVar('farmerid'))); ?>">
+                            <span class="head-icon head-icon2"></span>
+                            <span class="headmenu-label">My Profile</span>
+                        </a>
+                    </li>
+                    <li class="<?php echo ($controllername == 'farm' || $controllername == 'season' || $controllername == 'inventory' || $controllername == 'finance') ? 'active' : ''; ?>">
+                        <a href="<?php echo $this->baseUrl('profile/view/id/'.encode($userid).'/tab/farm'); ?>">
+                            <span class="head-icon head-icon2"></span>
+                            <span class="headmenu-label">Manage Farm</span>
+                        </a>
+                    </li>
+                <?php } ?>
+                <?php if ($acl->checkPermission('DNA', ACTION_LIST)) { ?>	
+                    <li class="odd <?php echo ($controllername == 'farmgroup') ? 'active' : ''; ?>">
+                        <a href="<?php echo $this->baseUrl('farmgroup/list'); ?>">
+                            <span class="head-icon head-icon3"></span>
+                            <span class="headmenu-label">DNA Profiles</span>
+                        </a>
+                    </li>
+                <?php } ?>
+                <?php if($acl->checkPermission('Messaging', ACTION_LIST)) { ?>
+                    <li class="<?php echo ($controllername == 'message') ? 'active' : ''; ?>">
+                        <a href="<?php echo $this->baseUrl('message/list'); ?>">
+                            <span class="count number <?php echo $unread_messages == 0 ? 'none' : ''; ?>"><?php echo $unread_messages; ?></span>
+                            <span class="head-icon head-icon4"></span>
+                            <span class="headmenu-label">Notifications</span>
+                        </a>
+                    </li>
+                <?php } ?>
+                <?php if ($acl->checkPermission('Report Dashboard', ACTION_VIEW)) { ?>	
+                    <li class="odd <?php echo ($controllername == 'report') ? 'active' : ''; ?>">
+                        <a href="<?php echo $this->baseUrl('report/overview'); ?>">
+                            <span class="head-icon head-icon5"></span>
+                            <span class="headmenu-label">Reports</span>
+                        </a>
+                    </li>
+                <?php } ?>
+                <li class="right">
+                    <table class="userloggedinfo table margin0 padding0 nohover border0">
+                        <tr>
+                            <td style="width:30%;"><a class="profileimg" href="<?php echo $this->baseUrl("profile/view/id/".encode($user->getID())); ?>">
+                                <img src="<?php echo $user->getMediumPicturePath(); ?>" /></a>
+                            </td>
+                            <td style="width:auto; padding-left:0"><div class="userinfo">
+                                <h5><?php echo $user->getName(); ?></h5>
+                                <ul>
+                                    <li><a href="<?php echo $this->baseUrl("profile/view/id/".encode($user->getID()))."/tab/basics"; ?>">My Profile</a></li>
+                                    <li><a href="<?php echo $this->baseUrl("profile/view/id/".encode($user->getID())."/tab/account"); ?>">Account Settings</a></li>
+                                    <li><a href="<?php echo $this->baseUrl("user/logout"); ?>">Sign Out</a></li>
+                                </ul>
+                            </div>
+                            </td>
+                        </tr>
+                    </table>
+                </li>
+            </ul>
+        </div>
+    </div>
+<?php } else { ?>
+    <div class="container makerelative">
+      <ul id="headerwrapper">
+        <li id="headerleft">
+            <div class="divider10"></div>
+            <a class="brand" id="thelogo" href="<?php echo $this->baseUrl('index'); ?>" style="text-align:left;"><img src="<?php echo $logopath; ?>" /></a>
+        </li>
+        <li id="headerright">
+            <div class="maxwidth" style="height:40px; margin-bottom:5px;">
+                <ul class="nav maxwidth" id="headeractions">
+                    <li style="width:28%; float:right;" class="dropdown maxheight">
+                        <ul class="nav pull-right" id="headeractions">
+                            <li id="loginheader" style="float:right;">
+                                <a class="btn" style="display:inline-block; font-weight:normal; color:#000; padding:6px 10px;" id="headersignup" type="submit" href="<?php echo $this->baseUrl('signup'); ?>"><i class="icon-user"></i> Signup</a>&nbsp;
+                                <a class="btn btn-primary" style="display:inline-block; font-weight:normal; padding:6px 10px;" id="headersignin" type="submit" href="<?php echo $this->baseUrl('user/login'); ?>"><i class="icon-lock icon-white"></i> Signin</a>
+                            </li>
+                        </ul>    
+                    </li>
+                </ul>
+            </div>
+            <div class="maxwidth" style="height:60px; margin-top:20px;">
+                <ul class="mainnav" id="middlebar">
+                    <li id="home" class="<?php echo ($controllername == 'index') ? 'active' : ''; ?>"><a href="<?php echo $this->baseUrl('index'); ?>"><span>Home</span></a></li>	
+                    <li id="about" class="<?php echo ($controllername == 'aboutus') ? 'active' : ''; ?>"><a href="<?php echo $this->baseUrl('aboutus'); ?>"><span>About</span></a></li>	
+                    <li id="benefits" class="<?php echo ($controllername == 'benefits') ? 'active' : ''; ?>"><a href="<?php echo $this->baseUrl('benefits'); ?>"><span>Benefits</span></a></li>	
+                    <li id="tour" class="<?php echo ($controllername == 'tour') ? 'active' : ''; ?>"><a href="<?php echo $this->baseUrl('tour'); ?>"><span>Feature Tour</span></a></li>
+                    <li id="howitworks" class="<?php echo ($controllername == 'howitworks') ? 'active' : ''; ?>"><a href="<?php echo $this->baseUrl('howitworks'); ?>"><span>How it Works</span></a></li>
+                    <li id="signup" class="<?php echo ($controllername == 'signup' || $controllername == 'billing') ? 'active' : ''; ?>"><a href="<?php echo $this->baseUrl('signup'); ?>"><span>Signup and Pricing</span></a></li>
+                    <li id="forum" class="<?php echo ($controllername == 'communityforum' || $controllername == 'forum') ? 'active' : ''; ?>"><a href="<?php echo $this->baseUrl('forum'); ?>"><span>Community Forum</span></a></li>
+                </ul>
+            </div>
+        </li>
+      </ul>
+    </div>
+<?php } ?>
+<?php
+	require_once APPLICATION_PATH.'/includes/footer.php';
+?>

@@ -1,0 +1,114 @@
+<?php
+	require_once APPLICATION_PATH.'/includes/header.php';
+	
+	$plant = new SeasonPlanting();
+	$plant->populate(decode($request->id));	
+	
+	$title = "Activity: ".$plant->getActivityName(); 
+	$request->setParam('tab', 'seasons');
+	$user = $plant->getUser();
+		
+	$title = "Activity: ".$plant->getActivityName();	
+	$farmtitle = $plant->getUser()->getName();
+	$this->headTitle($title.$browserappend);  
+?>
+<script>
+	$(document).ready(function() {
+		
+	}); 
+</script>
+<h1><?php echo $farmtitle; ?></h1>
+<div id="tabs">
+    <?php require APPLICATION_PATH."/views/scripts/profile/profileleftcolumn.phtml"; ?>
+    <div class="span9 tab-content" id="center">
+    	<?php require APPLICATION_PATH."/views/scripts/profile/tabstop.phtml"; ?>
+		<div id="seasons">
+            <form id="viewform" class="form-horizontal seasons">
+            <?php if($request->tab == 'seasons'){ ?>
+                <?php if(!isEmptyString($session->getVar(SUCCESS_MESSAGE)) ){ ?>
+                    <div class="alert alert-success"><a class="close" data-dismiss="alert">×</a><?php echo $session->getVar(SUCCESS_MESSAGE); ?></div>
+                <?php } ?>
+                <div class="row margin0" style="padding:2px; margin-bottom:10px;">
+                    <span class="pull-left well lighter margin0" style="width:72%; min-height:160px;">
+                        <h3 class="well-legend"><?php echo $title; ?></h3>
+                        <table class="table noborder margin0" style="margin-top:15px;">
+                            <tr>
+                                <td style="width:15%;"><label class="control-label"><?php echo $this->translate("season_activitystartdate_label"); ?>:</label></td>
+                                <td style="width:30%;"><?php echo changeMySQLDateToPageFormat($plant->getStartDate()); ?></td>
+                                <td style="width:15%;"><label class="control-label"><?php echo $this->translate("season_activityenddate_label"); ?>:</label></td>
+                                <td><?php echo changeMySQLDateToPageFormat($plant->getEndDate()); ?></td>
+                            </tr>
+                            <tr>
+                                <td><label class="control-label"><?php echo $this->translate("season_activity_ref_label"); ?>:</label></td>
+                                <td><?php echo $plant->getRef(); ?></td>
+                                <td><label class="control-label"><?php echo $this->translate("season_status_label"); ?>:</label></td>
+                                <td><?php echo getStatusText($plant->getStatus()); ?></td>
+                            </tr>
+                        </table>
+                    </span>
+                    <span class="pull-right padding0" style="width:24%; margin-left:5px;">
+                        <div class="well margin0" style="height:160px;">
+                            <h3 class="well-legend">Quick Links</h3>
+                            <table class="table noborder" >                       
+                               <tr>		                    
+                                    <td class="formactions">
+                                        <a class="btn btn-primary" href="<?php echo $this->baseUrl('season/plant/id/'.encode($plant->getID())); ?>" id="update"><i class="icon-pencil icon-white"></i> Update</a>
+                                        <a href="javascript: void(0)" id="deleteline" title="Delete Entry" class="btn deleteline noimgbutton" action="<?php echo $this->baseUrl('season/delete/id/'.$plant->getID()."/entityname/SeasonPlanting/successurl/".encode($this->baseUrl('season/view/id/'.encode($plant->getSeasonID())))); ?>"><i class="icon-trash"></i></a>   
+                                        <a class="btn" href="<?php echo $this->baseUrl('season/view/id/'.encode($plant->getSeasonID())); ?>" title="Return to Timeline"><i class="icon-list"></i> View Season</a>           
+                                        <?php if($plant->getUser()->getSeasons()->count() > 1){ ?>           
+                                        	<a class="btn" href="<?php echo $this->baseUrl('profile/view/id/'.encode($plant->getUserID()).'/tab/seasons'); ?>"><i class="icon-list"></i> All Seasons</a>
+                                        <?php } ?> 
+                                    </td>
+                               </tr>
+                            </table>                           
+                        </div>
+                    </span>
+            </div>
+            <div class="row margin0" style="padding:2px; margin-bottom:10px;">
+                    <span class="pull-left" style="width:100%; margin-right:5px;">
+                        <div id="location_left" class="well lighter margin0" style="min-height:150px;"> 
+                                <h3 class="well-legend">Planting Details</h3>
+                                <table class="table noborder margin0">
+                                    <tr>
+                                        <td style="width:30%; padding:15px; padding-right:5px;">
+                                            <div class="imagecontainer" style="width:90%; min-height:90px; padding:2px;">
+                                                <img style="width:100%;" src="<?php echo $plant->getCrop()->getImagePath(); ?>" />
+                                            </div></td>
+                                        <td class="padding4" style="padding-top:10px;"><label class="control-label" style="margin-bottom:10px;"><?php echo $plant->getCrop()->getName(); ?></label>
+                                            <table>
+                                                <tr>
+                                                    <td style="width:25%;" class="widgetlabel padding0"><?php echo $this->translate("season_plant_method_label"); ?>:</td>
+                                                    <td class="padding4" style="padding-top:0; padding-bottom:6px;"><?php echo $plant->getMethodText(); ?></td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="widgetlabel padding0"><?php echo $this->translate("season_plant_area_label"); ?>:</td>
+                                                    <td class="padding4" style="padding-top:0; padding-bottom:6px;"><?php echo clean_num($plant->getFieldSize())."&nbsp;<span class='pagedescription'>(".$plant->getFieldSizeUnitText().")</span>"; ?></td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="widgetlabel padding0"><?php echo $this->translate("season_plant_quantity_label"); ?>:</td>
+                                                    <td class="padding4" style="padding-top:0; padding-bottom:6px;"><?php echo clean_num($plant->getTotalPlanted())."&nbsp;<span class='pagedescription'>(".$plant->getTotalPlantedUnitText().")</span>"; ?></td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="widgetlabel padding0"><?php echo $this->translate("season_plant_rate_label"); ?>:</td>
+                                                    <td class="padding4" style="padding-top:0; padding-bottom:6px;"><?php echo clean_num($plant->getSeedingRate())."&nbsp;<span class='pagedescription'>(".$plant->getSeedingRateUnitText().")</span>"; ?></td>
+                                                </tr>
+                                            </table>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                    </span>
+                </div>
+                <?php require APPLICATION_PATH."/views/scripts/season/financeview.phtml"; ?>
+                <?php require APPLICATION_PATH."/views/scripts/season/labourview.phtml"; ?>
+                <?php require APPLICATION_PATH."/views/scripts/season/expenseview.phtml"; ?>
+                <?php require APPLICATION_PATH."/views/scripts/season/notesview.phtml"; ?>
+            <?php } ?>    
+            </form>
+		</div>
+		<?php require APPLICATION_PATH."/views/scripts/profile/tabsbottom.phtml"; ?>  
+    </div>
+</div>    
+<?php
+	require_once APPLICATION_PATH.'/includes/footer.php';
+?>

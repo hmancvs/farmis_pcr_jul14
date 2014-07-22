@@ -1,0 +1,385 @@
+ <?php
+	require_once APPLICATION_PATH.'/includes/header.php';
+	require_once APPLICATION_PATH.'/../'.PUBLICFOLDER.'/mpdf/mpdf.php';
+		
+	$title = "Farmis Baseline Detailed Report";
+	// meta data
+	$this->headTitle($title); 
+	
+	$user = new UserAccount();
+	$id = $request->id;
+	
+	$loggedinfarmer = new UserAccount();
+	$loggedinfarmer->populate($userid);
+	$farmgroupid = $loggedinfarmer->getFarmGroupID();
+	
+	if(!isEmptyString($id)){
+		$user->populate($id);
+	}
+	
+	$isexport = false;
+	$maxwidth = "width: 100%;";
+	if($request->pdf == 1 || $request->download == 1){
+		$isexport = true;
+		$maxwidth = "width: 940px;";
+	}
+	
+	$country = 'UG';
+	$location_label = 'District';
+	$locations_label = 'Districts';
+	$countrycode = COUNTRY_CODE_UG;
+	$county_label = $this->translate("global_county_label");
+	$subcounty_label = $this->translate("global_subcounty_label");
+	
+	if(isKenya()){
+		$country = 'KE';
+		$session->setVar('country', 'ke');
+		$location_label = 'County';
+		$locations_label = 'Counties';
+		$countrycode = COUNTRY_CODE_KE;
+		$county_label = $this->translate("global_subcounty_label");
+		$subcounty_label = $this->translate("global_ward_label");
+	}
+	$countryreq = strtolower($request->country);
+	
+?>
+<script>
+$(document).ready(function() {
+	<?php if($request->print == 1){ ?>
+		$("#headercontainer, #leftcolumn, .footer, #blankrow").remove().hide();
+		$(".printpage").html($("#printer_page_action_buttons").html());
+	<?php } ?>
+	equalHeight($("#landusage, #crops"));
+	
+	// trigger path to farmer report to be generated
+	$("#id").change(function(){
+		var id = $(this).val();
+		var url = '<?php echo $this->baseUrl('report/baselinedetail/id/'); ?>'+id;
+		$("#generate").attr('href', url);
+	});
+
+});
+</script>
+<div>
+  <div id="centercolumn" class="reportpage">
+  	<div class="printpage"></div>
+    <div class="hideonprint" style="width:100%;">
+        <?php if((isAdmin() || isFarmGroupAdmin() || isManagement())){ ?>
+        	<table class="table table-condensed noborder margin0" style="width:100%;">
+            	<tr>
+                    <td>
+                        <span class="reportfilter pull-right 80width">
+                            <label class="reportlabel cal-font">Farmer: </label>
+                            <?php
+                                $userarray = getFarmers($farmgroupid, false, false, false, '', $session->getVar('country'));
+                                $userdropdown = new Zend_Form_Element_Select('id',
+                                                    array(
+                                                            'multiOptions' => array_merge_maintain_keys(array('' => '<Browse Farmer>'), $userarray),								
+                                                        'view' => new Zend_View(),
+                                                        'decorators' => array('ViewHelper'),
+                                                            'class' => array('chzn-select', 'width180', 'novalidate')
+                                                    )
+                                                );
+                                $userdropdown->setValue($request->getParam('id')); 
+                                echo $userdropdown->render(); 
+                              ?>&nbsp;&nbsp;
+                             <a id="generate" href="<?php echo $this->baseUrl('report/baselinedetail/id/'); ?>" class="btn btn-primary" title="Generate Report"><i class="icon-list-alt icon-white"></i> Generate</a>&nbsp;
+                        </span>
+                    </td>
+                </tr>
+            </table>
+		<?php } ?>
+    </div>
+    
+    <?php if(isEmptyString($id)){  ?>
+    	<div class="widgetsection reportcontainer">
+            <h3 class="reportpagetitle"><?php echo $title; ?></h3>
+            <span class="pull-left margin0" style="width:99%; margin-top:10px; min-height:120px; position:relative;"><div class="alert alert-info" style="margin-top:10px;">Filter Farmer and Click Generate to view Report</div></span>
+        </div>
+    <?php } ?>
+    <div class="pull-left" id="pageleft">
+       <?php if(!isEmptyString($id)){ 
+				ob_start();
+		  ?>
+            <div class="widgetsection reportcontainer">
+                <h3 class="reportpagetitle"><?php echo $title; ?></h3>
+				<?php if($request->print != 1){ ?>
+                <span class="reportactions hideonprint">
+                    <a href="<?php echo $this->baseUrl('report/baselinedetail/id/'.$user->getID().'/print/1'); ?>" target="_blank" class="btn btn-primary btn-mini" title="Print Report"><i class="icon-print icon-white"></i> Print</a>&nbsp;
+                    <a href="<?php echo $this->baseUrl('report/baselinedetail/id/'.$user->getID().'/pdf/1'); ?>" target="_blank" class="btn btn-primary btn-mini" title="View PDF Report"><i class="icon-list-alt icon-white"></i> PDF</a>&nbsp;
+                   
+                </span>
+                <?php } ?>
+            <?php 
+				$farmingdate = isEmptyString($user->getFullStartDate()) ? "--" : $user->getFullStartDate();
+				$regdate =  isEmptyString($user->getRegDateFormatted()) ? "--" : $user->getRegDateFormatted();
+				$farmname = isEmptyString($user->getBusinessName()) ? "--" : $user->getBusinessName();
+				$description = isEmptyString($user->getDescription()) ? "--" : nl2br($user->getDescription());
+				$farmgroup = isEmptyString($user->getFarmGroup()->getName()) ? "--": $user->getFarmGroup()->getName();
+				$thefarmgroup = isEmptyString($user->getFarmGroupID()) ? "--" : $user->getFarmGroup()->getName();
+				$laborers = isEmptyString($user->getNumberOfEmployees()) ? '0' : $user->getNumberOfEmployees();
+				
+				$phone = isEmptyString($user->getPhone()) ? '--' : $user->getPhone();
+				$phone2 = isEmptyString($user->getPhone2()) ? '--' : $user->getPhone2();
+				$email = isEmptyString($user->getEmail()) ? "--" : $user->getEmail();
+				$email2 = -isEmptyString($user->getEmail2()) ? "--" : $user->getEmail2();
+				
+				$country = isEmptyString($user->getCountry()) ? "--" : $user->getCountryName();
+				$district = isEmptyString($user->getLocationID()) ? "--" : $user->getLocation()->getName();
+				$county = isEmptyString($user->getCountyID()) ? "--" : $user->getCounty()->getName();
+				$subcounty = isEmptyString($user->getSubCountyID()) ? "--" : $user->getSubCounty()->getName();
+				$parish = isEmptyString($user->getParishID()) ? "--" : $user->getParish()->getName();
+				$village = isEmptyString($user->getVillageID()) ? "--" : $user->getVillage()->getName();
+				$address = isEmptyString($user->getStreetAddress()) ? "--" : nl2br($user->getStreetAddress());
+				$gpslat = $user->getLatGPSFormatted();
+				$gpslng = $user->getLngGPSFormatted();
+				$landsize = $user->displayLandSize();
+				$activeland = $user->displayActiveLandSize();
+				$acquiremethod = $user->getLandAcquireMethodLabel();
+				$nooffarms = $user->getNumberOfFields();
+				
+				$crops = $user->getCrops();
+				$countcrops = $crops->count();
+				
+				$preseasondetails = $user->getpreseasons()->get(0)->getDetails();
+                $nooflines = $preseasondetails->count();
+				
+				$farmis_logo = $this->serverUrl($this->baseUrl('images/logo_gray.png'));
+				$infotrade_logo = $this->serverUrl($this->baseUrl('images/logo_infotrade.png'));
+				$profile_image = $this->serverUrl($user->getMediumPicturePath());
+			?>	
+				<div>
+                  	<table style="margin-top:10px; height:auto; width:100%;">
+                        <tr>
+                            <td id="outlength" style="width:72%; vertical-align:top;">
+								<table style="width:100%; height:190px; border-bottom:1px solid #e9e9e9;">
+                                    <tr>
+                                        <td style="vertical-align:top; padding-left:10px; padding-top:10px;"><span><img src="<?php echo $farmis_logo; ?>" /></span></td>
+                                        <td style="vertical-align:top; padding-left:10px; padding-top:10px;"><span><img src="<?php echo $infotrade_logo; ?>" /></span></td>
+                                    </tr>
+                                </table>
+								<table id="summary" class="table table-condensed contenttable noborder" style="margin:10px 0 0 0; width:99%;">
+                                    <thead>
+                                        <tr>
+                                            <td colspan="2"><h2>Business Profile</h2></td>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td style="width:50%;"><label class="control-label">Farmer's Name:</label><?php echo $user->getName(); ?> </td>
+                                            <td><label class="control-label">Business Name:</label><?php echo $farmname; ?></td>
+                                        </tr>
+                                        <tr>
+                                            <td><label class="control-label">Farm Group:</label><?php echo $farmgroup; ?></td>
+                                            <td><label class="control-label nowrapping">Description / Services:</label><?php echo $description; ?></td>
+                                        </tr>
+                                        <tr>
+                                            <td><label class="control-label">Date Registered on Farmis:</label><?php echo $regdate; ?></td> 
+                                            <td><label class="control-label">Farming Since:</label><?php echo $farmingdate; ?></td> 
+                                        </tr>
+										<tr>
+                                            <td><label class="control-label">Number of Labourers:</label><?php echo $laborers; ?></td> 
+                                            <td><label class="control-label">Farming Tools Used:</label><?php echo $user->getFarmingToolsLabel(); ?></td> 
+                                        </tr>
+                                    </tbody>
+                                </table>
+								<table style="margin:10px 0 0 0; width:99%;">
+									<tr>
+										<td style="width:60%; padding:0; vertical-align:top;">
+											<table id="landusage" class="table table-condensed noborder contenttable" style="margin:0 0 0 0; width:99%; height:auto;">
+												<thead>
+													<tr>
+														<td colspan="4"><h2>Land Usage</h2></td>
+													</tr>
+												</thead>
+												<tbody>
+													<tr>
+														<td style="width:60%;"><label class="control-label"><?php echo $this->translate("farm_landsize_label"); ?>:</label></td>
+														<td><?php echo $landsize; ?></td>
+													</tr>
+													<tr>
+														<td><label class="control-label"><?php echo $this->translate("farm_landsizeactive_label"); ?>:</label></td>
+														<td><?php echo $activeland; ?></td>
+													</tr>
+													<tr>
+														<td><label class="control-label"><?php echo $this->translate("farm_landacquiremethod_label"); ?>:</label></td>
+														<td><?php echo $acquiremethod; ?></td>
+													</tr>
+													<tr>
+														<td><label class="control-label">No of Farm Lands:</label></td>
+														<td><?php echo $nooffarms; ?></td>
+													</tr>
+												</tbody>
+											</table>
+										</td>
+										<td style="padding:0; padding-left:10px; vertical-align:top;">
+											<table id="crops" class="table table-condensed noborder contenttable" style="margin:0; width:99%; height:auto;">
+												<thead>
+													<tr>
+														<td><h2>Crops Profiled</h2></td>
+													</tr>
+												</thead>
+												<tbody><tr><td style="vertical-align:top; padding-top:10px; height:140px;">
+												<ul id="croplist">
+                                                <?php if($countcrops == 0) { ?>
+                            							<li><label class="control-label">--</label></li>
+                                                <?php } else { ?>
+                                                	<?php foreach($crops as $crop){ ?>
+                                                            <li><label class="control-label"><?php echo $crop->getCrop()->getName(); ?></label> </li>
+                                                    <?php } ?>
+                                                <?php } ?> 
+                                               </ul>      
+												</td></tr></tbody>
+											</table>
+										</td>
+									</tr>
+								</table>
+							</td>
+							<td style="vertical-align:top; border-left:1px solid #e1e1e1;">
+                                <table style="width:100%;">
+                                    <tr>
+                                        <td style="height:180px;">
+                                            <div id="profileinfo" style="padding:4px;"> 
+                                                <img id="profileimage" src="<?php echo $profile_image; ?>" />
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="paddding0" style="padding-top:20px; padding-left:5px;">
+											<table id="contacts" class="table table-condensed noborder contenttable">
+                                                <thead>
+                                                    <tr>
+                                                        <td colspan="4"><h2>Contacts</h2></td>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr>
+                                                        <td style="width:45%;"><label class="control-label">Phone:</label><?php echo $phone; ?></td>
+                                                        <td><label class="control-label">Alt Phone:</label><?php echo $phone2; ?></td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td colspan="2"><label class="control-label">Email:</label>
+                                                        <?php echo $email; ?></td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                            <table id="address" class="table table-condensed noborder contenttable" style="margin-top:10px;">
+                                                <thead>
+                                                    <tr>
+                                                        <td colspan="4"><h2>Address</h2></td>
+                                                    </tr>
+                                                </thead>
+                                                <tr>
+													<td style="width:50%;"><label class="control-label">Country:</label><?php echo $country; ?>
+													<td><label class="control-label"><?php echo $location_label; ?>:</label><?php echo $district; ?></td>
+												</tr>
+												<tr>
+													<td><label class="control-label"><?php echo $county_label; ?>:</label><?php echo $county; ?></td>
+													<td><label class="control-label"><?php echo $subcounty_label; ?>:</label><?php echo $subcounty; ?></td>
+												</tr>
+												<tr>
+													<td><?php if($user->isUgandan()){ ?>
+                                                    		<label class="control-label">Parish:</label><?php echo $parish; ?>
+                                                        <?php } ?>
+                                                    </td>
+													<td><?php if($user->isUgandan()){ ?>
+                                                    		<label class="control-label">Village:</label><?php echo $village; ?>
+                                                        <?php } ?>
+                                                   	</td>
+												</tr>
+												 <tr>
+													<td><label class="control-label" style="font-size:12px;">GPS(Latitude):</label><?php echo $gpslat; ?></td>
+													<td><label class="control-label" style="font-size:12px;">GPS(Longitude):</label><?php echo $gpslng; ?></td>
+												</tr>
+                                            </table>
+										</td>
+									</tr>
+								</table>
+							</td>
+                  		</tr>
+						<tr>
+							<td colspan="2">
+								<table id="estimates" class="table table-condensed table-bordered contenttable" style="margin:10px 0 0 0; width:100%;">
+                                    <thead>
+                                        <tr>
+                                            <td><h2>Preseason Baseline Estimates</h2></td>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+											<td>
+												<table id="estimates" class="table xtable-condensed table-bordered contenttable" style="margin:0; width:100%;">
+													<thead>
+														<tr>
+															<td style="">Crop</td>
+															<td style="width:12%;">Source of Inputs</td>
+															<td style="width:10%;">Acrage Planted</td>
+															<td style="width:8%;">Quantity Planted</td>
+															<td style="width:8%;">Quantity Harvested</td>
+															<td style="width:8%;">Quantity Sold</td>
+															<td style="width:11%;">Sales <br />Type / Mode</td>
+															<td style="width:10%;">Unit Price &nbsp;<span class="pagedescription blocked">(<?php echo getCurrencySymbol(); ?>)</span></td>
+															<td style="width:10%;">Revenue &nbsp;<span class="pagedescription blocked">(<?php echo getCurrencySymbol(); ?>)</span></td>
+															<td style="width:10%;">Cost of Inputs<span class="pagedescription blocked">(<?php echo getCurrencySymbol(); ?>)</span></td>
+														</tr>
+													</thead>
+													<tbody>
+													<?php if($nooflines == 0) { ?>
+                                                            <tr><td colspan="10"><label class="control-label">--</label></td></tr>
+                                                    <?php } else { ?>
+                                                        <?php foreach($preseasondetails as $detail){ 
+																$acrage = $detail->getfieldsizetext();
+																$inputsource = isEmptyString($detail->getinputsource()) ? '--' : $detail->getinputsource();
+																$qty_planted = $detail->gettotalplantedtext();
+																$qty_harvested = $detail->gettotalharvesttext();
+																$qty_sold = $detail->getquantitysoldtext();
+																$pricetypes = getPricingTypes(); 
+																$saletype = isEmptyString($detail->getsaletype()) || $detail->getsaletype() == 0 ? '-- ' : $pricetypes[$detail->getsaletype()];
+																$unitprice = formatNumber( $detail->getunitprice());
+																$revenue = formatNumber( $detail->gettotalsalesamount());
+																$inputcost = formatNumber( $detail->gettotalexpenseamount());
+														?>
+                                                            <tr>
+                                                                <td><label style="height:60px; font-weight:bold; font-size:12px; display:inline-block;"><?php echo $detail->getCrop()->getName(); ?></label></td>
+                                                                <td><?php echo $inputsource; ?></td>
+                                                                <td><?php echo $acrage; ?></td>
+                                                                <td><?php echo $qty_planted; ?></td>
+                                                                <td><?php echo $qty_harvested; ?></td>
+                                                                <td><?php echo $qty_sold; ?></td>
+                                                                <td><?php echo $saletype; ?></td>
+                                                                <td class="rightalign"><?php echo $unitprice; ?></td>
+                                                                <td class="rightalign"><?php echo $revenue; ?></td>
+                                                                <td class="rightalign"><?php echo $inputcost; ?></td>
+                                                            </tr> 
+                                                        <?php } } ?>
+                                                   
+                                                    </tbody>
+												</table>
+											</td>
+										</tr>
+                                    </tbody>
+                                </table>
+							</td>
+						</tr>
+					</table>
+                </div>
+            </div>
+      <?php } ?>
+      `	<?php require_once APPLICATION_PATH."/views/scripts/report/pdf.phtml"; ?> 
+		<?php if($request->download == 1 || $request->pdf == 1){  ?>
+            <script type="text/javascript">
+                $(document).ready(function() {
+                    var pdfurl = '<?php echo $relativepathtodocument; ?>';
+                    window.location.href = pdfurl;
+                });
+            </script>
+            <div class="widgetsection reportcontainer"><h3 class="reportpagetitle">PDF Viewer</h3>
+                <div id="embeddiv"></div>
+            </div>
+        <?php } ?>
+    </div>
+  </div>
+</div>
+<?php
+	require_once APPLICATION_PATH.'/includes/footer.php';
+?>

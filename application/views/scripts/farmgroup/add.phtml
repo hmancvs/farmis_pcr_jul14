@@ -1,0 +1,258 @@
+<?php
+	require_once APPLICATION_PATH.'/includes/header.php';
+	
+	$country = 'UG';
+	$location_label = 'District';
+	$locations_label = 'Districts';
+	$countrycode = COUNTRY_CODE_UG;
+	$locationerror = $this->translate("farmer_district_error");
+	$country_params_refno_placeholder = 'placeholder="Auto" maxlength="8" '; 
+	if(isKenya()){
+		$country = 'KE';
+		$location_label = 'County';
+		$locations_label = 'Counties';
+		$countrycode = COUNTRY_CODE_KE;
+		$locationerror = $this->translate("farmer_county_error");
+		$country_params_refno_placeholder = 'placeholder="" maxlength="10" '; 
+	}
+	
+	$farmgroup = new FarmGroup();
+	$subgroupid = $request->subgroupid;
+	if(!isEmptyString($subgroupid)){
+		$sgroup = new FarmGroup();
+		$sgroup->populate($subgroupid);
+		$farmgroup->setParentID($subgroupid);
+		$farmgroup->setType($sgroup->getType());
+		$farmgroup->setDistrictID($sgroup->getDistrictID());
+	} 
+	$farmgroup->setRegDate(changeMySQLDateToPageFormat(date('Y-m-d')));
+	
+	$isdna = true;
+	if($request->type == 6){
+		$isdna = false;
+		$farmgroup->setType(6);
+	}
+			
+	#in case of errors in session, populate the fields from session
+	if(!isEmptyString($session->getVar(ERROR_MESSAGE))){ 
+		$farmgroup->processPost($session->getVar(FORM_VALUES));	
+	}
+	
+	$title = $this->translate("farmgroup_pagetitle_new"); 
+	$this->headTitle($title);
+	
+?>
+<script>
+	$(document).ready(function() {
+		$("#indexform").validate({		
+			// define the validation rules one field at a time
+			rules: {
+				orgname: "required",
+				type:  "required",
+				districtid:  "required",
+				regdate: "required",
+				parentid:  "required",
+				refno: {
+					required: true,
+					validate_number: true,
+					maxlength:6,
+					minlength:4
+				}
+			}, 
+			// the messages for each of the fields being validated
+			messages: {		
+				orgname: "<?php echo $this->translate("farmgroup_orgname_error"); ?>",
+				type: "<?php echo $this->translate("farmgroup_type_error"); ?>",
+				districtid:  "<?php echo $locationerror; ?>",
+				parentid:  "Please select DNA",
+				regdate: "Please select Registration Date",
+				refno: {
+					required: "Please enter a Reference Number",
+					validate_number: "Invalid Ref No specified",
+					maxlength: "Should not be more than 6 digits",
+					minlength: "Should not be less than 4 digits"
+				}
+			},
+			// custom error positions
+			errorPlacement: function(error, element) {
+				switch(element.attr("name")){					
+					default:
+						error.appendTo("#"+element.attr("name")+"_error")
+						break;
+				}			
+			}
+		});
+		
+		// reset tab index
+		var tabindex = 1;
+		$('input,select').each(function() {
+			if (this.type != "hidden") {
+				var $input = $(this);
+				$input.attr("tabindex", tabindex);
+				tabindex++;
+			}
+		});
+		
+		var dateofregOpts = datepickerOpts;
+		dateofregOpts.yearRange = "-5";
+		dateofregOpts.maxDate = new Date();
+		$("#regdate").datepicker(dateofregOpts);
+		
+		<?php if(isEmptyString($request->type) || (!isEmptyString($farmgroup->getID()) && isEmptyString($farmgroup->getParentID()))){ ?>
+			// $("#parentid, #type").attr('readonly','readonly');
+			disableContainerByClass("parent");
+		<?php } else { ?>
+			disableContainerByClass("isdna");
+		<?php } ?>
+		
+		$('#parentid').change(function() {
+			var groupid = $(this).val();
+			if(!isEmptyString(groupid)){
+				var posturl = "<?php echo $this->baseUrl('mobile/populategroup/id/'); ?>"+groupid;
+				// alert(posturl);
+				$.get(posturl, 
+				   {	
+					// parameters for the request along with a cachebuster to stop IE from caching the request
+					cachebuster: new Date().getTime()}, 			   
+					function(data){	
+						// alert(data);	
+						data = jQuery.parseJSON(data);
+						var districtid = data.districtid;
+						if(!isEmptyString(districtid)){
+							$('#districtid').val(districtid);
+						}
+					}
+				);
+				// wait logic here
+			}
+		});
+		
+	}); 
+</script>
+<style>
+body {
+	overflow:hidden;
+}
+.form-horizontal.well {
+	margin:0;
+	padding-top:0;
+	padding-bottom:0;
+	width:93%;
+}
+.form-horizontal .control-label {
+	font-size: 11px;
+	padding-top:3px;
+	width: 130px;
+}
+.form-horizontal .control-label.gender {
+	width: 60px;
+	display:inline-block;
+}
+.form-horizontal input {
+	height:15px;
+}
+.form-horizontal select {
+	height:25px;
+	font-size: 12px;
+}
+.form-horizontal .table td {
+	vertical-align: middle;
+}
+.form-horizontal .table tr:last-child td {
+	height:10px;
+}
+.form-horizontal .table tbody {
+	border-top:none;
+}
+.radio.inline, .checkbox.inline {
+	display:inline-block;
+	margin-bottom: 1px;
+    padding-top: 0;
+}
+.radio input[type="radio"], .checkbox input[type="checkbox"] {
+	margin-top:1px;
+}
+
+</style>
+<div class="popupdiv">
+<form class="form-horizontal well span6" id="indexform" action="<?php echo $this->baseUrl("farmer/create"); ?>" method="post">
+    <table class="table">
+		<?php if($sessionhaserror) { ?>
+	        <tr>
+	        	<td colspan="2"><div class="alert alert-error"><?php echo $session->getVar(ERROR_MESSAGE); ?></div></td>
+	        </tr>
+        <?php } ?>
+        <tr>
+            <td width="20%"><label class="control-label"><?php echo $this->translate("farmgroup_name_label"); ?>: <?php echo $this->translate("global_required_field_marker"); ?></label></label></td>
+            <td><input type="text" name="orgname" id="orgname" value="<?php echo $farmgroup->getOrgName(); ?>" class="span3" style="width:260px;" /><div id="orgname_error"></div>
+            	<input type="hidden" name="entityname" value="FarmGroup" />
+			    <input type="hidden" id="id" name="id" value="<?php echo encode($farmgroup->getID()); ?>" />
+                <input type="hidden" name="<?php echo URL_SUCCESS; ?>" value="<?php echo encode($this->baseUrl('farmgroup/addsuccess')); ?>" />
+                <input type="hidden" name="<?php echo URL_FAILURE; ?>" value="<?php echo encode($this->baseUrl('farmgroup/adderror')); ?>" />
+                <input type="hidden" name="<?php echo SUCCESS_MESSAGE; ?>" value="farmer_add_success" />
+                <?php if(!isEmptyString($request->type)){ ?>
+                	<input type="hidden" id="type" name="type" value="<?php echo $farmgroup->getType(); ?>" />
+                <?php } ?>
+            </td>
+        </tr>
+        <tr class="parent">
+            <td><label class="control-label">Parent DNA: <?php echo $this->translate("global_required_field_marker"); ?></label></td>
+            <td>
+				<?php
+                    $groupdropdown = new Zend_Form_Element_Select('parentid',
+                                        array(
+                                            'multiOptions' => array_merge_maintain_keys(array('' => '<Select One>'), getAllFarmGroups('', $session->getVar('country'))),								
+                                            'view' => new Zend_View(),
+                                            'decorators' => array('ViewHelper'),
+                                            'class' => array('span4')
+                                        )
+                                    );
+                    $groupdropdown->setValue($farmgroup->getParentID()); 
+                    echo $groupdropdown->render(); 
+               ?><div id="parentid_error"></div>
+            </td>
+        </tr>
+        <tr class="isdna">
+            <td><label class="control-label"><?php echo $this->translate("farmgroup_type_label"); ?>: <?php echo $this->translate("global_required_field_marker"); ?></label></label></td>
+            <td><?php
+                    $alltypes = getFarmGroupTypes(array(6,5));
+                    $typedropdown = new Zend_Form_Element_Select('type',
+                                        array(
+                                            'multiOptions' => array_merge_maintain_keys(array('' => '<Select One>'), $alltypes),
+                                            'view' => new Zend_View(),
+                                            'decorators' => array('ViewHelper'),
+                                            'class' => array('lifestatus','span2')
+											
+                                        )
+                    );  
+                    $typedropdown->setValue($farmgroup->getType()); 
+                    echo $typedropdown->render();
+                ?><div id="type_error"></div></td>
+        </tr>
+        <tr>
+        	<td><label class="control-label"><?php echo $location_label; ?>: <?php echo $this->translate("global_required_field_marker"); ?></label></td>
+            <td><?php
+					$districts = getDistricts($session->getVar('country'));
+					$districtdropdown = new Zend_Form_Element_Select('districtid',
+										array(
+											'multiOptions' => array_merge_maintain_keys(array('' => '<Select One>'), $districts),								
+											'view' => new Zend_View(),
+											'decorators' => array('ViewHelper'),
+											'class' => array('country')
+										)
+									);
+					$districtdropdown->setValue($farmgroup->getDistrictID()); 
+					echo $districtdropdown->render(); 
+			   ?>
+			   <span id="tooltip_districtid"></span><div id="districtid_error"></div></td>
+        </tr>
+        <tr>
+            <td><label class="control-label"><?php echo $this->translate("farmgroup_dateregistered_label"); ?>: <?php echo $this->translate("global_required_field_marker"); ?></label></td>
+            <td><input type="text" name="regdate" id="regdate" class="datefield width100" value="<?php echo changeMySQLDateToPageFormat($farmgroup->getRegDate()); ?>" /></td>
+        </tr>
+  </table>
+</form>
+</div>
+<?php
+	require_once APPLICATION_PATH.'/includes/footer.php';
+?>

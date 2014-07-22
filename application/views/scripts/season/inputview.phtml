@@ -1,0 +1,143 @@
+<?php
+	require_once APPLICATION_PATH.'/includes/header.php';
+	
+	$input = new SeasonInput();
+	$input->populate(decode($request->id));	
+	
+	$type = $input->getType();
+	$isinput = true;
+	$isgeneral = false;
+	$title = $this->translate("season_input_pagetitle_view"); 
+	$detailstitle = "Season Input Details";
+	$activityref = $this->translate("season_activityref_label");
+	$activitydate = $this->translate("season_activitystart_label");
+	if($type == 2){
+		$isinput = false;
+		$isgeneral = true;
+		$title = $this->translate("season_expense_pagetitle_view"); 
+		$detailstitle = "Expense Details";
+		$activityref = $this->translate("season_expenseref_label");
+		$activitydate = $this->translate("season_expensestart_label");
+	}
+	$request->setParam('tab', 'seasons');
+	$user = $input->getUser();
+	
+	$title = "Activity: ".$input->getActivityName();	
+	$farmtitle = $input->getUser()->getName();
+	$this->headTitle($title.$browserappend);  
+?>
+<script>
+	$(document).ready(function() {
+		
+	}); 
+</script>
+<h1><?php echo $farmtitle; ?></h1>
+<div id="tabs">
+    <?php require APPLICATION_PATH."/views/scripts/profile/profileleftcolumn.phtml"; ?>
+    <div class="span9 tab-content" id="center">
+    	<?php require APPLICATION_PATH."/views/scripts/profile/tabstop.phtml"; ?>
+		<div id="seasons">
+            <form id="viewform" class="form-horizontal seasons">
+            <?php if($request->tab == 'seasons'){ ?>
+                <?php if(!isEmptyString($session->getVar(SUCCESS_MESSAGE)) ){ ?>
+                    <div class="alert alert-success"><a class="close" data-dismiss="alert">×</a><?php echo $session->getVar(SUCCESS_MESSAGE); ?></div>
+                <?php } ?>
+                <div class="row margin0" style="padding:2px; margin-bottom:10px;">
+                    <span class="pull-left well lighter margin0" style="width:72%; min-height:160px;">
+                        <h3 class="well-legend"><?php echo $title; ?></h3>
+                        <table class="table noborder margin0" style="margin-top:15px;">
+                            <tr>
+                                <td style="width:15%;"><label class="control-label"><?php echo $activityref; ?>: </label></td>
+                                <td style="width:35%;"><?php echo $input->getRef(); ?></td>
+                                <td style="width:15%;"><label class="control-label"><?php echo $this->translate("season_ref_label"); ?>: </label></td>
+                                <td><a href="<?php echo $this->baseUrl('season/view/id/'.encode($input->getSeasonID())); ?>" title="Season details"><?php echo $input->getSeason()->getRef(); ?></a></td>
+                            </tr>
+                            <tr>
+                                <td><label class="control-label"><?php echo $activitydate; ?>: </label></td>
+                                <td><?php echo changeMySQLDateToPageFormat($input->getStartDate()); ?></td>
+                                <td></td>
+                                <td></td>
+                            </tr>
+                        </table>
+                    </span>
+                    <span class="pull-right padding0" style="width:24%; margin-left:5px;">
+                        <div class="well margin0" style="height:160px;">
+                            <h3 class="well-legend">Quick Links</h3>
+                            <table class="table noborder" >                       
+                               <tr>		                    
+                                    <td class="formactions">
+                                        <a class="btn btn-primary" href="<?php echo $this->baseUrl('season/input/id/'.encode($input->getID())); ?>" id="update"><i class="icon-pencil icon-white"></i> Update</a>
+                                        <a href="javascript: void(0)" id="deleteline" title="Delete Inputs" class="btn deleteline noimgbutton" action="<?php echo $this->baseUrl('season/delete/id/'.$input->getID()."/entityname/SeasonInput/successurl/".encode($this->baseUrl('season/view/id/'.encode($input->getSeasonID())))); ?>"><i class="icon-trash"></i></a>   
+                                        <a class="btn" href="<?php echo $this->baseUrl('season/view/id/'.encode($input->getSeasonID())); ?>" title="Return to Timeline"><i class="icon-list"></i> View Season</a>        
+                                        <?php if($input->getUser()->getSeasons()->count() > 1){ ?>           
+                                        	<a class="btn" href="<?php echo $this->baseUrl('profile/view/id/'.encode($input->getUserID()).'/tab/seasons'); ?>"><i class="icon-list"></i> All Seasons</a>
+                                        <?php } ?>
+                                    </td>
+                               </tr>
+                            </table>                           
+                        </div>
+                    </span>
+                </div>
+                <div class="row margin0" style="padding:2px; margin-bottom:10px;">
+                    <span class="pull-left well lighter margin0" style="width:97%; min-height:230px;">
+                    <h3 class="well-legend"><?php echo $detailstitle; ?></h3>
+                        <input type="text" name="minimumdetails" id="minimumdetails" class="hide" value="" /><div id="minimumdetails_error"></div>
+                        <table class="table table-stripped table-bordered hasheader" style="margin-top:15px;">
+                            <thead>
+                                <tr>
+                                    <td style="width:5%;" class="centeralign">#</td>
+                                    <?php if($isgeneral){ ?>
+                                        <td style="width:25%;"><?php echo $this->translate("season_input_type_label"); ?></td>
+                                        <td><?php echo $this->translate("season_input_name_label"); ?></td>
+                                    <?php } ?>
+                                    <?php if($isinput){ ?>
+                                        <td style="width:15%;"><?php echo $this->translate("season_input_type_label"); ?></td>
+                                        <td><?php echo $this->translate("season_input_name_label"); ?></td>
+                                        <td style="width:20%;"><?php echo $this->translate("season_input_source_label"); ?></td>
+                                    <?php } ?>
+                                    <td style="width:10%;"><?php echo $this->translate("season_input_quantity_label"); ?></td>
+                                    <td style="width:12%;"><?php echo $this->translate("season_input_unitcost_label"); ?> (<?php echo getCurrencySymbol(); ?>)</td>
+                                    <td style="width:12%;"><?php echo $this->translate("season_input_amount_label"); ?> (<?php echo getCurrencySymbol(); ?>)</td>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php 
+                                    $inputdetails = $input->getinputdetails();
+                                    $x = 1;
+                                    foreach($inputdetails as $expense){
+                                ?>
+                                <tr>
+                                    <td class="centeralign"><?php echo $x; ?></td>
+                                    <?php if($isgeneral){ ?>
+                                        <td><?php echo $expense->getName(); ?></td>
+                                        <td><?php echo $expense->getDescription(); ?></td>
+                                    <?php } ?>
+                                    <?php if($isinput){ ?>
+                                        <td><?php echo $expense->getTypeText(); ?></td>
+                                        <td><?php echo $expense->getName(); ?></td>
+                                        <td><?php echo $expense->getSource(); ?></td>
+                                    <?php } ?>
+                                    <td class="centeralign"><?php echo $expense->getQuantity(); ?></td>
+                                    <td class="rightalign"><?php echo formatNumber($expense->getUnitCost()); ?></td>
+                                    <td><label id="amount_<?php echo $expense->getID(); ?>" class="amount_label"><?php echo formatNumber($expense->getAmount()); ?></label></td>
+                                </tr>
+                                <?php $x++;} ?>
+                                <tr>
+                                    <td colspan="<?php echo $isinput == true ? 4: 3; ?>"></td>
+                                    <td colspan="2"><label class="control-label pull-right" style="text-align:right; float:right;">Total Expenditure: </label></td>
+                                    <td><label id="summation" class="amount_label"><?php echo formatNumber($input->getTotalAmount());  ?></label></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </span>
+                </div>
+                <?php require APPLICATION_PATH."/views/scripts/season/financeview.phtml"; ?>
+                <?php require APPLICATION_PATH."/views/scripts/season/notesview.phtml"; ?>
+            <?php } ?>    
+            </form>
+		</div>
+		<?php require APPLICATION_PATH."/views/scripts/profile/tabsbottom.phtml"; ?>  
+    </div>
+</div>    
+<?php
+	require_once APPLICATION_PATH.'/includes/footer.php';

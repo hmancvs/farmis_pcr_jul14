@@ -1,0 +1,967 @@
+<?php
+	require_once APPLICATION_PATH.'/includes/header.php';
+		
+	$user = new UserAccount();
+	$farmgroup = new FarmGroup();
+	
+	$user->populate($userid);
+	if(isFarmer() || isFarmGroupAdmin()){
+		$user->populate($userid);
+		
+		$countcrops = $user->getCrops()->count();
+		$countseasons = $user->getSeasons()->count();
+
+		$seasonid = '';
+		$seasonurl = 'javascript: void(0)';
+		
+		$step1_1_counter = $user->getStep1_1_Status();
+		$step1_3_counter = $user->getStep1_3_Status();
+		$step1_4_counter = $user->getStep1_4_Status();
+		$step2_1_counter = $user->getStep2_1_Status();
+		$step2_2_counter = $user->getStep2_2_Status();
+		$step2_4_counter = $user->getPreseasons()->get(0)->getPreseasonEstimatesStatus();
+		$step3_1_counter = $user->getSeasons()->count();
+		$step3_2_counter = 0;
+		$step3_3_counter = 0;
+		$step3_4_counter = 0;
+		
+		$seasonurl = $this->baseUrl('season/index/userid/'.encode($user->getID()));
+		$season = $user->getSeasons()->get(0);
+		$seasonid = $season->getID();
+		if(!isEmptyString($seasonid)){
+			$timeline = $season->getTimeLineDetails();
+			$step3_2_counter = count($timeline);
+			$seasonurl = $this->baseUrl('season/view/id/'.encode($seasonid));
+			// season expenses
+			$step3_3_counter = $season->getTotalExpenses();
+		}
+		
+		$inventories = $user->getInventoryDetails();
+		$step3_4_counter = $inventories->count();
+		
+		if(isFarmGroupAdmin()){
+			$farmgroup = $user->getFarmGroup();
+			
+		}
+	}
+	
+	if(isAdmin()){
+		$farmers = countFarmers($session->getVar('country'));
+		$total_farmers = $farmers['total'];
+		$total_farmers_ingroups = $farmers['indna'];
+		$total_farmers_ind = $farmers['notindna'];
+		$total_farmers_male = $farmers['male'];
+		$total_farmers_female = $farmers['female'];
+		$total_farmers_phone = $farmers['withphone'];
+		$total_farmers_nophone = $farmers['nophone'];
+		$total_farmers_paid = $farmers['paid'];
+		$total_farmers_notpaid = $farmers['notpaidcount'];
+		
+		$percent_ind = $total_farmers_ind == 0 ? 0 : round(($total_farmers_ind / $total_farmers) * 100);
+		$percent_ingroups = $total_farmers_ingroups == 0 ? 0 : round(($total_farmers_ingroups / $total_farmers) * 100);
+		$percent_male = $total_farmers_male == 0 ? 0 : round(($total_farmers_male / $total_farmers) * 100);
+		$percent_female = $total_farmers_female == 0 ? 0 : round(($total_farmers_female / $total_farmers) * 100);
+		$percent_phone = $total_farmers_phone == 0 ? 0 : round(($total_farmers_phone / $total_farmers) * 100);
+		$percent_nophone = $total_farmers_nophone == 0 ? 0 : round(($total_farmers_nophone / $total_farmers) * 100);
+		$percent_paid = $total_farmers_paid == 0 ? 0 : round(($total_farmers_paid / $total_farmers) * 100);
+		$percent_notpaid = $total_farmers_notpaid == 0 ? 0 : round(($total_farmers_notpaid / $total_farmers) * 100);
+		
+		$where_query = " AND l.id <> '' AND u.type = 2 ";
+		$all_results_query = "
+				SELECT l.id as id, 
+				l.name as district,
+				l.name as name,
+				l.gpslat as gpslat,
+				l.gpslng as gpslng,
+				count(u.id) as totalfarmers,
+				SUM(IF(u.gender =1,1,0)) as male, 
+				SUM(IF(u.gender =2,1,0)) as female, 
+				SUM(IF(u.phone <> '',1,0)) as withphone, 
+				SUM(IF(u.phone = '' || u.phone is null ,1,0)) as nophone,
+				SUM(IF(u.paymentstatus = '1',1,0)) as paid, 
+				SUM(IF(u.paymentstatus = '0' || u.paymentstatus = '',1,0)) as notpaid
+				from location l 
+				left join useraccount u on (u.locationid = l.id AND u.type = 2)
+				left join farmgroup d on (d.districtid = l.id AND LOWER(d.country) = LOWER('".$session->getVar('country')."'))
+				where LOWER(u.country) = LOWER('".$session->getVar('country')."') ".$where_query."
+				GROUP BY u.locationid
+				HAVING count(u.id) > 100
+				order by l.name asc ";
+		
+		// debugMessage($all_results_query);
+		$conn = Doctrine_Manager::connection(); 
+		$result = $conn->fetchAll($all_results_query);
+		$has_no_data = (count($result) == 0) ? true : false; 
+		// debugMessage($result); exit();
+		
+		if(date('m') == 1){
+			$rangestart = $this->startofmonth_6monthago;
+		} else { 
+			$rangestart = $this->firstdayofyear_iso;
+		}
+		$users_sql = "select 
+			COUNT(DISTINCT(u.id)) as totalusers, 
+			SUM(IF(u.isactive = 1, 1,0)) as totalactive, 
+			SUM(IF(u.isactive = 0, 1,0)) as totalinactive, 
+			SUM(IF(u.farmgroupid = '' || u.farmgroupid is null ,1,0)) as notindna,
+			SUM(IF(u.farmgroupid <> '',1,0)) as indna,
+			month(u.datecreated) as month, 
+			year(u.datecreated) as year 
+			from useraccount as u where type = 2 AND TO_DAYS(datecreated) >= TO_DAYS('".$rangestart."') AND LOWER(u.country) = LOWER('".$session->getVar('country')."') group by year(u.datecreated), month(u.datecreated)"; // debugMessage($users_sql);
+		$users_count = $conn->fetchAll($users_sql); 
+		// debugMessage($users_count); exit;
+		$users_no_data = (count($users_count) == 0) ? true : false; 
+		
+		$months = getAllMonthsAsShortNames();
+		$totalarray = array(); $activearray = array(); $montharray = array(); $monthdisplay = array();
+		foreach($users_count as $key => $value){
+			// debugMessage($value['month']);
+			$totalarray[$value['year'].$value['month']] = $value['totalusers'];
+			$activearray[$value['year'].$value['month']] = $value['totalactive'];
+			$montharray[$value['year'].$value['month']] = $value['month'];
+			$monthdisplay[$value['year'].$value['month']] = $months[$value['month']]." ".$value['year'];
+		}
+		
+		// create list for periods
+		$periodlist = "'".implode("', '", $monthdisplay)."'";
+		$totallist = implode(", ", $totalarray);
+		$activelist = implode(", ", $activearray);
+		
+	}
+	
+	$title = $this->translate("dashboard_pagetitle");
+	$this->headTitle($title); 
+?>
+<script type="text/javascript" src="<?php echo $this->baseUrl('javascript/custom/skycons.js'); ?>"></script>
+<?php if(loadMaps()){ ?>
+	<script src="<?php echo getGoogleMapsUrl(); ?>" type="text/javascript"></script>
+	<script type="text/javascript" src="<?php echo $this->serverUrl($this->baseUrl('javascript/maps/gmaps.min.js')); ?>"></script>
+<?php } ?>
+<script>
+$(document).ready(function(){
+	
+	var location = $("#location").val();
+	var locationid = $("#locationid").val();
+	$("#weather, .weather").click(function(){
+		$(".weatherdata").html('<div class="centeralign blocked"><label class="centeralign blocked" style="margin-top:8px;">'+$("#wait").html()+'</div>');
+		// alert('clicked fetch');
+		$.get("<?php echo $this->baseUrl('weather/weathersummary/pgc/true/'); ?>locationid/"+locationid, 
+		   {                        
+			cachebuster: new Date().getTime()},                            
+			function(data){                        
+				// alert(data);
+				data = jQuery.parseJSON(data);                         
+				$("#temp_html").html(data.temperature);
+				$("#summary_html").html(data.summary);
+				$("#humidity_html").html(data.humidity);
+				$("#pressure_html").html(data.pressure);
+				var skycons = new Skycons({"color": "#6c5848"});
+				skycons.set('icon1', ""+data.icon+"");
+				skycons.play();
+			}
+		);
+		
+		$("#todaysummary").html('<div class="blocked" style="padding-left:15px; padding-top:20px;">'+$("#wait").html()+ '<label class="leftalign inline" style="font-weight:normal; font-size:12px;"> &nbsp;&nbsp;Loading '+location+' weather today...</label></div>');
+		$.get("<?php echo $this->baseUrl('weather/weathertoday/pgc/true/'); ?>locationid/"+locationid, 
+		   {                        
+			cachebuster: new Date().getTime()},                            
+			function(data){                        
+				// alert(data);
+				data = jQuery.parseJSON(data);                         
+				$("#todaysummary").html('<div>'+data.description+'</div>');
+			}
+		);
+	});
+	// $("#weather").trigger('click');
+	
+	$(".reload").click(function(){
+		var id = $(this).attr('id');
+		// alert('clicked fetch '+id);
+		$("#"+id+"_today, tr#"+id+"_row td label").html('');
+		initialise(id+"_today");
+		
+		$.get("<?php echo $this->baseUrl('dashboard/'); ?>"+id+'stats', 
+		   {                        
+			cachebuster: new Date().getTime()},                            
+			function(data){
+				// alert(data);      
+				data = jQuery.parseJSON(data);	                        
+				$('#'+id+'_today').html(isEmptyString(data.today) ? '0' : numberWithCommas(data.today));
+				$('#'+id+'_yesterday').html(isEmptyString(data.yesterday) ? '0' : numberWithCommas(data.yesterday));
+				$('#'+id+'_thisweek').html(isEmptyString(data.thisweek) ? '0' : numberWithCommas(data.thisweek));
+				$('#'+id+'_lastweek').html(isEmptyString(data.lastweek) ? '0' : numberWithCommas(data.lastweek));
+				$('#'+id+'_thismonth').html(isEmptyString(data.thismonth) ? '0' : numberWithCommas(data.thismonth));
+				$('#'+id+'_lastmonth').html(isEmptyString(data.lastmonth) ? '0' : numberWithCommas(data.lastmonth));
+				$('#'+id+'_thisyear').html(isEmptyString(data.thisyear) ? '0' : numberWithCommas(data.thisyear));
+				$('#'+id+'_allentries').html(isEmptyString(data.allentries) ? '0' : numberWithCommas(data.allentries));
+			}
+		);
+	});
+	
+	// reload all on page load
+	// $(".reload").trigger('click').attr('Reload');
+	// reload all data on clicking all trigger
+	$("#reloadall, .reloadall").click(function(){
+		$(".reload").trigger('click');
+	});
+	// show wait function
+	function initialise(id){
+		$("#"+id).html($("#wait").html());
+		return true;
+	}
+	
+	<?php if(loadMaps()){ ?>
+		var gpslat = '2.24065';
+		var gpslng = '32.37514';
+		var title = "Google Map";
+		var map = new GMaps({
+			div: '#mapcanvas',
+			lat: gpslat,
+			lng: gpslng,
+			minZoom: 7,
+			maxZoom:16,
+			zoomControlOptions: {
+				style: google.maps.ZoomControlStyle.SMALL //zoom control size
+			},
+			scaleControl: true, // enable scale control
+			mapTypeId: google.maps.MapTypeId.ROADMAP // google map type
+		});
+		
+		<?php
+			foreach($result as $location){
+				$hasgps = false;
+				if(!isEmptyString($location['gpslat']) && !isEmptyString($location['gpslng'])){
+					$hasgps = true;
+				}
+		?>
+			<?php if($hasgps){ ?>
+				var mgpslat = '<?php echo $location['gpslat']; ?>';
+				var mgpslng = '<?php echo $location['gpslng']; ?>';
+				var locationname = "<?php echo $location['name']; ?>";
+				
+				var id = '<?php echo $location['id']; ?>';
+				var contentdetails= $("#location_"+id).html();
+				var contentString = '<div id="content" style="margin-left:10px; min-height:250px; height:auto; width:400px;">'+
+					'<h3 id="firstHeading" class="firstHeading" style="margin-top:5px;">'+locationname+'</h3>'+
+					  '<div id="bodyContent">'+contentdetails+'</div>'+
+					'</div>';
+	
+				map.addMarker({
+					lat: mgpslat,
+					lng: mgpslng,
+					title: locationname,
+					infoWindow: {
+						content: contentString
+					}
+				});
+			<?php } ?>	
+		<?php } ?>
+		
+		map.setZoom(8);
+		map.setOptions({scrollwheel: false, disableDoubleClickZoom: true});
+	<?php } ?>
+	
+});
+</script>
+<script type="text/javascript">
+	// Radialize the colors
+	// Make monochrome colors and set them as default for all pies
+	Highcharts.getOptions().plotOptions.pie.colors = (function () {
+		var colors = ['#cff3c4','#42B521'], base = Highcharts.getOptions().colors[0], i;
+		for (i = 0; i < 10; i++) {
+			colors.push(Highcharts.Color(base).brighten((i - 3) / 7).get());
+		}
+		return colors;
+	}());
+	
+	$(function () {
+		var v_ingroups = <?php echo $total_farmers_ingroups; ?>;
+		var v_indv = <?php echo $total_farmers_ind; ?>;
+		var v_male = <?php echo $total_farmers_male; ?>;
+		var v_female = <?php echo $total_farmers_female; ?>;
+		var v_paid = <?php echo $total_farmers_paid; ?>;
+		var v_notpaid = <?php echo $total_farmers_notpaid; ?>;
+		var v_phone = <?php echo $total_farmers_phone; ?>;
+		var v_nophone = <?php echo $total_farmers_nophone; ?>;
+		
+		var ingroups = <?php echo $percent_ingroups; ?>;
+		var indv = <?php echo $percent_ind; ?>;
+		var male = <?php echo $percent_male; ?>;
+		var female = <?php echo $percent_female; ?>;
+		var paid = <?php echo $percent_paid; ?>;
+		var notpaid = <?php echo $percent_notpaid; ?>;
+		var phone = <?php echo $percent_phone; ?>;
+		var nophone = <?php echo $percent_nophone; ?>;
+		
+		$('#container_type').highcharts({
+			chart: {
+				height:240,
+				margin: [10, 0, 60, 0]
+			},
+			title: {
+				text: ''
+			},
+			exporting: {
+				enabled: false
+			},
+			credits: {
+				enabled: false
+			},
+			tooltip: {
+				pointFormat: '<b>{point.percentage}%</b>',
+				percentageDecimals: 1
+			},
+			plotOptions: {
+				pie: {
+					allowPointSelect: true,
+					cursor: 'pointer',
+					dataLabels: {
+						enabled: false
+					},
+					showInLegend: true
+				}
+			},
+			series: [{
+				type: 'pie',
+				name: 'Farmer Share',
+				data: [
+					{
+                        name: 'Individual Farmers (<?php echo formatNumber($total_farmers_ind); ?>)',
+                        y: indv,
+                        sliced: true,
+                        selected: true
+                    },
+					['Farmers In DNAs/Groups (<?php echo formatNumber($total_farmers_ingroups); ?>)', ingroups]
+				]
+			}],
+			legend: {
+				margin: 30
+			}
+		});
+		
+		$('#container_sex').highcharts({
+			chart: {
+				height:240,
+				margin: [10, 0, 60, 0]
+			},
+			title: {
+				text: ''
+			},
+			exporting: {
+				enabled: false
+			},
+			credits: {
+				enabled: false
+			},
+			tooltip: {
+				pointFormat: '<b>{point.percentage}%</b>',
+				percentageDecimals: 1
+			},
+			plotOptions: {
+				pie: {
+					allowPointSelect: true,
+					cursor: 'pointer',
+					dataLabels: {
+						enabled: false
+					},
+					showInLegend: true
+				}
+			},
+			series: [{
+				type: 'pie',
+				name: 'Farmer Share',
+				data: [
+					{
+                        name: 'Male Farmers (<?php echo formatNumber($total_farmers_male); ?>)',
+                        y: male,
+                        sliced: true,
+                        selected: true
+                    },
+					['Female Farmers (<?php echo formatNumber($total_farmers_female); ?>)', female]
+				]
+			}]
+		});
+		
+		$('#container_payment').highcharts({
+			chart: {
+				height:240,
+				margin: [10, 0, 60, 0]
+			},
+			title: {
+				text: ''
+			},
+			exporting: {
+				enabled: false
+			},
+			credits: {
+				enabled: false
+			},
+			tooltip: {
+				pointFormat: '<b>{point.percentage}%</b>',
+				percentageDecimals: 1
+			},
+			plotOptions: {
+				pie: {
+					allowPointSelect: true,
+					cursor: 'pointer',
+					dataLabels: {
+						enabled: false
+					},
+					showInLegend: true
+				}
+			},
+			series: [{
+				type: 'pie',
+				name: 'Farmer Share',
+				data: [
+					{
+                        name: 'Paid (<?php echo formatNumber($total_farmers_paid); ?>)',
+                        y: paid,
+                        sliced: true,
+                        selected: true
+                    },
+					['Not Paid (<?php echo formatNumber($total_farmers_notpaid); ?>)', notpaid]
+				]
+			}]
+		});
+		
+		$('#container_mobile').highcharts({
+			chart: {
+				height:240,
+				margin: [10, 0, 60, 0]
+			},
+			title: {
+				text: ''
+			},
+			exporting: {
+				enabled: false
+			},
+			credits: {
+				enabled: false
+			},
+			tooltip: {
+				pointFormat: '<b>{point.percentage}%</b>',
+				percentageDecimals: 1
+			},
+			plotOptions: {
+				pie: {
+					allowPointSelect: true,
+					cursor: 'pointer',
+					dataLabels: {
+						enabled: false
+					},
+					showInLegend: true
+				}
+			},
+			series: [{
+				type: 'pie',
+				name: 'Farmer Share',
+				data: [
+					{
+                        name: 'With Mobile (<?php echo formatNumber($total_farmers_phone); ?>)',
+                        y: phone,
+                        sliced: true,
+                        selected: true
+                    },
+					['No Mobile (<?php echo formatNumber($total_farmers_nophone); ?>)', nophone]
+				]
+			}]
+		});
+		
+		$('#usershistory').highcharts({
+			chart: {
+				type: 'area',
+				height: 400,
+				borderColor: '42B521',
+				borderWidth: 2
+			},
+			colors: ['#42B521'],
+			credits: {
+				enabled: false
+			},
+			exporting: {
+			  enabled: false
+			},
+			title: {
+				text: 'Farmer Subscription History'
+			},
+			xAxis: {
+				categories: [<?php echo $periodlist; ?>]
+			},
+			yAxis: {
+				title: {
+					text: 'Number of New Farmers'
+				}
+			},
+			tooltip: {
+				  formatter: function() {
+					return this.x+' <br/>'+this.series.name+' : '+numberWithCommas(this.y);
+				 }
+			},
+			series: [{
+				name: 'Total Farmers',
+				data: [<?php echo $totallist; ?>]
+			}]
+		});
+		
+	});
+</script>
+<div class="blocked clear maxwidth">
+	<?php require APPLICATION_PATH."/views/scripts/index/leftcolumn.phtml"; ?>
+    <div id="centercolumn">
+    	<div class="crumbs">
+            <ul class="breadcrumb" id="breadcrumbs">
+                <li><i class="icon-home"></i><a href="<?php echo $this->baseUrl('dashboard'); ?>">Dashboard</a></li>
+                <li class="current"> > <!--<a href="pages_calendar.html">Calendar</a>--></li>
+            </ul>
+            <ul class="crumb-buttons">
+                <li class="first"><a href="<?php echo $this->baseUrl('profile/add'); ?>"><i class="icon-plus"></i><span>Add New Farmer</span></a></li>
+                <li></li>
+                <li><a href="#"><i class="icon-calendar"></i> <span>June 19, 2014 - July 18, 2014</span> <i class="icon-angle-down"></i></a></li>
+                
+            </ul>
+        </div>
+        <div class="container-fluid">
+            <div class="page-header">
+                <div class="page-title">
+                    <h3>Dashboard</h3>
+                    <span><?php echo greatUser($user->getName()); ?>!</span>
+                </div>
+                <ul class="page-stats dashbd">
+                    <li><div class="summary"><span>My Location</span>
+                    	<h3 id="location_html"><?php echo !isEmptyString($user->getLocationID()) ? $user->getLocation()->getName() : 'Kampala'; ?></h3></div>
+                    </li>
+                    <li style="padding-right:32px;"><div class="summary floatleft"><span>Current Condition</span><h3 id="summary_html" class="weatherdata"></h3></div>
+                        <div class="floatright"><canvas id="icon1" width="48" height="48" class="blocked floatright"></canvas></div>
+                    </li>
+                    <li><div class="summary"><span>Temperature</span><h3 id="temp_html" class="weatherdata"></h3></div></li> 
+                    <li><div class="summary"><span>Pressure</span><h3 id="pressure_html" class="weatherdata"></h3></div></li> 
+                    <li><div class="summary"><span>Humidity</span><h3 id="humidity_html" class="weatherdata"></h3></div></li>        
+                    <li><a class="gonowhere btn btn-default btn-xs" id="weather"><i class="icon-refresh"></i></a></li>
+                </ul>
+            </div>
+            <div class="row margin0 maxwidth" style="margin-bottom:0;">
+            	<input type="hidden" name="location" id="location" value="<?php echo $user->getLocation()->getName(); ?>" />
+				<input type="hidden" name="locationid" id="locationid" value="<?php echo $user->getLocationID(); ?>" />
+                <div class="widget box makerelative">
+                    <div class="widget-header">
+                        <h4><i class="icon-th"></i> Weather Today</h4>
+                        <a href="<?php echo $this->baseUrl('weather/index/state/forecast/locationid/'.$user->getLocationID()); ?>" class="btn btn-primary" style="position:absolute; right:40px; top:3px;"><i class="icon-arrow-right icon-white"></i> Full Forecast</a>
+                        <div class="toolbar no-padding">
+                            <div class="btn-group">
+                                <a class="gonowhere weather btn noround padding10"><i class="icon-refresh"></i></a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="widget-content no-padding" style="min-height:80px;">
+                        <div id="todaysummary" class="margin10 clearfix" style="font-weight:normal; font-size:16px; padding-left:0; padding-right:100px;"></div>     
+                        <?php if(false){ ?>
+                        	<iframe id="forecast_embed" type="text/html" frameborder="0" height="230" width="100%" src="http://forecast.io/embed/#lat=<?php echo $user->getLocation()->getGpsLat(); ?>&lon=<?php echo $user->getLocation()->getGpsLng(); ?>&name=<?php echo $user->getLocation()->getName(); ?> - Next 7 Days&units=uk&color=#42B521"> </iframe>
+                        <?php } ?>
+                    </div>
+                </div>
+            </div>
+            <div class="row row-bg">
+            	<div class="blocked" style="padding:0 15px;">
+                	<div class="widget box makerelative">
+                        <div class="widget-header">
+                            <h4><i class="icon-th"></i> FARMIS Statistics</h4>
+                            <div class="toolbar no-padding">
+                                <div class="btn-group">
+                                    <a class="gonowhere reloadall btn noround padding10"><i class="icon-refresh"></i></a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="widget-content no-padding">
+                            <table class="table table-striped">
+                                <thead class="monitor">
+                                    <tr>
+                                        <th style="width:10px;" class="monitorhead"></th>
+                                        <th style="width:160px; text-align:left;" class="monitorhead">Variable</th>
+                                        <th style="width:15px; text-align:center; padding:0;"><a class="gonowhere btn btn-mini centeralign reloadall margin5" id="reloadall" title="Reload All"><i class="icon-refresh"></i> </a></th>
+                                        <th class="monitorhead">Today</th>
+                                        <th class="monitorhead">Yesterday</th>
+                                        <th class="monitorhead">This week</th>
+                                        <th class="monitorhead">Last week</th>
+                                        <th class="monitorhead">This month</th>
+                                        <th class="monitorhead">Last month</th>
+                                        <th class="monitorhead">This year</th>
+                                        <th class="monitorhead">All</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="monitorbody">
+                                    <tr id="farmerug_row">
+                                        <td class="icontd"><span class="label label-success blocked">&nbsp;</span></td>
+                                        <td class="variabletd">Total Farmers</td>
+                                        <td><a class="gonowhere btn btn-mini centeralign reload" id="farmerug"><i class="icon-refresh"></i> </a></td>
+                                        <td><label id="farmerug_today"></label></td>
+                                        <td><label id="farmerug_yesterday"></label></td>
+                                        <td><label id="farmerug_thisweek"></label></td>
+                                        <td><label id="farmerug_lastweek"></label></td>
+                                        <td><label id="farmerug_thismonth"></label></td>
+                                        <td><label id="farmerug_lastmonth"></label></td>
+                                        <td><label id="farmerug_thisyear"></label></td>
+                                        <td class="last"><label id="farmerug_allentries"></label></td>
+                                    </tr>
+                                    <tr id="farmerugdna_row">
+                                        <td class="icontd"><span class="label label-success blocked">&nbsp;</span></td>
+                                        <td class="variabletd">Farmers in Groups/DNAs</td>
+                                        <td><a class="gonowhere btn btn-mini centeralign reload" id="farmerugdna"><i class="icon-refresh"></i> </a></td>
+                                        <td><label id="farmerugdna_today"></label></td>
+                                        <td><label id="farmerugdna_yesterday"></label></td>
+                                        <td><label id="farmerugdna_thisweek"></label></td>
+                                        <td><label id="farmerugdna_lastweek"></label></td>
+                                        <td><label id="farmerugdna_thismonth"></label></td>
+                                        <td><label id="farmerugdna_lastmonth"></label></td>
+                                        <td><label id="farmerugdna_thisyear"></label></td>
+                                        <td class="last"><label id="farmerugdna_allentries"></label></td>
+                                    </tr>
+                                    <tr id="farmerugind_row">
+                                        <td class="icontd"><span class="label label-success blocked">&nbsp;</span></td>
+                                        <td class="variabletd">Individual Farmers</td>
+                                        <td><a class="gonowhere btn btn-mini centeralign reload" id="farmerugind"><i class="icon-refresh"></i> </a></td>
+                                        <td><label id="farmerugind_today"></label></td>
+                                        <td><label id="farmerugind_yesterday"></label></td>
+                                        <td><label id="farmerugind_thisweek"></label></td>
+                                        <td><label id="farmerugind_lastweek"></label></td>
+                                        <td><label id="farmerugind_thismonth"></label></td>
+                                        <td><label id="farmerugind_lastmonth"></label></td>
+                                        <td><label id="farmerugind_thisyear"></label></td>
+                                        <td class="last"><label id="farmerugind_allentries"></label></td>
+                                    </tr>
+                                    <tr id="farmerugmale_row">
+                                        <td class="icontd"><span class="label label-success blocked">&nbsp;</span></td>
+                                        <td class="variabletd">Male Farmers</td>
+                                        <td><a class="gonowhere btn btn-mini centeralign reload" id="farmerugmale"><i class="icon-refresh"></i> </a></td>
+                                        <td><label id="farmerugmale_today"></label></td>
+                                        <td><label id="farmerugmale_yesterday"></label></td>
+                                        <td><label id="farmerugmale_thisweek"></label></td>
+                                        <td><label id="farmerugmale_lastweek"></label></td>
+                                        <td><label id="farmerugmale_thismonth"></label></td>
+                                        <td><label id="farmerugmale_lastmonth"></label></td>
+                                        <td><label id="farmerugmale_thisyear"></label></td>
+                                        <td class="last"><label id="farmerugmale_allentries"></label></td>
+                                    </tr>
+                                    <tr id="farmerugfemale_row">
+                                        <td class="icontd"><span class="label label-success blocked">&nbsp;</span></td>
+                                        <td class="variabletd">Female Farmers</td>
+                                        <td><a class="gonowhere btn btn-mini centeralign reload" id="farmerugfemale"><i class="icon-refresh"></i> </a></td>
+                                        <td><label id="farmerugfemale_today"></label></td>
+                                        <td><label id="farmerugfemale_yesterday"></label></td>
+                                        <td><label id="farmerugfemale_thisweek"></label></td>
+                                        <td><label id="farmerugfemale_lastweek"></label></td>
+                                        <td><label id="farmerugfemale_thismonth"></label></td>
+                                        <td><label id="farmerugfemale_lastmonth"></label></td>
+                                        <td><label id="farmerugfemale_thisyear"></label></td>
+                                        <td class="last"><label id="farmerugfemale_allentries"></label></td>
+                                    </tr>
+                                    <tr id="farmerugmobile_row">
+                                        <td class="icontd"><span class="label label-success blocked">&nbsp;</span></td>
+                                        <td class="variabletd">Farmers with Mobile</td>
+                                        <td><a class="gonowhere btn btn-mini centeralign reload" id="farmerugmobile"><i class="icon-refresh"></i> </a></td>
+                                        <td><label id="farmerugmobile_today"></label></td>
+                                        <td><label id="farmerugmobile_yesterday"></label></td>
+                                        <td><label id="farmerugmobile_thisweek"></label></td>
+                                        <td><label id="farmerugmobile_lastweek"></label></td>
+                                        <td><label id="farmerugmobile_thismonth"></label></td>
+                                        <td><label id="farmerugmobile_lastmonth"></label></td>
+                                        <td><label id="farmerugmobile_thisyear"></label></td>
+                                        <td class="last"><label id="farmerugmobile_allentries"></label></td>
+                                    </tr>
+                                    <tr id="farmerugpaid_row">
+                                        <td class="icontd"><span class="label label-success blocked">&nbsp;</span></td>
+                                        <td class="variabletd">Paid-up Farmers</td>
+                                        <td><a class="gonowhere btn btn-mini centeralign reload" id="farmerugpaid"><i class="icon-refresh"></i> </a></td>
+                                        <td><label id="farmerugpaid_today"></label></td>
+                                        <td><label id="farmerugpaid_yesterday"></label></td>
+                                        <td><label id="farmerugpaid_thisweek"></label></td>
+                                        <td><label id="farmerugpaid_lastweek"></label></td>
+                                        <td><label id="farmerugpaid_thismonth"></label></td>
+                                        <td><label id="farmerugpaid_lastmonth"></label></td>
+                                        <td><label id="farmerugpaid_thisyear"></label></td>
+                                        <td class="last"><label id="farmerugpaid_allentries"></label></td>
+                                    </tr>
+                                    <tr id="dnaug_row">
+                                        <td class="icontd"><span class="label label-important blocked">&nbsp;</span></td>
+                                        <td class="variabletd">Total DNAs</td>
+                                        <td><a class="gonowhere btn btn-mini centeralign reload" id="dnaug"><i class="icon-refresh"></i> </a></td>
+                                        <td><label id="dnaug_today"></label></td>
+                                        <td><label id="dnaug_yesterday"></label></td>
+                                        <td><label id="dnaug_thisweek"></label></td>
+                                        <td><label id="dnaug_lastweek"></label></td>
+                                        <td><label id="dnaug_thismonth"></label></td>
+                                        <td><label id="dnaug_lastmonth"></label></td>
+                                        <td><label id="dnaug_thisyear"></label></td>
+                                        <td class="last"><label id="dnaug_allentries"></label></td>
+                                    </tr>
+                                    <tr id="dnaugpaid_row">
+                                        <td class="icontd"><span class="label label-important blocked">&nbsp;</span></td>
+                                        <td class="variabletd">Paid-up DNAs</td>
+                                        <td><a class="gonowhere btn btn-mini centeralign reload" id="dnaugpaid"><i class="icon-refresh"></i> </a></td>
+                                        <td><label id="dnaugpaid_today"></label></td>
+                                        <td><label id="dnaugpaid_yesterday"></label></td>
+                                        <td><label id="dnaugpaid_thisweek"></label></td>
+                                        <td><label id="dnaugpaid_lastweek"></label></td>
+                                        <td><label id="dnaugpaid_thismonth"></label></td>
+                                        <td><label id="dnaugpaid_lastmonth"></label></td>
+                                        <td><label id="dnaugpaid_thisyear"></label></td>
+                                        <td class="last"><label id="dnaugpaid_allentries"></label></td>
+                                    </tr>
+                                    <tr id="farmerpaymentsug_row">
+                                        <td class="icontd"><span class="label label-primary blocked">&nbsp;</span></td>
+                                        <td class="variabletd">Farmer Payments (UGX)</td>
+                                        <td><a class="gonowhere btn btn-mini centeralign reload" id="farmerpaymentsug"><i class="icon-refresh"></i> </a></td>
+                                        <td><label id="farmerpaymentsug_today"></label></td>
+                                        <td><label id="farmerpaymentsug_yesterday"></label></td>
+                                        <td><label id="farmerpaymentsug_thisweek"></label></td>
+                                        <td><label id="farmerpaymentsug_lastweek"></label></td>
+                                        <td><label id="farmerpaymentsug_thismonth"></label></td>
+                                        <td><label id="farmerpaymentsug_lastmonth"></label></td>
+                                        <td><label id="farmerpaymentsug_thisyear"></label></td>
+                                        <td class="last"><label id="farmerpaymentsug_allentries"></label></td>
+                                    </tr>
+                                    <tr id="dnapaymentsug_row">
+                                        <td class="icontd"><span class="label label-primary blocked">&nbsp;</span></td>
+                                        <td class="variabletd">DNA Payments (UGX)</td>
+                                        <td><a class="gonowhere btn btn-mini centeralign reload" id="dnapaymentsug"><i class="icon-refresh"></i> </a></td>
+                                        <td><label id="dnapaymentsug_today"></label></td>
+                                        <td><label id="dnapaymentsug_yesterday"></label></td>
+                                        <td><label id="dnapaymentsug_thisweek"></label></td>
+                                        <td><label id="dnapaymentsug_lastweek"></label></td>
+                                        <td><label id="dnapaymentsug_thismonth"></label></td>
+                                        <td><label id="dnapaymentsug_lastmonth"></label></td>
+                                        <td><label id="dnapaymentsug_thisyear"></label></td>
+                                        <td class="last"><label id="dnapaymentsug_allentries"></label></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+               	</div>
+          	</div>
+            
+            <div class="row margin0 maxwidth" style="margin-bottom:0;">
+                <div class="widget box">
+                    <div class="widget-header">
+                        <h4><i class="icon-th"></i> FARMIS Coverage</h4>
+                        <div class="toolbar no-padding">
+                            <div class="btn-group">
+                               <a class="btn noround padding10" id="map" href="<?php echo $this->viewurl; ?>"><i class="icon-refresh"></i></a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="widget-content no-padding">
+                        <div id="mapcanvas" class="maxwidth" style="height:700px; border: 2px solid #878787; border-radius: 3px; margin:4px; width:99%;"></div>
+                        <div class="row span12 margin0 padding0 clearfix">
+                            <?php
+                                 $counter = 1;
+                                 $total = 0;
+                                 $maletotal = 0; $femaletotal = 0; $phonetotal = 0; $nophonetotal = 0; $paidtotal = 0;
+                                 foreach($result as $line){
+                                     $total += $line['totalfarmers'];
+                                     $maletotal += $line['male']; 
+                                     $femaletotal += $line['female'];
+                                     $phonetotal += $line['withphone'];
+                                     $nophonetotal += $line['nophone'];
+                                     $paidtotal += $line['paid'];
+                                     $malepctg = round(($line['male']/$line['totalfarmers'])*100,1);
+                                     $femalepctg = round(($line['female']/$line['totalfarmers'])*100,1);
+                                     $phonepctg = round(($line['withphone']/$line['totalfarmers'])*100,1);
+                                     $nophonepctg = round(($line['nophone']/$line['totalfarmers'])*100, 1);
+                                     $paidpctg = round(($line['paid']/$line['totalfarmers'])*100, 1);
+                            ?>
+                                <div class="row hidden" id="location_<?php echo $line['id']; ?>" style="margin-left:10px;">
+                                    <div class="widget-content" style="padding-left:0;">
+                                        <h4 style="font-size:14px; margin:0;"><i class="icon-th"></i> Statistics</h4>
+                                        <div class="divider10"></div>
+                                        <table class="table table-hover table-bordered table-condensed noround" style="font-size:12px;">
+                                            <thead>
+                                                <tr>
+                                                    <th class="bolded" style="width:50%; font-size:12px;">Variable</th>
+                                                    <th class="centeralign" style="width:25%; font-size:10px;">Count</th>
+                                                    <th class="centeralign" style="width:25%; font-size:10px;">%age</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr>
+                                                    <td>Total Farmers</td>
+                                                    <td class="maptablecell"><span class="nullifempty"><?php echo formatNumber($line['totalfarmers']); ?></span></td>
+                                                    <td class="maptablecell" style="padding-right:15px;"><span class="nullifempty">100%</span></td>
+                                                </tr>
+                                                <tr>
+                                                    <td>Male</td>
+                                                    <td class="maptablecell"><span class="nullifempty"><?php echo formatNumber($line['male']); ?></span></td>
+                                                    <td class="maptablecell"><span class="nullifempty"><?php echo $malepctg.'%'; ?></span></td>
+                                                </tr>
+                                                <tr>
+                                                    <td>Female</td>
+                                                    <td class="maptablecell"><span class="nullifempty"><?php echo formatNumber($line['female']); ?></span></td>
+                                                    <td class="maptablecell"><span class="nullifempty"><?php echo $femalepctg.'%'; ?></span></td>
+                                                </tr>
+                                                <tr>
+                                                    <td>With Phone</td>
+                                                    <td class="maptablecell"><span class="nullifempty"><?php echo formatNumber($line['withphone']); ?></span></td>
+                                                    <td class="maptablecell"><span class="nullifempty"><?php echo $phonepctg.'%'; ?></span></td>
+                                                </tr>
+                                                <tr>
+                                                    <td>No Phone</td>
+                                                    <td class="maptablecell"><span class="nullifempty"><?php echo formatNumber($line['nophone']); ?></span></td>
+                                                    <td class="maptablecell"><span class="nullifempty"><?php echo $nophonepctg.'%'; ?></span></td>
+                                                </tr>
+                                                <tr>
+                                                    <td>Paid Farmers</td>
+                                                    <td class="maptablecell"><span class="nullifempty"><?php echo formatNumber($line['paid'])?></span></td>
+                                                    <td class="maptablecell"><span class="nullifempty"><?php echo $paidpctg.'%'; ?></span></td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                        <div class="divider15"></div>
+                                        <h4 style="font-size:14px; margin:0;"><i class="icon-th"></i> DNAs <?php //echo '('.countDNAsInDistrict($line['id']).')'; ?> </h4>
+                                        <div class="divider10"></div>
+                                        <table class="table table-hover table-bordered table-condensed noround" style="font-size:12px;">
+                                            <tbody>	
+                                                <?php 
+                                                    $dnas = getDNAsInDistrict($line['id']);
+                                                ?>
+                                                <?php if(count($dnas) == 0){ ?>
+                                                    <tr>
+                                                        <td colspan="2">None</td>
+                                                    </tr>
+                                                <?php } else { ?>
+                                                    <?php 
+                                                        $counter = 1;
+                                                        foreach($dnas as $key => $value){ 
+                                                    ?>
+                                                        <tr>
+                                                            <td class="centeralign"><?php echo $counter; ?></td>
+                                                            <td><?php echo $value; ?></td>
+                                                        </tr>
+                                                    <?php $counter++; } ?>
+                                                <?php } ?>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            <?php } ?>
+                        </div>
+                    </div>
+                </div>
+            </div>  
+            
+            <div class="row-fluid margin0 maxwidth" style="margin-bottom:0;">
+                <div class="span3">
+                    <div class="widget box">
+                        <div class="widget-header"><h4><i class="icon-th"></i> Farmers By Type</h4></div>
+                        <div class="widget-content no-padding" style="height:250px;"><div id="container_type"></div></div>
+                    </div>
+               	</div>
+                <div class="span3">
+                    <div class="widget box">
+                        <div class="widget-header"><h4><i class="icon-th"></i> Farmers By Gender</h4></div>
+                        <div class="widget-content no-padding" style="height:250px;"><div id="container_sex"></div></div>
+                    </div>
+               	</div>
+                <div class="span3">
+                    <div class="widget box">
+                        <div class="widget-header"><h4><i class="icon-th"></i> Farmers By Payment Status</h4></div>
+                        <div class="widget-content no-padding" style="height:250px;"><div id="container_payment"></div></div>
+                    </div>
+               	</div>
+                <div class="span3">
+                    <div class="widget box">
+                        <div class="widget-header"><h4><i class="icon-th"></i> Farmers By Mobile Access</h4></div>
+                        <div class="widget-content no-padding" style="height:250px;"><div id="container_mobile"></div></div>
+                    </div>
+               	</div>
+           	</div>
+            <div class="row margin0 maxwidth" style="margin-bottom:0;">
+                <div class="widget box">
+                    <div class="widget-header">
+                        <h4><i class="icon-th"></i> Subscription Trends</h4>
+                    </div>
+                    <div class="widget-content no-padding minheight250"><div id="usershistory"></div></div>
+               	</div>
+           	</div>
+            <div class="row margin0 maxwidth" style="margin-bottom:0;">
+                <div class="widget box">
+                    <div class="widget-header">
+                        <h4><i class="icon-th"></i> Lastest Subscriptions</h4>
+                    </div>
+                    <div class="widget-content no-padding">
+                    	<?php 
+							$latestusers = getLatestUsers(5, $session->getVar('country'));
+							$latestgrps = getLatestGroups(5, $session->getVar('country'));
+						?>
+                        <div class="row-fluid margin0 maxwidth" style="margin-bottom:0;">
+                            <div class="span5">
+                            	<div class="divider10"></div>
+                                <table class="table xtable-condensed table-bordered noround">
+                                    <?php if(count($latestusers) == 0) { ?>
+                                        <div style="clear:both;" class="alert alert-info margin5"><?php echo $this->translate("global_list_norecords"); ?></div>
+                                    <?php } else { ?>
+                                        <thead>
+                                            <tr>
+                                                <td class="centeralign" style="width:20px;">#</td>
+                                                <td style="padding-left:15px;"><label class="control-label leftalign lineblocked">Lastest Farmers</label><span class="pull-right inlineblocked"><a href="<?php echo $this->baseUrl('profile/list'); ?>">View all</a></span></td>
+                                                <td style="width:35%;"><label class="control-label centeralign">Date</label></td>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <?php 
+                                                $i = 1;
+                                                foreach($latestusers as $user){
+                                                    $useracc = new UserAccount();
+                                                    $useracc->populate($user['id']);
+                                            ?>
+                                                <tr>
+                                                    <td class="centeralign"><?php echo $i; ?></td>
+                                                    <td><a href="<?php echo $this->baseUrl('profile/view/id/'.encode($useracc->getID())); ?>" title="<?php echo $useracc->isFarmer() ? 'Farmer' : 'DNA Group Clerk'; ?>: <?php echo $useracc->getName(); ?>"><?php echo $useracc->getName(); ?></a></td>
+                                                    <td><?php echo changeMySQLDateToPageFormat($useracc->getDateCreated()).' '.date("g:i A", strtotime($useracc->getDateCreated())); ?></td>
+                                                </tr>
+                                            <?php $i++; } ?>
+                                            
+                                        </tbody>
+                                    <?php } ?>
+                                </table>
+                            </div>
+                            <div class="span7">
+                            	<div class="divider10"></div>
+                                <table class="table xtable-condensed table-bordered noround">
+                                    <?php if(count($latestgrps) == 0) { ?>
+                                        <div style="clear:both;" class="alert alert-info margin5"><?php echo $this->translate("global_list_norecords"); ?></div>
+                                    <?php } else { ?>
+                                        <thead>
+                                            <tr>
+                                                <td class="centeralign" style="width:20px;">#</td>
+                                                <td style="padding-left:15px;"><label class="control-label leftalign lineblocked">Lastest DNAs</label><span class="pull-right inlineblocked"><a href="<?php echo $this->baseUrl('farmgroup/list'); ?>">View all</a></span></td>
+                                                <td style="width:30%;"><label class="control-label centeralign">Date</label></td>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                        <?php 
+                                            $i = 1;
+                                            foreach($latestgrps as $grp){
+                                                $fmgroup = new FarmGroup();																
+                                                $fmgroup->populate($grp['id']);
+                                        ?>
+                                            <tr>
+                                                <td class="centeralign"><?php echo $i; ?></td>
+                                                <td><a href="<?php echo $this->baseUrl('farmgroup/view/id/'.encode($fmgroup->getID())); ?>"><?php echo $fmgroup->getName(); ?></a></td>
+                                                <td><?php echo changeMySQLDateToPageFormat($fmgroup->getDateCreated()).' '.date("g:i A", strtotime($fmgroup->getDateCreated())); ?></td>
+                                            </tr>
+                                        <?php $i++; } ?>
+                                        </tbody>
+                                    <?php } ?>
+                                </table>
+                            </div>
+                      	</div>
+                        <div class="divider10"></div>
+                    </div>
+               	</div>
+           	</div>
+    	</div>
+    </div>
+</div>
+<?php
+	require_once APPLICATION_PATH.'/includes/footer.php';
+?>
