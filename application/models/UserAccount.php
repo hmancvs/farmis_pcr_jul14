@@ -85,7 +85,7 @@ class UserAccount extends BaseEntity {
 		$this->hasColumn('leadershiprole', 'string', 50);
 		
 		$this->hasColumn('selfregistered', 'integer', null, array('default' => 0));
-		$this->hasColumn('regsource', 'integer', null, array('default' => 0));
+		$this->hasColumn('regsource', 'integer', null, array('default' => 0)); // 0 desktop, 1 Mobile
 		
 		# override the not null and not blank properties for the createdby column in the BaseEntity
 		$this->hasColumn('createdby', 'integer', 11);
@@ -1008,6 +1008,33 @@ class UserAccount extends BaseEntity {
     	$conn = Doctrine_Manager::connection();
    	 	$update = false;
 		
+   	 	# generate registration number for farmer
+   	 	if(isEmptyString($this->getRefNo()) && $this->isUgandan()){
+   	 		$this->setRefNo($this->generateRefNo());
+   	 		$this->setRegNo($this->getCurrentRegNo());
+   	 		$this->save();
+   	 		if($this->isFarmer()){
+   	 			$session->setVar('custommessage', 'Farmer ID# '.$this->getRefNo().' generated.');
+   	 		}
+   	 	}
+   	 	 
+   	 	# invite user to activate
+   	 	if($this->getVarIsinvited() == 1 && !isEmptyString($this->getEmail())){
+   	 		$this->inviteOne();
+   	 		$session->setVar('emailinvitesuccess', sprintf($this->translate->_("farmer_invite_email_success"), $this->getEmail()));
+   	 	}
+   	 	// invite the farmer to activate via phone
+   	 	if($this->getVarIsphoneinvited() == 1 && !isEmptyString($this->getPhone())){
+   	 		$this->inviteOneByPhone();
+   	 		$session->setVar('phoneinvitesuccess', sprintf($this->translate->_("farmer_invite_phone_success"), $this->getFormattedPhone()));
+   	 	}
+   	 	# send credentials to email
+   	 	if($this->getVarSendlogintoemail() == 1 && !isEmptyString($this->_getParam('email'))){
+   	 		$password = $this->getVarPassword();
+   	 		$this->sendCredentialsByEmail($password);
+   	 		$session->setVar('emailinvitesuccess', sprintf($this->translate->_("farmer_login_email_success"), $this->getEmail()));
+   	 	}
+   	 	
     	return true;
     }
     /**

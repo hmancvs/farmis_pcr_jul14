@@ -148,7 +148,7 @@
 	}
 	
 	$paginate->processPost($request->getParams());
-	$all_results_query = "SELECT u.id as id, u.id as userid, u.farmgroupid as fmgroupid, u.firstname, u.lastname, u.othernames, u.subgroupid, u.gender, u.isactive, u.locationid as districtid, u.email as email, u.email as femail, u.refno, u.regno as regno, u.phone as phone, u.regdate as fregdate, u.profilephoto as profilephoto, fg.orgname as orgname, fgs.orgname as sorgname, l.name as district, u.isphoneinvited, u.hasacceptedinvite, u.isinvited, u.selfregistered, concat(ua.firstname, ' ', ua.lastname) as addedby, u.datecreated as dateadded FROM useraccount u LEFT JOIN farmgroup as fg on (u.farmgroupid = fg.id) LEFT JOIN location l on (u.locationid = l.id AND l.locationtype = 2) INNER JOIN useraccount ua on (u.createdby = ua.id) LEFT JOIN farmgroup as fgs on (u.subgroupid = fgs.id) ".$where_query." AND u.type = 2 AND u.country = UPPER('".$session->getVar('country')."') ".$paginate->getSearchAndFilterSQL($customwhere)." GROUP BY u.id ".$order_query;
+	$all_results_query = "SELECT u.id as id, u.id as userid, u.farmgroupid as fmgroupid, u.firstname, u.lastname, u.othernames, u.subgroupid, u.gender, u.isactive, u.locationid as districtid, u.email as email, u.email as femail, u.refno, u.regno as regno, u.phone as phone, u.regdate as fregdate, u.profilephoto as profilephoto, fg.orgname as orgname, fgs.orgname as sorgname, l.name as district, u.isphoneinvited, u.hasacceptedinvite, u.isinvited, u.selfregistered, concat(ua.firstname, ' ', ua.lastname) as addedby, u.datecreated as dateadded, u.paymentstatus FROM useraccount u LEFT JOIN farmgroup as fg on (u.farmgroupid = fg.id) LEFT JOIN location l on (u.locationid = l.id AND l.locationtype = 2) INNER JOIN useraccount ua on (u.createdby = ua.id) LEFT JOIN farmgroup as fgs on (u.subgroupid = fgs.id) ".$where_query." AND u.type = 2 AND u.country = UPPER('".$session->getVar('country')."') ".$paginate->getSearchAndFilterSQL($customwhere)." GROUP BY u.id ".$order_query;
 	
 	// debugMessage($all_results_query); // exit();
 	
@@ -237,28 +237,22 @@ img.ui-datepicker-trigger {
 	<?php require APPLICATION_PATH."/views/scripts/index/leftcolumn.phtml"; ?>
     <div id="centercolumn">
         <div class="container-fluid">
-            <div class="row margin0 maxwidth" style="margin-bottom:0;">
-            	<form action="<?php echo $this->baseUrl("farmer/listsearch"); ?>" method="get" id="listform" class="form-search" style="padding-left:0">
+            <div class="row margin0 maxwidth">
+            	<form action="<?php echo $this->baseUrl("farmer/listsearch"); ?>" method="get" id="listform" class="form-search">
                     <h1><?php echo $title; ?><?php echo $groupstring; ?></h1>
-                    <div class="wellcontent" style=" margin-top:-10px;">
-                        <div class=" blocked clear" style="position:relative; margin-top:25px;">
-                            <div class="advsearch" style="display:block; float:right; text-align:right; position:absolute; right:0; top:10px; width:60px;">
-                                <a href="<?php echo $listurl; ?>" id="reset" class="btn btn-primary btn-mini pull-left" title="Reset list or clear all filters">Reset</a>&nbsp;&nbsp;
-                            </div>
-                            <ul class="peoplegroup" style="border:1px solid #DDDDDD; padding:5px;">
+                    <div class="wellcontent">
+                        <div class="blocked clear makerelative">
+                            <ul class="peoplegroup">
                                 <li>
-                                    <?php if(isAdmin() || isManagement() || isDataClerk()){ ?>
-                                        <a href="<?php echo $addfarmerurl; ?>" class="farmerpopup addpopup btn btn-primary" title="New Farmer" rel="New Farmer" id="newfarmer" formtitle="indexform" successurl="<?php echo $listurl; ?>" action="<?php echo $this->baseUrl("mobile/create"); ?>"><i class="icon-plus icon-white"></i> New Farmer</a>
-                                    <?php } ?>     
-                                    <?php if(isFarmGroupAdmin()){ ?>
-                                        <a class="addpopup addfarmer btn btn-primary" style="margin-bottom: 10px;" href="<?php echo $addfarmerurl; ?>" rel="Add Farmer | <?php echo $farmgroup->getName(); ?>" title="Add Farmer" id="addfarmer" formtitle="indexform" successurl="<?php echo $listurl; ?>" action="<?php echo $this->baseUrl("profile/create"); ?>"><i class="icon-plus icon-white"></i> New Farmer</a>
+                                    <?php if($acl->checkPermission('Farmer', ACTION_CREATE)) { ?>	
+                                        <a href="<?php echo $addfarmerurl; ?>" class="btn btn-primary"><i class="icon-plus icon-white"></i> New Farmer</a>
                                     <?php } ?>
-                                    <?php if($loggedinuser->isUgandan() && isUganda() && (isAdmin() || isManagement())){ ?>
+                                    <?php if($loggedinuser->isUgandan() && isUganda() && $acl->checkPermission('Can Administer Kenya', ACTION_VIEW)){ ?>
                                         <?php if(isEmptyString($request->country) || $countryreq == 'ug'){ ?>
                                             <a class="btn btn-mini" style="margin-top: 10px; display:block;" href="<?php echo $this->baseUrl('farmer/list/country/ke'); ?>" title="Browse Kenya Directory"><i class="icon-list"></i> Browse Kenya</a>
                                         <?php } ?>
                                     <?php } ?>
-                                    <?php if($loggedinuser->isUgandan() && isKenya() && (isAdmin() || isManagement())){ ?>
+                                    <?php if($loggedinuser->isUgandan() && isKenya() && $acl->checkPermission('Can Administer Kenya', ACTION_VIEW)){ ?>
                                         <?php if(!isEmptyString($request->country) && $countryreq == 'ke'){ ?>
                                             <a class="btn btn-mini" style="margin-top: 10px; display:block;" href="<?php echo $this->baseUrl('farmer/list/country/ug'); ?>" title="Browse Uganda Directory"><i class="icon-list"></i> Browse Uganda</a>
                                         <?php } ?>
@@ -280,16 +274,16 @@ img.ui-datepicker-trigger {
                                       ?>
                                       <input name="startdate"  id="startdate" type="text" class="datefield startdate inline form-control input-width-small width100" style="margin-top:10px;" placeholder="From" value="<?php echo $request->startdate; ?>" />
                                 </li>
-                                <?php if(isAdmin() || isManagement() || isDataClerk()){ ?>
-            
-                                    <li style="width:220px;">
+                                <?php if(!isFarmGroupAdmin()){ ?>
+                                    <li style="width:210px;">
                                         <?php
                                             $groupdropdown = new Zend_Form_Element_Select('farmgroupid',
                                                                 array(
                                                                     'multiOptions' => array_merge_maintain_keys(array('' => 'All DNAs'.$locationstring, '0'=> 'All Individual Farmers'), getAllFarmGroups($request->getParam('locationid'), $session->getVar('country'))),								
                                                                     'view' => new Zend_View(),
                                                                     'decorators' => array('ViewHelper'),
-                                                                    'class' => array('span3','autofilter')
+                                                                    'class' => array('autofilter'),
+																	'style' => 'width:210px;'
                                                                 )
                                                             );
                                             $groupdropdown->setValue($request->getParam('farmgroupid')); 
@@ -364,8 +358,8 @@ img.ui-datepicker-trigger {
                                         echo $ordersdropdown->render();
                                     ?>
                                 </li>
-                                <li style="float:right;"><input name="searchterm" id="searchterm" value="<?php echo $request->searchterm; ?>" type="text" class="input-medium span3" style="margin-bottom:5px;" placeholder="Search Farmers">
-                                    <button type="submit" id="searchbutton" class="btn btn-primary" style="vertical-align:top; margin-left:-2px;"><i class="icon-search icon-white"></i> Search or Filter</button>
+                                <li style="float:right;"><input name="searchterm" id="searchterm" value="<?php echo $request->searchterm; ?>" type="text" class="input-medium" placeholder="Search Farmers">
+                                    <button type="submit" id="searchbutton" class="btn btn-primary noround"><i class="icon-search icon-white"></i></button>
                                     <input type="hidden" name="letter" id="letter" value="<?php echo $request->getParam('letter'); ?>" />
                                     <?php if($loggedinuser->isDataClerk()){?>
                                        <input type="hidden" name="profiledby" id="profiledby" value="<?php echo $profiledby; ?>" />
@@ -398,7 +392,7 @@ img.ui-datepicker-trigger {
                             <div class="divider2"></div>
                             <div class="container-fluid makerelative">
                             	<div class="row" style="margin-left:-12px; margin-right:-12px;">
-                                	<?php require APPLICATION_PATH."/views/scripts/farmer/contentloop.phtml"; ?>
+                                	<?php require APPLICATION_PATH."/views/scripts/farmer/farmerloop.phtml"; ?>
                                 </div>
                             </div>
                      	<?php } ?>

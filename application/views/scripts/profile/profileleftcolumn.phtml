@@ -32,11 +32,17 @@ $(document).ready(function() {
 			var controller = '<?php echo $controller; ?>';
 			var action = '<?php echo $action; ?>';
 			
-			if(controller == 'profile' && action == 'index'){
-				var url = "<?php echo $this->baseUrl("profile/index/id/".encode($user->getID())."/tab/"); ?>"+currentclass;
+			if(controller == '<?php echo $controller; ?>' && action == 'index'){
+				var url = "<?php echo $this->baseUrl($controller."/index/id/".encode($user->getID())."/tab/"); ?>"+currentclass;
+				if(controller != 'farmer' && controller != 'profile'){
+					var url = "<?php echo $this->baseUrl("farmer/index/id/".encode($user->getID())."/tab/"); ?>"+currentclass;
+				}
 			}
-			if((controller == 'profile' && action == 'view') || action == 'picture' || currentclass == 'seasons' || currentclass == 'calendar'|| currentclass == 'inventory' || currentclass == 'finance' || currentclass == 'account'){
-				var url = "<?php echo $this->baseUrl("profile/view/id/".encode($user->getID())."/tab/"); ?>"+currentclass;
+			if((controller == '<?php echo $controller; ?>' && action == 'view') || action == 'picture' || currentclass == 'seasons' || currentclass == 'calendar'|| currentclass == 'inventory' || currentclass == 'finance' || currentclass == 'account'){
+				var url = "<?php echo $this->baseUrl($controller."/view/id/".encode($user->getID())."/tab/"); ?>"+currentclass;
+				if(controller != 'farmer' && controller != 'profile'){
+					var url = "<?php echo $this->baseUrl("farmer/view/id/".encode($user->getID())."/tab/"); ?>"+currentclass;
+				}
 			}
 			if(currentclass == 'subscription'){
 				var url = "<?php echo $this->baseUrl('payment/list/id/'.encode($user->getID())); ?>";
@@ -56,25 +62,27 @@ $(document).ready(function() {
 <div class="span3 marginleft0" id="left">    
     <div class="well" id="profiletop">
         <div id="profileinfo"> 
-			<?php if($userid == $user->getID() || isFarmGroupAdmin() || isAdmin() || isDataClerk()){ ?>
-                <a href="<?php echo $this->baseUrl('profile/picture/id/'.encode($user->getID()).'/type/photo'); ?>" class="editpic" title="Update Profile Photo"><img id="profileimage" src="<?php echo $user->getMediumPicturePath(); ?>" /><pre id="uploadlink" class="hide absoluteupload"><i class="icon-pencil"></i> Upload Photo</pre></a>
+			<?php if($isme || $acl->checkPermission($resourcename, ACTION_EDIT)){ ?>
+                <a href="<?php echo $this->baseUrl($controller.'/picture/id/'.encode($user->getID()).'/type/photo'); ?>" class="editpic" title="Update Profile Photo"><img id="profileimage" src="<?php echo $user->getMediumPicturePath(); ?>" /><pre id="uploadlink" class="hide absoluteupload"><i class="icon-pencil"></i> Upload Photo</pre></a>
             <?php } else { ?>
                 <img id="profileimage" src="<?php echo $user->getMediumPicturePath(); ?>" alt="Update Profile Photo" />
             <?php } ?>
-            <?php if($userid == $user->getID() || isFarmGroupAdmin() || isAdmin() || isDataClerk()){ ?>
-                <a style="display:block; width:155px; text-align:center;" href="<?php echo $this->baseUrl('profile/picture/id/'.encode($user->getID()).'/type/photo'); ?>" class="btn btn-mini">Upload Photo</a>
+            <?php if($isme || $acl->checkPermission($resourcename, ACTION_EDIT)){ ?>
+                <a style="display:block; width:155px; text-align:center;" href="<?php echo $this->baseUrl($controller.'/picture/id/'.encode($user->getID()).'/type/photo'); ?>" class="btn btn-mini">Upload Photo</a>
             <?php } ?>
         </div>
     </div>
     <ul id="leftnav" style="width:97%;">
         <li id="tab_basics"><a href="#basics" class="basics">Profile Summary </a></li>
         <li id="tab_contacts"><a href="#contacts" class="contacts">Contacts</a></li>
+        <?php if($user->isFarmer()){ ?>
         <li id="tab_personal"><a href="#personal" class="personal">Biography</a></li>
         <li id="tab_farm"><a href="#farm" class="farm">Manage Farm</a></li>
         <li id="tab_seasons"><a href="#seasons" tab="seasons" class="seasons">Manage Seasons</a></li>
         <li id="tab_calendar"><a href="#calendar" tab="calendar" class="calendar">Activity Calendar</a></li>
         <li id="tab_inventory"><a href="#inventory" tab="inventory" class="inventory">Inventory</a></li>
         <li id="tab_finance"><a href="#finance" tab="finance" class="finance">Finance and Reports</a></li>
+        <?php } ?>
         <li id="tab_subscription"><a href="#subscription" class="subscription">Subscription History</a></li>
         <li id="tab_account"><a href="#account" class="account">Account Settings</a></li>   
     </ul>

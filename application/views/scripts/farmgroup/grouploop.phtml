@@ -1,0 +1,61 @@
+<?php//  require_once APPLICATION_PATH.'/includes/header.php'; ?>
+<div class="peoplelist">
+	<?php
+        $counter = 1;	
+		$viewaction = 'view'; // debugMessage('> '.$controllername.' >'.$controlleraction);
+		if($controllername == 'mobile' || $controlleraction == 'groups'){
+			$viewaction = 'viewgroup';
+		}
+        foreach($result as $line){
+            $farmgroup = new FarmGroup();
+            $farmgroup->populate($line['id']);
+            
+    ?>
+        <?php if($counter % 2 == 1){ ?>
+        <div class="row-fluid">
+        <?php } ?>
+          <div class="span6">
+            <div class="peoplewrapper well">
+              <div class="thumbwrapper">
+                  <div class="thumb">
+                    <div id="thumbinfo">
+                    	<?php if($farmgroup->isGroup()){ ?>
+                        	<a href="<?php echo $this->baseUrl($controllername."/".$viewaction."/id/".encode($line['id'])); ?>"><img class="profileimage" src="<?php echo $farmgroup->getThumbnailLogoPath(); ?>" /></a>
+                        <?php } else { ?>
+                        	<img class="profileimage" src="<?php echo $farmgroup->getThumbnailLogoPath(); ?>" />
+                        <?php } ?>
+                    </div>
+                    <div class="blocked bolded" style="font-size:9px; width:98%;"><span>Reg No#:</span> <?php echo isEmptyString($farmgroup->getRegNo()) ? '--' : $farmgroup->getRegNo(); ?></div>
+                  </div>
+              </div>
+              <div class="peopleinfo">
+                <h4>
+                	<?php if($farmgroup->isGroup()){ ?>
+                		<a href="<?php echo $this->baseUrl($controllername."/".$viewaction."/id/".encode($line['id'])); ?>"><?php echo snippet($farmgroup->getName(), 50, '..'); ?></a>
+					<?php } else { ?>
+                        <?php echo snippet($farmgroup->getName(), 50, '..'); ?>
+                    <?php } ?>
+                </h4>
+                <ul>
+                <?php if($farmgroup->isSubGroup()){ ?>
+                  <li><span>DNA:</span> <?php echo $farmgroup->getParent()->getName(); ?></li>
+                <?php } ?>
+                  <li><span>Group Type:</span> <?php echo $farmgroup->getTypeLabel(); ?></li>
+                  <li><span><?php echo $location_label?>:</span> <?php echo isEmptyString($farmgroup->getDistrictID()) ? '--' : $farmgroup->getDistrict()->getName(); ?></li>
+                  <li><span>Phone:</span> <?php echo isEmptyString($farmgroup->getPhone()) ? '--' : $farmgroup->getPhone(); ?></li>
+                  <li><span>Email:</span> <?php echo isEmptyString($farmgroup->getEmail()) ? '--' : $farmgroup->getEmail(); ?></li>
+                  <li><span>Total Farmers:</span> <?php echo $line['totalfarmers']; ?></li>
+                  <li><span>Date Registered:</span> <?php echo $farmgroup->getRegDateFormatted(); ?></li>
+                </ul>
+              </div>
+              <!--peopleinfo--> 
+            </div>
+            <!--peoplewrapper--> 
+          <?php if($counter % 2 == 0){ ?>
+          </div>
+          <?php } ?>
+        </div>
+    <?php $counter++; } ?>
+  </div>
+  <!--peoplelist-->
+  <?php echo $paginate->getPaginationLinks(); ?>  

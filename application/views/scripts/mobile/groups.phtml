@@ -64,7 +64,7 @@
 	
 	$ugcustom_query ='';
 	if(strtolower($country) == 'ug'){
-		$ugcustom_query = " OR f.country is null ";
+		// $ugcustom_query = " OR f.country is null ";
 	}
 	
 	# define the letter to be clicked to ease navigation 
@@ -76,7 +76,7 @@
 	
 	$type = trim($request->type);
 	if($type == 6){
-		$where_query .= " AND f.`parentid` IS NOT NULL AND (f.country = UPPER('".$country."') ".$ugcustom_query.") ";
+		$where_query .= " AND f.`parentid` IS NOT NULL AND (LOWER(f.country) = LOWER('".$country."') ".$ugcustom_query.") ";
 		$dna = trim($request->dnaid);
 		if(isFarmGroupAdmin() && isEmptyString($request->dnaid)){
 			$dna = $user->getFarmGroupID();
@@ -86,7 +86,7 @@
 		}
 		$title = "FARM Groups";	
 	} else {
-		$where_query .= " AND f.parentid IS NULL AND (f.country = UPPER('".$country."') ".$ugcustom_query.") ";
+		$where_query .= " AND f.parentid IS NULL AND (LOWER(f.country) = LOWER('".$country."') ".$ugcustom_query.") ";
 	}
 	
 	$order = trim($request->order);
@@ -108,7 +108,9 @@
 	}
 	
 	$paginate->processPost($request->getParams());
-	$all_results_query = "SELECT f.id FROM farmgroup f LEFT JOIN useraccount u ON (f.managerid = u.id) LEFT JOIN location as l ON (f.districtid = l.id AND l.locationtype = 2) ".$where_query." ".$paginate->getSearchAndFilterSQL()." GROUP BY f.id ".$order_query;
+	$all_results_query = "SELECT f.id, count(u.farmgroupid) as totalfarmers FROM farmgroup f 
+	LEFT JOIN useraccount u ON (f.id = u.farmgroupid) 
+	LEFT JOIN location as l ON (f.districtid = l.id AND l.locationtype = 2) ".$where_query." ".$paginate->getSearchAndFilterSQL()." GROUP BY f.id ".$order_query;
 	
 	// debugMessage($all_results_query);
 	$paginate->setItemCountFromSQLQuery($all_results_query);
@@ -141,24 +143,24 @@
       <?php } ?>
       <ul class="peoplegroup">
             <li><a class="btn" href="<?php echo $this->baseUrl('mobile/home'); ?>" style="padding:6px 10px;"><i class="icon-home"></i></a></li>
-            <?php if((isAdmin() || isManagement()) && isEmptyString($type)){ ?>
+            <?php if($acl->checkPermission('DNA', ACTION_CREATE) && isEmptyString($type)){ ?>
            		<li><a href="<?php echo $addurl; ?>" class="btn btn-primary"><i class="icon-plus icon-white"></i> New DNA</a></li>
             <?php } ?>
-            <?php if((isAdmin() || isManagement() || isDataClerk() || isFarmGroupAdmin()) && $type == 6){ ?>
+            <?php if($acl->checkPermission('Farm Group', ACTION_CREATE) && $type == 6){ ?>
            		<li><a href="<?php echo $addurl; ?>" class="btn btn-primary"><i class="icon-plus icon-white"></i> New Farm Group</a></li>
             <?php } ?>
-            <?php if((isAdmin() || isManagement() || isDataClerk()) && $type == 6){ ?>
+            <?php if($acl->checkPermission('DNA', ACTION_LIST) && $type == 6){ ?>
            		<li><a href="<?php echo $this->baseUrl('mobile/groups'); ?>" class="btn"><i class="icon-list"></i> DNA Profiles</a></li>
             <?php } ?>
-            <?php if((isAdmin() || isManagement() || isDataClerk()) && isEmptyString($type)){ ?>
+            <?php if($acl->checkPermission('Farm Group', ACTION_LIST) && isEmptyString($type)){ ?>
            		<li><a href="<?php echo $this->baseUrl('mobile/groups/type/6'); ?>" class="btn"><i class="icon-list"></i> Farm Groups</a></li>
             <?php } ?>
-            <?php if($loggedinuser->isUgandan() && isUganda() && (isAdmin() || isManagement())){ ?>
+            <?php if($loggedinuser->isUgandan() && isUganda() && $acl->checkPermission('Can Administer Kenya', ACTION_VIEW)){ ?>
 				<?php if(isEmptyString($request->country) || $countryreq == 'ug'){ ?>
                     <li><a class="btn" href="<?php echo $this->baseUrl('mobile/groups/country/ke'); ?>" title="Browse Kenya"><i class="icon-list"></i> Browse Kenya</a></li>
                 <?php } ?>
             <?php } ?>
-            <?php if($loggedinuser->isUgandan() && isKenya() && (isAdmin() || isManagement())){ ?>
+            <?php if($loggedinuser->isUgandan() && isKenya() && $acl->checkPermission('Can Administer Kenya', ACTION_VIEW)){ ?>
                 <?php if(!isEmptyString($request->country) && strtolower($countryreq) == 'ke'){ ?>
                     <li><a class="btn" href="<?php echo $this->baseUrl('mobile/groups/country/ug'); ?>" title="Browse Uganda"><i class="icon-list"></i> Browse Uganda</a></li>
                 <?php } ?>
@@ -198,7 +200,7 @@
 					echo $districtdropdown->render(); 
 				  ?>
             </li>
-            <?php if((isAdmin() || isManagement() || isDataClerk()) && $isgrouplist){ ?>
+            <?php if(!isFarmGroupAdmin() && $isgrouplist){ ?>
             <li>
                 <?php
                     $groupdropdown = new Zend_Form_Element_Select('dnaid',
@@ -244,54 +246,7 @@
         <?php if($has_no_data) { ?>
             <div style="clear:both;" class="alert alert-info margin5"><?php echo $this->translate("global_list_norecords_error"); ?></div>
         <?php } else { ?>
-              <div class="peoplelist">
-                <?php
-                    $counter = 1;		
-                    foreach($result as $line){
-                        $farmgroup = new FarmGroup();
-                        $farmgroup->populate($line['id']);
-                        
-                ?>
-                    <?php if($counter % 2 == 1){ ?>
-                    <div class="row-fluid">
-                    <?php } ?>
-                      <div class="span6">
-                        <div class="peoplewrapper well">
-                          <div class="thumbwrapper">
-                              <div class="thumb">
-                                <div id="thumbinfo"> 
-                                    <a href="<?php echo $this->baseUrl("mobile/viewgroup/id/".encode($line['id'])); ?>"><img class="profileimage" src="<?php echo $farmgroup->getThumbnailLogoPath(); ?>" /></a>
-                                </div>
-                                <div class="blocked bolded" style="font-size:9px; width:98%;"><span>Reg No#:</span> <?php echo isEmptyString($farmgroup->getRegNo()) ? '--' : $farmgroup->getRegNo(); ?></div>
-                              </div>
-                          </div>
-                          <div class="peopleinfo">
-                            <h4><a href="<?php echo $this->baseUrl("mobile/viewgroup/id/".encode($line['id'])); ?>"><?php echo $farmgroup->getName(); ?></a></h4>
-                            <ul>
-                            <?php if($farmgroup->isSubGroup()){ ?>
-                              <li><span>DNA:</span> <?php echo $farmgroup->getParent()->getName(); ?></li>
-                            <?php } ?>
-                              <li><span>Group Type:</span> <?php echo $farmgroup->getTypeLabel(); ?></li>
-                              <li><span><?php echo $location_label?>:</span> <?php echo isEmptyString($farmgroup->getDistrictID()) ? '--' : $farmgroup->getDistrict()->getName(); ?></li>
-                              <li><span>Phone:</span> <?php echo isEmptyString($farmgroup->getPhone()) ? '--' : $farmgroup->getPhone(); ?></li>
-                              <li><span>Email:</span> <?php echo isEmptyString($farmgroup->getEmail()) ? '--' : $farmgroup->getEmail(); ?></li>
-                              <li><span>Total Farmers:</span> <?php echo $farmgroup->getCountFarmers(); ?></li>
-                              <li><span>Active Farmers:</span> <?php echo $farmgroup->getCountRegisteredFarmers(); ?></li>
-                              <li><span>Date Registered:</span> <?php echo $farmgroup->getRegDateFormatted(); ?></li>
-                              
-                            </ul>
-                          </div>
-                          <!--peopleinfo--> 
-                        </div>
-                        <!--peoplewrapper--> 
-                      <?php if($counter % 2 == 0){ ?>
-                      </div>
-                      <?php } ?>
-                    </div>
-                <?php $counter++; } ?>
-              </div>
-              <!--peoplelist-->
-              <?php echo $paginate->getPaginationLinks(); ?>  
+              <?php require APPLICATION_PATH."/views/scripts/farmgroup/grouploop.phtml"; ?>
 		<?php } ?>              
   </form>
 </div>

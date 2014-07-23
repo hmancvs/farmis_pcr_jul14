@@ -51,7 +51,7 @@
               <div class="thumbwrapper">
                   <div class="thumb">
                     <div id="thumbinfo" class="<?php echo $hasprofileimage ? 'new_pic' : 'default_pic'; ?>"> 
-                        <a href="<?php echo $this->baseUrl("mobile/view/id/".encode($id)); ?>"><img class="profileimage" src="<?php echo $photo_path; ?>" /></a>
+                        <a href="<?php echo $this->baseUrl($controllername."/view/id/".encode($id)); ?>"><img class="profileimage" src="<?php echo $photo_path; ?>" /></a>
                     </div>
                   </div>
                   <div class="divider2"></div>
@@ -61,7 +61,7 @@
                   <?php } ?>
               </div>
               <div class="peopleinfo">
-                <h4><a href="<?php echo $this->baseUrl("mobile/view/id/".encode($id)); ?>"><?php echo $name; ?></a></h4>
+                <h4><a href="<?php echo $this->baseUrl($controllername."/view/id/".encode($id)); ?>"><?php echo $name; ?></a></h4>
                 <ul>
                     <li><span><?php echo $location_label; ?>:</span> <?php echo isEmptyString($line['districtid']) ? '--' : $line['district']; ?></li>
                     <?php if($hasdfa){ ?>
@@ -74,7 +74,8 @@
                     <?php } ?>  
                     <li><span>Phone:</span> <?php echo isEmptyString($line['phone']) ? '--' : getShortPhone($line['phone']); ?></li>
                     <li><span>Email:</span> <?php echo isEmptyString($line['email']) ? '--' : $line['email']; ?></li>
-                    <li><span>Status:</span> <?php echo $line['isactive'] == 1 ? 'Activated' : 'Inactive'; ?></li>
+                    <li><span>Paid:</span> <?php echo $line['paymentstatus'] == 1 ? 'Yes' : 'No'; ?></li>
+                    <li><span>Login Active:</span> <?php echo $line['isactive'] == 1 ? 'Yes' : 'No'; ?></li>
                     <li><span>Profiled By:</span> <?php echo $line['addedby']; ?></li>
                     <li><span>Date:</span> <?php echo formatDateAndTime($line['dateadded'], true); ?></li>
                 </ul>

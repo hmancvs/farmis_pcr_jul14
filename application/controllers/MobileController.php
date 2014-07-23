@@ -21,8 +21,12 @@ class MobileController extends IndexController  {
 		$this->_helper->layout->disableLayout();
 		$this->_helper->viewRenderer->setNoRender(TRUE);
 		$this->_translate = Zend_Registry::get("translate"); 
+		$ismobile = true; $isdesktop = false;
+		if($this->_getParam('regsource') == 0){
+			$ismobile = true; $isdesktop = true;
+		}
 		
-		if(isEmptyString($session->getVar('userid'))){
+		if(isEmptyString($session->getVar('userid')) && $ismobile){
 			$this->_helper->redirector->gotoUrl($this->view->baseUrl("mobile/login"));
 		}
 		
@@ -38,7 +42,7 @@ class MobileController extends IndexController  {
 		if(!isEmptyString($this->_getParam('password')) && $this->_getParam('adminactivate') == '1'){
 			$password = $formvalues['password'];
 		}
-		// debugMessage($formvalues);
+		// debugMessage($formvalues); exit();
 		
 		$user = new UserAccount();
 		if(!isArrayKeyAnEmptyString('id', $formvalues)){
@@ -46,19 +50,17 @@ class MobileController extends IndexController  {
 			$user->populate($id);
 		}
 		$user->processPost($formvalues);
-		/*debugMessage($user->toArray());
-		debugMessage('error is '.$user->getErrorStackAsString()); // exit();*/
+		/* debugMessage($user->toArray());
+		debugMessage('error is '.$user->getErrorStackAsString()); exit(); */
 		
 		if($user->hasError()){
 			$session->setVar(ERROR_MESSAGE, $user->getErrorStackAsString());
 			$session->setVar(FORM_VALUES, $formvalues);
-			$url = $this->view->baseUrl("mobile/farmer/id/".encode($user->getID()));
+			$url = $this->view->baseUrl($formvalues['thecontroller'].'/'.$formvalues['theaction'].'/id/'.encode($user->getID()));
 			if($formvalues['adminactivate'] == 1){
-				$url = $this->view->baseUrl("mobile/farmer/id/".encode($user->getID())."/type/other");
+				$url = $this->view->baseUrl($formvalues['thecontroller'].'/'.$formvalues['theaction']."/id/".encode($user->getID())."/type/other");
 			}
-			if($this->_getParam('regsource') == 1){
-				$this->_helper->redirector->gotoUrl($url);
-			}
+			$this->_helper->redirector->gotoUrl($url);
 		}
 		// exit();
 		try {
@@ -98,23 +100,21 @@ class MobileController extends IndexController  {
 				$session->setVar('phoneinvitesuccess', sprintf($this->_translate->translate("farmer_login_phone_success"), $user->getFormattedPhone()));
 			}
 			
-			$url = $this->view->baseUrl("mobile/view/id/".encode($user->getID()));
+			$url = $this->view->baseUrl($formvalues['thecontroller']."/view/id/".encode($user->getID()));
 			// debugMessage($user->toArray());
 		} catch (Exception $e) {
 			$error = $e->getMessage().$user->getErrorStackAsString();
 			$session->setVar(ERROR_MESSAGE, $error);
 			$session->setVar(FORM_VALUES, $formvalues);
-			$url = $this->view->baseUrl("mobile/farmer/id/".encode($user->getID()));
+			$url = $this->view->baseUrl($formvalues['thecontroller'].'/'.$formvalues['theaction']."/id/".encode($user->getID()));
 			if($this->_getParam('adminactivate') == 1){
-				$url = $this->view->baseUrl("mobile/farmer/id/".encode($user->getID())."/type/other");
+				$url = $this->view->baseUrl($formvalues['thecontroller'].'/'.$formvalues['theaction']."/id/".encode($user->getID())."/type/other");
 			}
 		}
-		/*debugMessage('source is '.$this->_getParam('regsource'));
+		/* debugMessage('source is '.$this->_getParam('regsource'));
 		debugMessage($session->getVar(ERROR_MESSAGE));
-		debugMessage($url); exit();*/
-		if($this->_getParam('regsource') == 1){
-			$this->_helper->redirector->gotoUrl($url);
-		}
+		debugMessage($url); exit(); */
+		$this->_helper->redirector->gotoUrl($url);
 	}
 	
 	function viewAction() {

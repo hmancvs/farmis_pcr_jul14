@@ -2,15 +2,36 @@
 	require_once APPLICATION_PATH.'/includes/header.php';
 
 	$farmgroup = new FarmGroup();
-	$farmgroup->populate(decode($request->id));
-	// debugMessage($farmgroup->toArray());
+	$title = "New DNA";
+	if($request->type == '6'){
+		
+	}
+	$total_farmers = 0;
+	$thefarmers = 0;
+	$user_count = 0;
+	$button_title = $this->translate("global_button_save");
+	$posturl = $this->baseUrl("farmgroup/create"); 
 	
-	$total_farmers = $farmgroup->getListOfFarmers()->count();
-	$thefarmers = $farmgroup->getFeaturedFarmers(10);
-	$user_count = $thefarmers->count();
-	
-	$button_title = $this->translate("farmgroup_button_save");
-	$posturl = $this->baseUrl("farmgroup/edit"); 
+	$isdna = true;
+	if($request->type == 6){
+		$title = "New Farm Group";
+		$isdna = false;
+		$farmgroup->setType(6);
+	}
+		
+	if(!isEmptyString($request->id)){
+		$farmgroup->populate(decode($request->id));// debugMessage($farmgroup->toArray());
+		$title = "Update DNA";
+		if($farmgroup->isSubGroup()){
+			$title = "Update Farm Group";
+		}
+		$total_farmers = $farmgroup->getListOfFarmers()->count();
+		$thefarmers = $farmgroup->getFeaturedFarmers(10);
+		$user_count = $thefarmers->count();
+		
+		$button_title = $this->translate("global_button_save_changes");
+		$posturl = $this->baseUrl("farmgroup/edit"); 
+	}
 	
 	// set the default tab
 	$tab = $request->tab;
@@ -20,9 +41,6 @@
 	
 	$controller = $request->getControllerName();
 	$action = $request->getActionName();
-	if($controller == 'farmer' && isEmptyString($tab)){
-		$request->setParam('tab', 'basics'); 
-	}
 	
 	$subgroups = $farmgroup->getListOfSubGroups();
 	$hassubgroups = false;
@@ -51,7 +69,7 @@
 		$subcounty_label = $this->translate("global_ward_label");
 	}
 	
-	$title = "Update Farm Group";
+	
 	$this->headTitle($title);
 	
 ?>
@@ -88,8 +106,12 @@ $(document).ready(function() {
 		rules: {
 			orgname: "required",
 			type:  "required",
+			districtid:  "required",
+			regdate: "required",
+			parentid:  "required",
 			refno: {
-				required: true,
+				required: false,
+				validate_number: true,
 				maxlength:6,
 				minlength:4
 			},
@@ -146,8 +168,12 @@ $(document).ready(function() {
 		messages: {		
 			orgname: "<?php echo $this->translate("farmgroup_orgname_error"); ?>",
 			type: "<?php echo $this->translate("farmgroup_type_error"); ?>",
+			districtid:  "<?php echo $locationerror; ?>",
+			parentid:  "Please select DNA",
+			regdate: "Please select Registration Date",
 			refno: {
 				required: "Please enter a Reference Number",
+				validate_number: "Invalid Ref No specified",
 				maxlength: "Should not be more than 6 digits",
 				minlength: "Should not be less than 4 digits"
 			},
@@ -204,9 +230,6 @@ $(document).ready(function() {
 		}
 	});
 	
-	// validate that refno has not been taken
-	
-	
 	// basics custom failure and success url
 	$("#profileform-basics .savethenview").click(function() {
 		$("#profileform-basics .successurl").val('<?php echo encode($this->baseUrl('farmgroup/view/tab/basics')); ?>');
@@ -235,7 +258,7 @@ $(document).ready(function() {
 			data: 'currentvalue=<?php echo $farmgroup->getCountyID(); ?>',
 			type: 'get'
 		});
-		$('#districtid').trigger("change");
+		//$('#districtid').trigger("change");
 		
 		// chained select to load the subcounties for a county
 		$('#countyid').selectChain({
@@ -244,7 +267,7 @@ $(document).ready(function() {
 			data: 'currentvalue=<?php echo $farmgroup->getSubcountyID(); ?>',
 			type: 'get'
 		});
-		$('#countyid').trigger("change");
+		//$('#countyid').trigger("change");
 		
 		// chained select to load the subcounties for a county
 		$('#subcountyid').selectChain({
@@ -253,7 +276,7 @@ $(document).ready(function() {
 			data: 'currentvalue=<?php echo $farmgroup->getParishID(); ?>',
 			type: 'get'
 		});
-		$('#subcountyid').trigger("change");
+		//$('#subcountyid').trigger("change");
 		
 		// chained select to load the subcounties for a county
 		$('#parishid').selectChain({
@@ -262,7 +285,7 @@ $(document).ready(function() {
 			data: 'currentvalue=<?php echo $farmgroup->getVillageID(); ?>',
 			type: 'get'
 		});
-		$('#parishid').trigger("change");
+		// $('#parishid').trigger("change");
 	<?php } ?>
 	
 	$("#isinvited-1").attr('checked', false);
@@ -276,7 +299,7 @@ $(document).ready(function() {
 	$("#regdate").datepicker(dateofregOpts);
 	<?php } ?>
 	
-	equalHeight($("#row1_left, #row1_right"));
+	// equalHeight($("#row1_left, #row1_right"));
 	$("#refno").keyup(function(){
 		$("#regno").val('<?php echo FARMGROUP_REG_PREFIX; ?>/'+$(this).val());
 	});
@@ -316,7 +339,7 @@ select.country {
     <div class="span3 marginleft0" id="left">    
         <div class="well" id="profiletop">
             <div id="profileinfo" style="width:170px; margin-bottom:10px;"> 
-				<?php if(isAdmin() || $userid == $farmgroup->getManagerID()){ ?>
+				<?php if($acl->checkPermission('DNA', ACTION_EDIT) || $userid == $farmgroup->getManagerID()){ ?>
                     <a href="<?php echo $this->baseUrl('farmgroup/picture/id/'.encode($farmgroup->getID())); ?>" class="editpic" title="Update Image"><img id="profileimage" src="<?php echo $farmgroup->getMediumLogoPath(); ?>" /><pre id="uploadlink" class="hide absoluteupload"><i class="icon-pencil"></i> Upload Image</pre></a>
                 <?php } else { ?>
                     <img id="profileimage" src="<?php echo $farmgroup->getMediumLogoPath(); ?>" alt="Update Profile Image" />
@@ -325,14 +348,16 @@ select.country {
         </div>
         <ul id="leftnav" style="width:97%;">
             <li id="tab_basics"><a href="#basics" class="basics">Basic Info</a></li>
-            <?php if($farmgroup->hasSubGroups()){ ?>
-            <li id="tab_subgroups"><a href="#subgroups" class="subgroups">Sub Groups</a></li>
-            <?php } ?>
-            <li id="tab_farmers"><a href="#farmers" class="farmers">Farmers</a></li>
-            <li id="tab_subscription"><a href="#subscription" class="subscription">Subscription</a></li>
-            <?php if(isFarmGroupAdmin()){ ?>
-            <li id="tab_account"><a href="#account" class="account">My Account</a></li>
-            <?php } ?>
+            <?php if(!isEmptyString($request->id)){ ?>
+				<?php if($farmgroup->hasSubGroups()){ ?>
+                    <li id="tab_subgroups"><a href="#subgroups" class="subgroups">Sub Groups</a></li>
+                <?php } ?>
+                <li id="tab_farmers"><a href="#farmers" class="farmers">Farmers</a></li>
+                <li id="tab_subscription"><a href="#subscription" class="subscription">Subscription</a></li>
+                <?php if(isFarmGroupAdmin()){ ?>
+                <li id="tab_account"><a href="#account" class="account">My Account</a></li>
+                <?php } ?>
+          	<?php } ?>
         </ul>
     </div>
     <div class="span9 tab-content" id="center">   
@@ -345,7 +370,7 @@ select.country {
                         <div class="alert alert-success"><a class="close" data-dismiss="alert">×</a><?php echo $session->getVar(SUCCESS_MESSAGE); ?></div>
                     <?php } ?>
                     <span class="span6 marginleft0" style="width:72%;">
-                        <div class="well row marginleft0" id="row1_left" style="min-height:60px; padding-left:10px;">                        
+                        <div class="well row marginleft0" id="row1_left" style="min-height:60px; padding-left:10px; height:auto;">                        
                             <table class="table"> 
                                 <tr>
                                     <td width="100"><label class="control-label"><?php echo $this->translate("farmgroup_name_label"); ?>:<?php echo $this->translate("global_required_field_marker"); ?></label></td>
@@ -367,7 +392,7 @@ select.country {
                                                             );
                                             $groupdropdown->setValue($farmgroup->getParentID()); 
                                             echo $groupdropdown->render(); 
-                                       ?>
+                                       ?><div id="parentid_error"></div>
                                     </td>
                                 </tr>
                                 <?php } ?>
@@ -559,7 +584,7 @@ select.country {
                                 ?><input type="hidden" name="country" id="country" value="<?php echo $farmgroup->getCountry(); ?>" />
                                 <span id="tooltip_country"></span><div id="country_error"></div>
                             </td>
-                            <td width="30%"><label class="control-label"><?php echo $location_label; ?>:</label>
+                            <td width="30%"><label class="control-label"><?php echo $location_label; ?>: <?php echo $this->translate("global_required_field_marker"); ?></label>
                                 <?php
 									$districts = getDistricts($session->getVar('country'));
 									$districtdropdown = new Zend_Form_Element_Select('districtid',
@@ -612,7 +637,9 @@ select.country {
             <?php } ?>  
             </form>
         </div>
-        <?php require APPLICATION_PATH."/views/scripts/farmgroup/groupbottom.phtml"; ?>
+        <?php if(!isEmptyString($request->id)){ ?>
+	        <?php require APPLICATION_PATH."/views/scripts/farmgroup/groupbottom.phtml"; ?>
+        <?php } ?>
 	</div>
 </div>
 <?php

@@ -12,6 +12,9 @@
 	if(isEmptyString($userid)){
 		$publiccontrollers[] = 'contactus';
 	}
+	if(($thecontroller == 'index' && $theaction == 'accessdenied')){
+		unset($publiccontrollers['0']);
+	}
 	
 	if (in_array($thecontroller, $publiccontrollers)){
 		$logopath = $this->baseUrl('images/logopublic.png');

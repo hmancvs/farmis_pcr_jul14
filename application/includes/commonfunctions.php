@@ -7,6 +7,7 @@ require_once 'BrowserDetection.php';
 define("ACTION_CREATE", "create");
 define("ACTION_INDEX", "index"); // maps to the default controller for Zend Framework, same as the create action in the ACL 
 define("ACTION_EDIT", "edit");
+define("ACTION_UPDATE", "edit");
 define("ACTION_APPROVE", "approve");
 define("ACTION_DELETE", "delete");
 define("ACTION_EXPORT", "export");

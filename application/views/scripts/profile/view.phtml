@@ -32,6 +32,10 @@
 	$id = $user->getID();	
 	$name = $user->getName();
 	$firstname = $user->getFirstName();
+	$resourcename = 'Farmer';
+	if($controllername == 'profile'){
+		$resourcename == 'User Account';
+	}
 	
 	# profile for one viewing
 	$isme = false;
@@ -55,7 +59,7 @@
 	height: 450px;
 }
 #center .ui-widget-content {
-	width:100%;
+	/*width:100%;*/
 	float:left;
 }
 .alert.alert-success {
@@ -70,7 +74,7 @@
 	padding-bottom:10px;
 }
 #center .ui-widget-content {
-	width:98%;
+	/*width:98%;*/
 }
 </style>
 <?php if(!isFarmer()){ ?>
@@ -82,26 +86,48 @@
         <div id="basics">
             <form id="profileform-basics" class="form-horizontal basics">
             <?php if($tab == 'basics'){ ?>
-        		<?php if(!isEmptyString($session->getVar(SUCCESS_MESSAGE)) ){ ?>
-                    <div class="alert alert-success"><a class="close" data-dismiss="alert">×</a><?php echo $session->getVar(SUCCESS_MESSAGE); ?></div>
+				<?php if($sessionhaserror) { ?>
+                  <div class="row-fluid">
+                    <div class="alert alert-error"><?php echo $session->getVar(ERROR_MESSAGE); ?></div>
+                  </div>
                 <?php } ?>
-            <div class="row margin0" style="width:98%;">
+                <?php if(!isEmptyString($session->getVar(SUCCESS_MESSAGE)) ){ ?>
+                <div class="row-fluid">
+                    <div class="alert alert-success"><a class="close" data-dismiss="alert">×</a><?php echo $session->getVar(SUCCESS_MESSAGE); ?></div>
+                </div>
+                <?php } ?>
+                <?php if(!isEmptyString($session->getVar("custommessage")) ){ ?>
+                <div class="row-fluid">
+                    <div class="alert alert-success"><a class="close" data-dismiss="alert">×</a><?php echo $session->getVar("custommessage"); ?></div>
+                </div>
+                <?php } ?>
+                <?php if(!isEmptyString($session->getVar("emailinvitesuccess")) ){ ?>
+                <div class="row-fluid">
+                    <div class="alert alert-success"><a class="close" data-dismiss="alert">×</a><?php echo $session->getVar("emailinvitesuccess"); ?></div>
+                </div>
+                <?php } ?>
+                <?php if(!isEmptyString($session->getVar("phoneinvitesuccess")) ){ ?>
+                <div class="row-fluid">
+                    <div class="alert alert-success"><a class="close" data-dismiss="alert">×</a><?php echo $session->getVar("phoneinvitesuccess"); ?></div>
+                </div>
+                <?php } ?>
+            <div class="row margin0">
                 <div class="row margin0 pull-left">
-                	<?php if($isme || isFarmGroupAdmin() || isAdmin() || isDataClerk()){ ?>
-                        <a class="btn btn-primary" href="<?php echo $this->baseUrl('profile/index/id/'.encode($id)); ?>" id="update"><i class="icon-pencil icon-white"></i> Update Profile</a>
+                	<?php if($isme || $acl->checkPermission($resourcename, ACTION_EDIT)){ ?>
+                        <a class="btn btn-primary" href="<?php echo $this->baseUrl($controllername.'/index/id/'.encode($id)); ?>" id="update"><i class="icon-pencil icon-white"></i> Update Profile</a>
                     <?php } ?>
-                    <?php if(isFarmGroupAdmin() || isAdmin() || isDataClerk()){ ?>
+                    <?php if($acl->checkPermission($resourcename, ACTION_LIST)){ ?>
                     	<?php if($user->isFarmer()){ ?>
-	                        <a class="btn" href="<?php echo $this->baseUrl('profile/list'); ?>"><i class="icon-list"></i> Farmers</a>
+	                        <a class="btn" href="<?php echo $this->baseUrl('farmer/list'); ?>"><i class="icon-list"></i> Farmers</a>
                         <?php } ?>
-                        <?php if($user->isPIA()){ ?>
-	                        <a class="btn" href="<?php echo $this->baseUrl('profile/users'); ?>"><i class="icon-list"></i> Profiles</a>
+                        <?php if(!$user->isFarmer()){ ?>
+	                        <a class="btn" href="<?php echo $this->baseUrl('profile/list'); ?>"><i class="icon-list"></i> User Profiles</a>
                         <?php } ?>
                     <?php } ?>
                 </div>
 				<div class="divider10"></div>
                 <span class="span6 marginleft0" style="width:72%;">
-                    <div id="row1_left" class="well lighter row marginleft0" style="min-height:250px; padding-left:10px;">                        
+                    <div id="row1_left" class="well lighter row marginleft0" style="height:300px; padding-left:10px;">                        
                         <table class="table noborder">                       
                            	<tr>
                                 <td style="width:20%;"><label class="control-label"><?php echo "Full ".$this->translate("farmer_name_label"); ?>:</label></td>
@@ -122,31 +148,29 @@
                                 <td><label class="control-label"><?php echo $location_label; ?>:</label></td>
                                 <td><?php echo isEmptyString($user->getLocationID()) ? '--' : $user->getLocation()->getName(); ?></td>
                             </tr>
-                            <?php if(strtolower($country) == 'ug'){ ?>
-                                <tr>		                    
-                                    <td><label class="control-label prefix"><?php echo $this->translate("farmer_refno_label"); ?>:</label></td>
-                                    <td><?php echo $user->getRefNo(); ?></td>
-                                    <td><label class="control-label prefix"><?php echo $this->translate("farmer_regno_label"); ?>:</label></td>
-                                    <td><?php echo $user->getRegNo(); ?></td>
-                                </tr>
-                            <?php } ?>
-                            <?php if(strtolower($country) == 'ke'){ ?>
-                            	<tr>		                    
-                                    <td><label class="control-label">National ID#:</label></td>
-                                    <td><?php echo $user->getRefNo(); ?></td>
-                                    <?php if($user->isPIA()){ ?>
-                                        <td><label class="control-label">PID#</label></td>
-                                        <td><?php echo $user->getID(); ?></td>
-                                    <?php } else { ?>
-                                    	<td></td>
-                                        <td></td>
-                                    <?php } ?>
-                                </tr>
-                            <?php } ?>      
-                            <tr>
-                                <td><label class="control-label"><?php //echo $this->translate("farmer_profilepath_label").':'; ?></label></td>
-                                <td colspan="3"><?php //echo $user->getProfilePath(); ?></td>                                                             
-                            </tr>
+                            <?php if($user->isFarmer()){ ?>
+								<?php if(strtolower($country) == 'ug'){ ?>
+                                    <tr>		                    
+                                        <td><label class="control-label prefix"><?php echo $this->translate("farmer_refno_label"); ?>:</label></td>
+                                        <td><?php echo $user->getRefNo(); ?></td>
+                                        <td><label class="control-label prefix"><?php echo $this->translate("farmer_regno_label"); ?>:</label></td>
+                                        <td><?php echo $user->getRegNo(); ?></td>
+                                    </tr>
+                                <?php } ?>
+                                <?php if(strtolower($country) == 'ke'){ ?>
+                                    <tr>		                    
+                                        <td><label class="control-label">National ID#:</label></td>
+                                        <td><?php echo $user->getRefNo(); ?></td>
+                                        <?php if($user->isPIA()){ ?>
+                                            <td><label class="control-label">PID#</label></td>
+                                            <td><?php echo $user->getID(); ?></td>
+                                        <?php } else { ?>
+                                            <td></td>
+                                            <td></td>
+                                        <?php } ?>
+                                    </tr>
+                                <?php } ?>
+                            <?php } ?>     
                             <?php if($user->hasFarmGroup()){ ?>  
                             <tr>
                                 <td colspan="2"><label class="control-label"><?php echo $this->translate("farmer_dna_label"); ?>:</label>
@@ -161,7 +185,7 @@
                             <?php } ?>
                         </table>
                     </div>
-                    <div id="xrow2_left" class="well lighter row marginleft0" style="min-height:212px;">
+                    <div id="xrow2_left" class="well lighter row marginleft0" style="min-height:245px;">
                         <h3 class="well-legend margin0">About</h3>
                         <table class="table">                       
                            <tr>		                    
@@ -171,7 +195,7 @@
                     </div>                    
                 </span>
                 <span class="span3 pull-right" style="width:24%;">
-                    <div id="xrow2_right" class="well lighter row" style="height:600px;">
+                    <div id="xrow2_right" class="well lighter row" style="height:550px;">
                         <h3 class="well-legend margin0">Account Summary</h3>
                         <table class="table table-striped table-bordered table-condensed" id="stats">
                             <tr>		                    
@@ -230,11 +254,11 @@
                             <?php if($user->isFarmer()){ ?>
                                 <tr>             
                                     <td class="profilerightlabel">No of Crops:</td>
-                                    <td class="profilerightvalue nullifempty"><a href="<?php echo $this->baseUrl('profile/view/id/'.$user->getID().'/tab/farm'); ?>"><?php echo $user->getCrops()->count(); ?></a></td>
+                                    <td class="profilerightvalue nullifempty"><a href="<?php echo $this->baseUrl('farmer/view/id/'.$user->getID().'/tab/farm'); ?>"><?php echo $user->getCrops()->count(); ?></a></td>
                                 </tr>
                                 <tr>             
                                     <td class="profilerightlabel">No of Seasons:</td>
-                                    <td class="profilerightvalue nullifempty"><a href="<?php echo $this->baseUrl('profile/view/id/'.$user->getID().'/tab/seasons'); ?>"><?php echo $user->getSeasons()->count(); ?></a></td>
+                                    <td class="profilerightvalue nullifempty"><a href="<?php echo $this->baseUrl('farmer/view/id/'.$user->getID().'/tab/seasons'); ?>"><?php echo $user->getSeasons()->count(); ?></a></td>
                                 </tr>
                             <?php } ?>
                         </table>
@@ -246,7 +270,7 @@
         </div>
         <div id="contacts">
             <h2>Contact Information</h2>
-            <form id="profileform-contacts" class="form-horizontal contacts" action="<?php echo $this->baseUrl("profile/processgps"); ?>" method="post">
+            <form id="profileform-contacts" class="form-horizontal contacts" action="<?php echo $this->baseUrl($controllername."/processgps"); ?>" method="post">
                 <?php if($tab == 'contacts'){ ?>
                 <div class="row" style="margin-left:0px;">
 					<?php if(!isEmptyString($session->getVar(SUCCESS_MESSAGE)) ){ ?>
@@ -260,11 +284,11 @@
                     <?php } ?>
                      <div class="row margin0 padding0">
 						 <?php if($isme || isFarmGroupAdmin() || isAdmin() || isDataClerk()){ ?>
-                            <a class="btn btn-primary" href="<?php echo $this->baseUrl('profile/index/id/'.encode($id).'/tab/contacts'); ?>" id="update"><i class="icon-pencil icon-white"></i> Update Contacts</a>                                       
+                            <a class="btn btn-primary" href="<?php echo $this->baseUrl($controllername.'/index/id/'.encode($id).'/tab/contacts'); ?>" id="update"><i class="icon-pencil icon-white"></i> Update Contacts</a>                                       
                         <?php } ?>
                     </div>
                     <div class="divider10"></div>        
-                    <span class="span6 marginleft0" style="width:96%;">
+                    <span class="span6 marginleft0" style="width:100%;">
                         <div class="well lighter row marginleft0" style="min-height:150px;">  
                         	<h3 class="well-legend">Contacts</h3>                   
                             <table class="table">
@@ -280,7 +304,7 @@
                         </div>
                     </span>
                 </div>
-                <div class="well lighter row marginleft0" style="min-height:100px; width:94%;">
+                <div class="well lighter row marginleft0" style="min-height:100px;">
                     <h3 class="well-legend">Address</h3>
                     <table class="table">                       
                     	<tr>
@@ -447,12 +471,12 @@ maplace.Load();
 						<?php } ?>
 					});
                 </script>
-                <div class="row marginleft0" style="width:96%;">
+                <div class="row marginleft0" style="width:100%;">
                     <h3 class="well-legend margin0">Location Map</h3>
                     <div class="divider5"></div>
                     <div class="well clearfix makerelative" style="min-height:500px; height:auto; background:none; background:url('<?php echo $this->baseUrl('images/uggoogle.png'); ?>') t; padding-bottom:10px; padding-top:10px;">
 						<?php if(isEmptyString($request->detect)){ ?>
-                            <a class="btn btn-primary makeabsolute" style="top:-25px; left:0;" href="<?php echo $this->baseUrl('profile/view/id/'.encode($user->getID()).'/tab/contacts/detect/1'); ?>"><?php echo $user->hasGPSCoordinates() ? 'Update '.$metxt.'Position' : 'Compute '.$metxt.'Location'; ?></a>
+                            <a class="btn btn-primary makeabsolute" style="top:-25px; left:0;" href="<?php echo $this->baseUrl($controllername.'/view/id/'.encode($user->getID()).'/tab/contacts/detect/1'); ?>"><?php echo $user->hasGPSCoordinates() ? 'Update '.$metxt.'Position' : 'Compute '.$metxt.'Location'; ?></a>
                             <!--<div id="map_canvas" class="gmaps"></div>-->
                             <div id="gmap"></div>
                         <?php } ?>
@@ -462,7 +486,7 @@ maplace.Load();
                             <input type="text" id="lng" name="lng" value="" class="form-control input-width-small isdecimal" /><input type="hidden" id="hasgps" name="hasgps" value="" /><br /><br />
                             
                             <a href="<?php echo $this->referer; ?>" class="btn"><i class="icon-remove"></i> <?php echo $this->translate('global_button_cancel'); ?></a>
-                            <a href="<?php echo $this->baseUrl('profile/view/id/'.encode($user->getID()).'/tab/contacts/detect/1'); ?>" class="btn"><i class="icon-refresh"></i> Reload</a>
+                            <a href="<?php echo $this->baseUrl($controllername.'/view/id/'.encode($user->getID()).'/tab/contacts/detect/1'); ?>" class="btn"><i class="icon-refresh"></i> Reload</a>
                             <button type="submit" class="btn btn-primary hide" id="saveposition"><i class="icon-ok icon-white"></i> <?php echo $this->translate('global_button_save')." Position"; ?></button>
                             <div class="form-group">
                                 <div id="hasgps_error"></div>
@@ -473,8 +497,8 @@ maplace.Load();
                             <input type="hidden" id="id" name="id" value="<?php echo encode($user->getID()); ?>" />
                             
                             
-                            <input type="hidden" name="<?php echo URL_SUCCESS; ?>" value="<?php echo encode($this->baseUrl('profile/view/id/'.encode($user->getID()).'/tab/contacts')); ?>" />
-                            <input type="hidden" name="<?php echo URL_FAILURE; ?>" value="<?php echo encode($this->baseUrl('profile/view/id/'.encode($user->getID()).'/tab/contacts/detect/1')); ?>" />
+                            <input type="hidden" name="<?php echo URL_SUCCESS; ?>" value="<?php echo encode($this->baseUrl($controllername.'/view/id/'.encode($user->getID()).'/tab/contacts')); ?>" />
+                            <input type="hidden" name="<?php echo URL_FAILURE; ?>" value="<?php echo encode($this->baseUrl($controllername.'/view/id/'.encode($user->getID()).'/tab/contacts/detect/1')); ?>" />
                             <input type="hidden" name="<?php echo SUCCESS_MESSAGE; ?>" value="global_save_success" />
                         <?php } ?>
                     </div>
@@ -482,6 +506,7 @@ maplace.Load();
                 <?php } ?>
             </form>
         </div>
+        <?php if($user->isFarmer()){ ?>
         <div id="personal">
             <h2>Personal Bio Data</h2>
             <form id="profileform-personal" class="form-horizontal personal">
@@ -491,11 +516,11 @@ maplace.Load();
                 <?php } ?>
                 <div class="row margin0 padding0">
 					 <?php if($isme || isFarmGroupAdmin() || isAdmin() || isDataClerk()){ ?>
-                        <a class="btn btn-primary" href="<?php echo $this->baseUrl('profile/index/id/'.encode($id).'/tab/personal'); ?>" id="update"><i class="icon-pencil icon-white"></i> Update Profile</a>                                       
+                        <a class="btn btn-primary" href="<?php echo $this->baseUrl($controllername.'/index/id/'.encode($id).'/tab/personal'); ?>" id="update"><i class="icon-pencil icon-white"></i> Update Profile</a>                                       
                     <?php } ?>
                 </div> 
                 <div class="divider10"></div> 
-                <div class="well lighter row marginleft0" style="min-height:75px; width:94%;"> 
+                <div class="well lighter row marginleft0" style="min-height:75px;"> 
                     <h3 class="well-legend">Family</h3>
                     <table class="table">                       
                        
@@ -516,7 +541,7 @@ maplace.Load();
                         </tr>
                     </table>
                 </div>
-                <div class="well lighter row marginleft0" style="min-height:100px; width:94%;">
+                <div class="well lighter row marginleft0" style="min-height:100px;">
                     <h3 class="well-legend"><?php echo $this->translate("farmer_nextofkin_label"); ?></h3>
                     <table class="table">                       
                        <tr>		  
@@ -532,7 +557,7 @@ maplace.Load();
                         </tr>
                     </table>
                 </div>
-                <div class="well lighter row marginleft0" style="min-height:100px; width:94%;">
+                <div class="well lighter row marginleft0" style="min-height:100px;">
                     <h3 class="well-legend">Other Information</h3>                       
                     <table class="table">
                         <tr>		  
@@ -541,7 +566,7 @@ maplace.Load();
                             <td>
                             	<label class="control-label"><?php echo $this->translate("farmer_signature_label"); ?>:</label>
                                 <div class="profileinfo pull-left" id="signinfo"> 
-                                    <a href="<?php echo $this->baseUrl('profile/picture/id/'.encode($user->getID()).'/type/sign'); ?>" class="editpic" title="Upload Signature Image"><img id="profileimage" src="<?php echo $user->getSignaturePath(); ?>" width="180" height="90" /><pre id="signlink" class="hide absoluteupload"><i class="icon-pencil"></i> Upload Image</pre></a>
+                                    <a href="<?php echo $this->baseUrl($controllername.'/picture/id/'.encode($user->getID()).'/type/sign'); ?>" class="editpic" title="Upload Signature Image"><img id="profileimage" src="<?php echo $user->getSignaturePath(); ?>" width="180" height="90" /><pre id="signlink" class="hide absoluteupload"><i class="icon-pencil"></i> Upload Image</pre></a>
                                 </div>
                             </td>
                         </tr>
@@ -559,11 +584,11 @@ maplace.Load();
                     <?php } ?>
                     <div class="row margin0 padding0">
                          <?php if($isme || isFarmGroupAdmin() || isAdmin() || isDataClerk()){ ?>
-                            <a class="btn btn-primary" href="<?php echo $this->baseUrl('profile/index/id/'.encode($id).'/tab/farm'); ?>" id="update"><i class="icon-pencil icon-white"></i> Update Profile</a>                                       
+                            <a class="btn btn-primary" href="<?php echo $this->baseUrl($controllername.'/index/id/'.encode($id).'/tab/farm'); ?>" id="update"><i class="icon-pencil icon-white"></i> Update Profile</a>                                       
                         <?php } ?>
                     </div> 
                     <div class="divider10"></div>
-                    <div class="row margin0 padding0" style="width:96%;">
+                    <div class="row margin0 padding0" style="width:100%;">
                         <span style="width:49%; float:left;">
                             <div class="well lighter row marginleft0" id="farmleft" style="min-height:325px;"> 
                                 <h3 class="well-legend">Manage Farm</h3>
@@ -596,7 +621,7 @@ maplace.Load();
                             </div>
                         </span>
                         <span style="width:49%; float:right;">
-                            <div class="well lighter row marginleft0" id="farmright" style="min-height:325px; width:98%">
+                            <div class="well lighter row marginleft0" id="farmright" style="min-height:325px;">
                                 <h3 class="well-legend">Land Usage</h3>                       
                                 <table class="table higherpadding"> 
                                     <tr>
@@ -634,7 +659,7 @@ maplace.Load();
 						<?php if(!isEmptyString($session->getVar(SUCCESS_MESSAGE)) ){ ?>
                             <div class="alert alert-success"><a class="close" data-dismiss="alert">×</a><?php echo $session->getVar(SUCCESS_MESSAGE); ?></div>
                         <?php } ?>  
-                        <span class="span6 marginleft0" style="width:97%;">
+                        <span class="span6 marginleft0" style="width:100%;">
                             <div class="well row marginleft0" style="min-height:60px; padding-left:10px; position:relative;">
                                 <div class="margin0" style="position:absolute; right:15px; top:8px;">
                                      <a class="btn btn-primary" href="<?php echo $this->baseUrl('season/index/userid/'.encode($user->getID())); ?>" title="Setup New Season"><i class="icon-plus icon-white"></i> Setup Season</a>
@@ -765,7 +790,7 @@ maplace.Load();
                     <div class="row margin0 padding0">
                         <div class="divider10"></div>
                     </div>
-                    <div id='calendarcontainer' class="padding0 margin0 row clearfix" style="margin-top:10px; width:95%;"></div>
+                    <div id='calendarcontainer' class="padding0 margin0 row clearfix" style="margin-top:10px; width:100%;"></div>
                     <?php
 						$seasons = $user->getOrderedSeasons();
 						foreach ($seasons as $season){
@@ -829,7 +854,7 @@ maplace.Load();
 						<?php if(!isEmptyString($session->getVar(SUCCESS_MESSAGE)) ){ ?>
                             <div class="alert alert-success"><a class="close" data-dismiss="alert">×</a><?php echo $session->getVar(SUCCESS_MESSAGE); ?></div>
                         <?php } ?>  
-                        <span class="span6 marginleft0" style="width:94%;">
+                        <span class="span6 marginleft0" style="width:100%;">
                             <div class="well row marginleft0" style="min-height:60px; padding-left:10px; position:relative;">
                                 <div class="margin0" style="position:absolute; right:10px; top:5px;">
                                     <a class="btn btn-primary" href="<?php echo $this->baseUrl('inventory/index/userid/'.encode($user->getID())); ?>" title="Add Inventory Item"><i class="icon-plus icon-white"></i> Add Item</a>                                       
@@ -894,7 +919,7 @@ maplace.Load();
             <form id="profileform-finance" class="form-horizontal finance">
             	<?php if($tab == 'finance'){ ?>
             		<div class="row" style="margin-left:0px;">
-                        <span class="marginleft0 span9" style="width:94%;">
+                        <span class="marginleft0 span9" style="width:100%;">
                             <ul class="sectionitems">
                                 <li>
                                     <a class="list" href="<?php echo $this->baseUrl("finance/credithistory/id/".encode($user->getID())); ?>" title="Credit History"><img src="<?php echo $this->baseUrl('images/topmenu_market.png'); ?>" /><br /><h2>Credit History</h2></a>
@@ -913,6 +938,7 @@ maplace.Load();
             	<?php } ?>
             </form>
         </div>
+        <?php } ?>
         <div id="subscription">
         	<h2>Payment History</h2>
             <form id="profileform-subscription" class="form-horizontal subscription">

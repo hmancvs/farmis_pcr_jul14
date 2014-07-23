@@ -978,16 +978,20 @@ $(window).load(function() {
 	if(isEmptyString($userid)){
 		$publiccontrollers[] = 'contactus';
 	}
+	if(($thecontroller == 'index' && $theaction == 'accessdenied')){
+		unset($publiccontrollers['0']);
+	}
 	
 	$bodyclass = '';
 	$bodyclassonly = '';
 	$isInnerPage = false;
-	if (in_array($thecontroller, $publiccontrollers)){
+	if(in_array($thecontroller, $publiccontrollers)){
 		$bodyclass = ' class="publicbody"';
 		$bodyclassonly = ' publicbody';
 	} else {
 		$isInnerPage = true;
 	}
+	
 ?>
 <body data-spy="scroll" data-target=".subnav" data-offset="50"<?php echo $bodyclass; ?>>
 

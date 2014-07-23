@@ -15,7 +15,7 @@ update farmis.location f inner join agmis.location a set f.regionid = a.regionid
 -- update location l inner join location d on l.districtid = d.id set l.regionid = d.regionid where (l.regionid >= 5 AND l.locationtype > 2 AND l.country = 'UG');
 update location l set l.locationtype = 0 where l.id IN(5,6,7);
 
-ALTER TABLE `location` drop column `linkhref`, drop column `wikihref`;
+-- ALTER TABLE `location` drop column `linkhref`, drop column `wikihref`;
 ALTER TABLE `location` ADD COLUMN `linkhref` varchar(255) DEFAULT NULL;
 update location l set l.linkhref = concat('http://en.wikipedia.org/wiki/',l.name,'_District') where l.locationtype = 2 and l.country='UG';
 
@@ -36,3 +36,11 @@ UPDATE payment p inner join useraccount u set p.country = u.country where p.user
 -- update status for those who have paid
 UPDATE useraccount u inner join payment p set u.paymentstatus = 1, u.paymentid = p.id where p.userid = u.id and p.userid <> '';
 UPDATE farmgroup f inner join payment p set f.paymentstatus = 1, f.paymentid = p.id where p.farmgroupid = f.id and p.farmgroupid <> '';
+
+-- permission and role changes (script imported manually)
+
+ALTER TABLE `membershipplan` ADD COLUMN `amountke` decimal(10,0) DEFAULT NULL;
+UPDATE `membershipplan` set amount = '0', amountke = '0' where id = 1;
+UPDATE `membershipplan` set amount = '20000', amountke = '850' where id = 2;
+UPDATE `membershipplan` set amount = '0', amountke = '0' where id = 3;
+UPDATE `membershipplan` set amount = '360000', amountke = '12000' where id = 4;

@@ -16,19 +16,19 @@
                                <tr>		                    
                                     <td width="20%"><label class="control-label leftalign">Email: </label></td>
                                     <td><?php echo isEmptyString($user->getEmail()) ? '--' : $user->getEmail(); ?> &nbsp;
-                                    	<a href="<?php echo $this->baseUrl('profile/changeemail/id/'.encode($user->getID()).'/pgc/true'); ?>" class="addpopup changeemail pull-right" title="Change Email" rel="Change Email" id="changeemail" formtitle="indexform" successurl="<?php echo $this->baseUrl('profile/view/id/'.encode($user->getID()).'/tab/account'); ?>" action="<?php echo $this->baseUrl("profile/processchangeemail"); ?>">Change Email</a></td>
+                                    	<a href="<?php echo $this->baseUrl($controllername.'/changeemail/id/'.encode($user->getID()).'/pgc/true'); ?>" class="addpopup changeemail pull-right" title="Change Email" rel="Change Email" id="changeemail" formtitle="indexform" successurl="<?php echo $this->baseUrl($controllername.'/view/id/'.encode($user->getID()).'/tab/account'); ?>" action="<?php echo $this->baseUrl($controllername."/processchangeemail"); ?>">Change Email</a></td>
                                </tr>
                                <tr>		                    
                                     <td><label class="control-label leftalign">Username: </label></td>
                                     <td><?php echo isEmptyString($user->getUserName()) ? '--' : $user->getUserName(); ?> &nbsp;
-                                    	<a href="<?php echo $this->baseUrl('profile/changeusername/id/'.encode($user->getID()).'/pgc/true'); ?>" class="addpopup changeusername pull-right" title="Change Username" rel="Change Username" id="changeusername" formtitle="indexform" successurl="<?php echo $this->baseUrl('profile/view/id/'.encode($user->getID()).'/tab/account'); ?>" action="<?php echo $this->baseUrl("profile/processchangeusername"); ?>">Change Username</a>
+                                    	<a href="<?php echo $this->baseUrl($controllername.'/changeusername/id/'.encode($user->getID()).'/pgc/true'); ?>" class="addpopup changeusername pull-right" title="Change Username" rel="Change Username" id="changeusername" formtitle="indexform" successurl="<?php echo $this->baseUrl($controllername.'/view/id/'.encode($user->getID()).'/tab/account'); ?>" action="<?php echo $this->baseUrl($controllername."/processchangeusername"); ?>">Change Username</a>
                                </tr>
                                <tr>		                    
                                     <td><label class="control-label leftalign">Phone: </label></td>
                                     <td><div class="makerelative">
                                     	<?php echo isEmptyString($user->getFormattedPhone()) ? '--' : $user->getFormattedPhone(); ?>
                                     	<!--<?php //if(!$user->hasPendingActivation(1) && $user->isPhoneValidated()){ ?>
-                                        	<a href="<?php //echo $this->baseUrl('profile/changephone/id/'.encode($user->getID()).'/pgc/true'); ?>" class="addpopup changephone" style="position:absolute; right:0; top:0;" title="Change Phone" rel="Change Phone" id="changephone" formtitle="indexform" successurl="<?php //echo $this->baseUrl('profile/view/id/'.encode($user->getID()).'/tab/account'); ?>" action="<?php //echo $this->baseUrl("profile/processchangephone"); ?>">Change Phone</a>
+                                        	<a href="<?php //echo $this->baseUrl($controllername.'/changephone/id/'.encode($user->getID()).'/pgc/true'); ?>" class="addpopup changephone" style="position:absolute; right:0; top:0;" title="Change Phone" rel="Change Phone" id="changephone" formtitle="indexform" successurl="<?php //echo $this->baseUrl($controllername.'/view/id/'.encode($user->getID()).'/tab/account'); ?>" action="<?php //echo $this->baseUrl("profile/processchangephone"); ?>">Change Phone</a>
                                         <?php //} ?>-->
                                     </div>
                                     </td>
@@ -41,9 +41,9 @@
                                         	--
                                         <?php } ?>
                                     	<?php if($isme){ ?>
-                                            <a class="changepassword pull-right" id="changepassword" rel="Change Password" href="<?php echo $this->baseUrl('profile/changepassword/pgc/true/id/'.encode($user->getID())); ?>">Change Password</a>
+                                            <a class="changepassword pull-right" id="changepassword" rel="Change Password" href="<?php echo $this->baseUrl($controllername.'/changepassword/pgc/true/id/'.encode($user->getID())); ?>">Change Password</a>
                                         <?php } else { ?>
-                                            <a class="confirm-dialog pull-right" id="resetpassword" href="<?php echo $this->baseUrl('profile/resetpassword/id/'.encode($user->getID())); ?>" message="Are you sure you want to reset <?php echo $user->getName() ?>'s Password?">Reset Password</a>
+                                            <a class="confirm-dialog pull-right" id="resetpassword" href="<?php echo $this->baseUrl($controllername.'/resetpassword/id/'.encode($user->getID())); ?>" message="Are you sure you want to reset <?php echo $user->getName() ?>'s Password?">Reset Password</a>
                                         <?php } ?>
                                     </td>
                                </tr>
@@ -51,14 +51,14 @@
                                     <td><label class="control-label leftalign">Account Status: </label></td>
                                     <td><?php echo $user->isUserActive() ? 'Active' : 'In Active'; ?></td>
                                </tr>
-                             	<?php if((isAdmin() || isManagement()) && !$isme){ ?>
+                             	<?php if($acl->checkPermission($resourcename, ACTION_CREATE) && !$isme){ ?>
                                     <tr>		                    
-                                        <td colspan="2"><a class="deleteline gonowhere" action="<?php echo $this->baseUrl('profile/delete/id/'.$user->getID()."/entityname/UserAccount/successurl/".encode($this->baseUrl('profile/list'))); ?>"><i class="icon-trash"></i> Delete Profile</a></td>
+                                        <td colspan="2"><a class="deleteline gonowhere" action="<?php echo $this->baseUrl($controllername.'/delete/id/'.$user->getID()."/entityname/UserAccount/successurl/".encode($this->baseUrl($controllername.'/list'))); ?>"><i class="icon-trash"></i> Delete Profile</a></td>
                                     </tr>
                     			<?php } ?> 
-								<?php if((isAdmin() || isManagement()) && !$isme && $user->isUserActive()){ ?>
+								<?php if($acl->checkPermission($resourcename, ACTION_CREATE) && !$isme && $user->isUserActive()){ ?>
                                     <tr>		                    
-                                        <td colspan="2"><a action="<?php echo $this->baseUrl('mobile/deactivate/id/'.$user->getID()."/entityname/Farmer/successurl/".encode($this->baseUrl('mobile/list'))); ?>"><i class="icon-trash"></i> Deactivate</a></td>
+                                        <td colspan="2"><a action="<?php echo $this->baseUrl($controllername.'/deactivate/id/'.$user->getID()."/entityname/UserAccount/successurl/".encode($this->baseUrl($controllername.'/list'))); ?>"><i class="icon-trash"></i> Deactivate</a></td>
                                     </tr>
                                 <?php } ?>
                             </table>

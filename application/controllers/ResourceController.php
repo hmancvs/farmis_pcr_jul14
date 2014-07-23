@@ -12,7 +12,7 @@ class ResourceController extends SecureController   {
 	}
     
     public function getResourceForACL(){
-        return "Farmer"; 
+        return "Dashboard"; 
     }
     
     function allpricesAction() {
@@ -583,7 +583,7 @@ class ResourceController extends SecureController   {
 					if(!isEmptyString($user->hasFarmGroup())){
 						$group = '<span class="blocked"><b>DNA</b> '.$user->getFarmGroup()->getName().'</span>';
 					}
-					$viewurl = $this->view->baseUrl('profile/view/id/'.encode($user->getID()));
+					$viewurl = $this->view->baseUrl('farmer/view/id/'.encode($user->getID()));
 					$html .= '
 					<li class="display_box" align="left" url="'.$viewurl.'" theid="'.$user->getID().'">
 						<img src="'.$media.'" style="width:60px; height:60px; float:left; margin-right:6px;" />

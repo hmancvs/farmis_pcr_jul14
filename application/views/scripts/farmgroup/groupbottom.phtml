@@ -15,17 +15,15 @@
                         	<tr>		                    
                                 <td>
                                 	<?php if(isAdmin() || $userid == $farmgroup->getManagerID()){ ?>
-                                        <a class="btn btn-primary btn-mini addpopup" style="margin-bottom: 10px;" href="<?php echo $this->baseUrl('profile/add/pgc/true/farmgroupid/'.$farmgroup->getID().'/country/'.$country); ?>" rel="Add Farmer | <?php echo $farmgroup->getName(); ?>" title="Add Farmer" id="addfarmer" formtitle="indexform" successurl="<?php echo $this->baseUrl('farmgroup/view/id/'.encode($farmgroup->getID()).'/tab/farmers'); ?>" action="<?php echo $this->baseUrl("profile/create"); ?>"><i class="icon-plus icon-white"></i> Add Farmer</a>
-                                        <a class="btn btn-primary btn-mini" style="margin-bottom: 10px;" href="<?php echo $this->baseUrl('report/allfarmers/farmgroupid/'.$farmgroup->getID()); ?>" title="View Report"><i class="icon-list icon-white"></i> Bio Data Report</a>
-                                        
+                                        <a class="btn btn-primary btn-mini" href="<?php echo $this->baseUrl('farmer/add/farmgroupid/'.$farmgroup->getID().'/country/'.$country); ?>"><i class="icon-plus icon-white"></i> Add Farmer</a>
+                                        <a class="btn btn-primary btn-mini" href="<?php echo $this->baseUrl('report/allfarmers/farmgroupid/'.$farmgroup->getID()); ?>" title="View Report"><i class="icon-list icon-white"></i> Bio Data Report</a>
                                     <?php } ?>
-                                    
                                 	<label class="labeldescription" style="margin-top:15px;"><?php echo $total_farmers == 0 ? "There are currently no farmers for ".$farmgroup->getName(): "There are currently ".$total_farmers." farmers in ".$farmgroup->getName(); ?></label>
                                     <?php if($user_count > 0){ ?>
-                                    <div style="position:absolute; right:30px; top:20px;">
-										<?php echo "Viewing ".$user_count." out of ".$total_farmers." farmers "; ?>
-                                        <a class="btn btn-primary btn-mini" style="" href="<?php echo $this->baseUrl('profile/list/farmgroupid/'.$farmgroup->getID()); ?>" title="View Report"><i class="icon-list icon-white"></i> List all</a>
-                                    </div>
+                                        <div style="position:absolute; right:30px; top:20px;">
+                                            <?php echo "Viewing ".$user_count." out of ".$total_farmers." farmers "; ?>
+                                            <a class="btn btn-primary btn-mini" style="" href="<?php echo $this->baseUrl('profile/list/farmgroupid/'.$farmgroup->getID()); ?>" title="View Report"><i class="icon-list icon-white"></i> List all</a>
+                                        </div>
                                     <?php } ?>
                                     <ul id="datalist" class="nav nav-stacked">
 									<?php 				  		

@@ -29,6 +29,10 @@
 	
 	$button_title = $this->translate("farmer_button_save");
 	$posturl = $this->baseUrl("profile/edit"); 
+	$resourcename = 'Farmer';
+	if($controllername == 'profile'){
+		$resourcename == 'User Account';
+	}
 	
 	#in case of errors in session, populate the fields from session
 	if(!isEmptyString($session->getVar(ERROR_MESSAGE))){ 
@@ -147,8 +151,8 @@ $(document).ready(function() {
 		
 		// basics custom failure and success url
 		$("#profileform-basics .savethenview").click(function() {
-			$("#profileform-basics .successurl").val('<?php echo encode($this->baseUrl('profile/view/tab/basics')); ?>');
-			$("#profileform-basics .failureurl").val('<?php echo encode($this->baseUrl('profile/index/id/'.encode($user->getID()).'/tab/basics')); ?>');
+			$("#profileform-basics .successurl").val('<?php echo encode($this->baseUrl($controllername.'/view/tab/basics')); ?>');
+			$("#profileform-basics .failureurl").val('<?php echo encode($this->baseUrl($controllername.'/index/id/'.encode($user->getID()).'/tab/basics')); ?>');
 		});
 		
 		var dateofregOpts = datepickerOpts;
@@ -214,8 +218,8 @@ $(document).ready(function() {
 		
 		// personal custom failure and success url
 		$("#profileform-personal .savethenview").click(function() {
-			$("#profileform-personal .successurl").val('<?php echo encode($this->baseUrl('profile/view/tab/personal')); ?>');
-			$("#profileform-personal .failureurl").val('<?php echo encode($this->baseUrl('profile/index/id/'.encode($user->getID()).'/tab/personal')); ?>');
+			$("#profileform-personal .successurl").val('<?php echo encode($this->baseUrl($controllername.'/view/tab/personal')); ?>');
+			$("#profileform-personal .failureurl").val('<?php echo encode($this->baseUrl($controllername.'/index/id/'.encode($user->getID()).'/tab/personal')); ?>');
 		}); 
 	<?php } ?>
 	
@@ -311,8 +315,8 @@ $(document).ready(function() {
 		
 		// contacts custom failure and success url
 		$("#profileform-contacts .savethenview").click(function() {
-			$("#profileform-contacts .successurl").val('<?php echo encode($this->baseUrl('profile/view/tab/contacts')); ?>');
-			$("#profileform-contacts .failureurl").val('<?php echo encode($this->baseUrl('profile/index/id/'.encode($user->getID()).'/tab/contacts')); ?>');
+			$("#profileform-contacts .successurl").val('<?php echo encode($this->baseUrl($controllername.'/view/tab/contacts')); ?>');
+			$("#profileform-contacts .failureurl").val('<?php echo encode($this->baseUrl($controllername.'/index/id/'.encode($user->getID()).'/tab/contacts')); ?>');
 		});
 		
 		$('#locationid').change(function() {
@@ -449,8 +453,8 @@ $(document).ready(function() {
 	<?php if($tab == 'farm') { ?>
 		// farm custom failure and success url
 		$("#profileform-farm .savethenview").click(function() {
-			$("#profileform-farm .successurl").val('<?php echo encode($this->baseUrl('profile/view/tab/farm')); ?>');
-			$("#profileform-farm .failureurl").val('<?php echo encode($this->baseUrl('profile/index/id/'.encode($user->getID()).'/tab/farm')); ?>');
+			$("#profileform-farm .successurl").val('<?php echo encode($this->baseUrl($controllername.'/view/tab/farm')); ?>');
+			$("#profileform-farm .failureurl").val('<?php echo encode($this->baseUrl($controllername.'/index/id/'.encode($user->getID()).'/tab/farm')); ?>');
 		});
 	<?php } ?>	
 }); 
@@ -488,7 +492,7 @@ select#salutation {
 	width:210px;
 }
 #center .ui-widget-content {
-	width:100%;
+	/*width:100%;*/
 	float:left;
 }
 .alert.alert-success {
@@ -513,7 +517,7 @@ select#salutation {
                     <div class="alert alert-error"><?php echo $session->getVar(ERROR_MESSAGE); ?></div>
                 <?php } ?>
                 <div class="row margin0 pull-left">
-                    <a href="<?php echo $this->baseUrl('profile/view/id/'.encode($user->getID())); ?>" class="btn"><i class="icon-remove"></i> <?php echo $this->translate('global_button_cancel'); ?></a>
+                    <a href="<?php echo $this->baseUrl($controllername.'/view/id/'.encode($user->getID())); ?>" class="btn"><i class="icon-remove"></i> <?php echo $this->translate('global_button_cancel'); ?></a>
                     <button type="submit" class="btn btn-primary savethenview"><i class="icon-ok icon-white"></i> <?php echo $this->translate('global_button_save_changes'); ?></button>
                     <input type="hidden" name="entityname" value="UserAccount" />
                     <input type="hidden" id="id" name="id" value="<?php echo encode($user->getID()); ?>" />
@@ -524,18 +528,18 @@ select#salutation {
                     <input type="hidden" name="type" id="type" value="<?php echo $user->getType(); ?>" />
                 </div>
 				<div class="divider10"></div>
-                <span class="span6 marginleft0" style="width:97%;">
+                <span class="span6 marginleft0" style="width:100%;">
                     <div id="row1_left" class="well lighter row marginleft0" style="height:auto; padding-left:10px;">                        
                         <table class="table">                       
                            <tr>
                                 <td width="54%"><label class="control-label"><?php echo $this->translate("farmer_firstname_label"); ?>: <?php echo $this->translate("global_required_field_marker"); ?></label>
-                                <input name="firstname" id="firstname" type="text" class="span3 hastooltip" value="<?php echo $user->getFirstName(); ?>" title="<?php echo $this->translate("farmer_firstname_tooltip"); ?>" /><div id="firstname_error"></div></td>
+                                <input name="firstname" id="firstname" type="text" class="span3 xhastooltip" value="<?php echo $user->getFirstName(); ?>" title="<?php // echo $this->translate("farmer_firstname_tooltip"); ?>" /><div id="firstname_error"></div></td>
                                 <td><label class="control-label"><?php echo $this->translate("farmer_lastname_label"); ?>: <?php echo $this->translate("global_required_field_marker"); ?></label>
-                                <input name="lastname" id="lastname" type="text" class="span3 hastooltip" value="<?php echo $user->getLastName(); ?>" title="<?php echo $this->translate("farmer_lastname_tooltip"); ?>" /><div id="lastname_error"></div></td>                                                             
+                                <input name="lastname" id="lastname" type="text" class="span3 xhastooltip" value="<?php echo $user->getLastName(); ?>" title="<?php // echo $this->translate("farmer_lastname_tooltip"); ?>" /><div id="lastname_error"></div></td>                                                             
                             </tr>
                             <tr>		                    
                                 <td><label class="control-label"><?php echo $this->translate("farmer_othernames_label"); ?>:</label>
-                                <input name="othernames" id="othernames" type="text" class="span3 hastooltip" value="<?php echo $user->getOtherNames(); ?>" title="<?php echo $this->translate("farmer_othernames_tooltip"); ?>" /></td>
+                                <input name="othernames" id="othernames" type="text" class="span3 xhastooltip" value="<?php echo $user->getOtherNames(); ?>" title="<?php // echo $this->translate("farmer_othernames_tooltip"); ?>" /></td>
                                 <td><label class="control-label"><?php echo $this->translate("farmer_gender_label"); ?>: </label>
 								<?php						  
                                       $genderradio = new Zend_Form_Element_Radio('gender',
@@ -596,7 +600,7 @@ select#salutation {
                                             $yeardp->setValue($birthyear); 
                                             echo $yeardp->render(); 
                                         ?>
-                                        <input name="dateofbirth" id="dateofbirth" type="text" class="span2 datefield hastooltip" value="<?php echo $dateofbirth; ?>" title="<?php echo $this->translate("person_dateofbirth_tooltip"); ?>" />
+                                        <input name="dateofbirth" id="dateofbirth" type="text" class="span2 datefield xhastooltip" value="<?php echo $dateofbirth; ?>" `title="<?php // echo $this->translate("person_dateofbirth_tooltip"); ?>" />
                                     	<div id="dateofbirth_error"></div>
 									</td>
                                     <td><label class="control-label suffix"><?php echo $this->translate("farmer_suffix_label"); ?>: </label>
@@ -608,7 +612,7 @@ select#salutation {
                                                               'multiOptions' => array_merge_maintain_keys(array('' => '<Select>'), $suffixlookup->getOptionValuesAndDescription()),
                                                               'view' => new Zend_View(),
                                                               'decorators' => array(array('ViewHelper')),
-                                                              'class' => array('chzn-selectX','span1','type','hastooltip'),
+                                                              'class' => array('chzn-selectX','span1','type','xhastooltip'),
                                                               'title' => $this->translate("farmer_suffix_tooltip")	
                                                       )
                                               );
@@ -641,7 +645,7 @@ select#salutation {
                                                                 'multiOptions' => array_merge_maintain_keys(array('' => '<Select One>'), $districts),								
                                                                 'view' => new Zend_View(),
                                                                 'decorators' => array('ViewHelper'),
-                                                                'class' => array('filterselect', 'hastooltip_custom', 'country'),
+                                                                'class' => array('filterselect', 'xhastooltip_custom', 'country'),
                                                                 'title' => $this->translate("farmer_district_tooltip")
                                                             )
                                                         );
@@ -684,7 +688,7 @@ select#salutation {
                                 <td>
                                 	<?php if(!$isme){ ?>
                                         <label class="control-label">Profiled By: <?php echo $this->translate("global_required_field_marker"); ?></label>
-                                        <?php if(isAdmin()){ ?>
+                                        <?php if(isEmptyString($user->getCreatedBy())){ ?>
 											<?php
                                                 $users = getProfilingUsers($session->getVar('country'));
                                                 $dropdown = new Zend_Form_Element_Select('profiledby',
@@ -716,7 +720,7 @@ select#salutation {
                             <td style="width:40%;">
 								<?php if($user->isSelfRegistered()){ ?>
                                     <label class="control-label">Farmer Association / Group:</label>
-                                    <input type="text" name="supportprovider" id="supportprovider" value="<?php echo $user->getSupportProvider(); ?>" class="hastooltip" style="width:88%;" title="<?php echo $this->translate("farmgroup_supportprovider_tooltip"); ?>" />
+                                    <input type="text" name="supportprovider" id="supportprovider" value="<?php echo $user->getSupportProvider(); ?>" class="xhastooltip" style="width:88%;" title="<?php // echo $this->translate("farmgroup_supportprovider_tooltip"); ?>" />
                                 <?php } ?>
                                 <?php if($user->getCreatedBy() != $user->getID() || !$user->isSelfRegistered()){ ?>
                                 	<label class="control-label"><?php echo $this->translate("farmer_dna_label"); ?>:</label>
@@ -727,7 +731,7 @@ select#salutation {
                                                                     'multiOptions' => array_merge_maintain_keys(array('' => '<Select One>'), getAllFarmGroups('', $session->getVar('country'))),								
                                                                     'view' => new Zend_View(),
                                                                     'decorators' => array('ViewHelper'),
-                                                                    'class' => array('width300', 'hastooltip_custom'),
+                                                                    'class' => array('width300', 'xhastooltip_custom'),
                                                                     'title' => $this->translate("farmer_farmgroupid_tooltip")
                                                                 )
                                                             );
@@ -751,7 +755,7 @@ select#salutation {
                                                                     'multiOptions' => array_merge_maintain_keys(array('' => '<Select One>'), getSubGroups($user->getFarmGroupID(), $session->getVar('country'))),								
                                                                     'view' => new Zend_View(),
                                                                     'decorators' => array('ViewHelper'),
-                                                                    'class' => array('width300', 'hastooltip_custom'),
+                                                                    'class' => array('width300', 'xhastooltip_custom'),
                                                                     'title' => $this->translate("farmer_subgroupid_tooltip")
                                                                 )
                                                             );
@@ -776,7 +780,7 @@ select#salutation {
                 <table class="table margin0">              
                     <tr>		  
                         <td style="padding-left:0;">
-                        <textarea name="bio" id="bio" class="span4 expanding hastooltip" style="width:90%; min-height:100px;" title="<?php echo $this->translate("farmer_bio_tooltip"); ?>"><?php echo $user->getBio(); ?></textarea></td>
+                        <textarea name="bio" id="bio" class="span4 expanding xhastooltip" style="width:90%; min-height:100px;" title="<?php // echo $this->translate("farmer_bio_tooltip"); ?>"><?php echo $user->getBio(); ?></textarea></td>
                     </tr>
                 </table>
             </div>
@@ -807,14 +811,14 @@ select#salutation {
                 </div>
                 <div class="divider10"></div>
                 <div class="row" style="margin-left:0px;">
-                    <span class="span6 marginleft0" style="width:96%;">
+                    <span class="span6 marginleft0" style="width:100%;">
                         <div class="well lighter row marginleft0" style="min-height:150px;">     
                         <h3 class="well-legend">Contact Information</h3>                   
                             <table class="table">
                                 <tr>
                                     <td width="50%"><label class="control-label">Phone:</label>
                                     	<div class="input-prepend">
-                                        	<span class="add-on"><?php echo '+'.$countrycode; ?></span><input name="phone" id="phone" type="text" maxlength="10" class="span2 hastooltip" style="width:110px;" value="<?php echo $user->getFormattedPhone(); ?>" title="<?php echo $this->translate("farmer_phone_tooltip"); ?>" />
+                                        	<span class="add-on"><?php echo '+'.$countrycode; ?></span><input name="phone" id="phone" type="text" maxlength="10" class="span2 xhastooltip" style="width:110px;" value="<?php echo $user->getFormattedPhone(); ?>" title="<?php // echo $this->translate("farmer_phone_tooltip"); ?>" />
                                         </div>
                                         <?php if($user->isUserInActive() || isEmptyString($user->getID())){ ?>
                                              <div class="blocked" style="margin-top:5px;"><input type="checkbox" name="isphoneinvited" id="isphoneinvited" value="1" style="margin-top:0;" /> &nbsp;
@@ -825,14 +829,14 @@ select#salutation {
                                     <td>
                                     	<label class="control-label">Alt Phone:</label>
                                         <div class="input-prepend">
-                                        	<span class="add-on"><?php echo '+'.$countrycode; ?></span><input name="phone2" id="phone2" type="text" maxlength="10" class="span2 hastooltip" style="width:110px;" value="<?php echo $user->getFormattedPhone2(); ?>" title="<?php echo $this->translate("farmer_phone_tooltip"); ?>" />
+                                        	<span class="add-on"><?php echo '+'.$countrycode; ?></span><input name="phone2" id="phone2" type="text" maxlength="10" class="span2 xhastooltip" style="width:110px;" value="<?php echo $user->getFormattedPhone2(); ?>" title="<?php // echo $this->translate("farmer_phone_tooltip"); ?>" />
                                         </div>
                                         <div id="phone2_error"></div>
                                     </td>
                                 </tr>
                                 <tr>
                                     <td><label class="control-label">Email:</label>
-                                    	<input type="text" name="email" id="email" class="span3 hastooltip"  value="<?php echo isEmptyString($user->getEmail()) ? $user->getEmail() : $user->getEmail(); ?>" title="<?php echo $this->translate("farmer_email_tooltip"); ?>"/>
+                                    	<input type="text" name="email" id="email" class="span3 xhastooltip"  value="<?php echo isEmptyString($user->getEmail()) ? $user->getEmail() : $user->getEmail(); ?>" title="<?php // echo $this->translate("farmer_email_tooltip"); ?>"/>
                                         <?php if($user->isUserInActive() || isEmptyString($user->getID())){ ?>
                                              <div class="blocked" style="margin-top:5px;"><input type="checkbox" name="isinvited" id="isinvited" value="1" /> &nbsp;
                                              <label class="lineblocked">Invite to activate via Email</label></div>
@@ -840,7 +844,7 @@ select#salutation {
                                     </td>
                                     <td>
                                     	<label class="control-label">Alt Email:</label>
-                                        <input type="text" name="email2" id="email2" class="span3 hastooltip" value="<?php echo $user->getEmail2(); ?>" title="<?php echo $this->translate("farmer_phone2_tooltip"); ?>" />
+                                        <input type="text" name="email2" id="email2" class="span3 xhastooltip" value="<?php echo $user->getEmail2(); ?>" title="<?php // echo $this->translate("farmer_phone2_tooltip"); ?>" />
                                     </td>
                                 </tr>
                                 
@@ -848,7 +852,7 @@ select#salutation {
                         </div>
                     </span>
                 </div>
-                <div class="well lighter row marginleft0" style="min-height:100px; width:94%;">
+                <div class="well lighter row marginleft0" style="min-height:100px;">
                     <h3 class="well-legend">Address</h3>
                     <table class="table">                       
                        <tr>
@@ -930,10 +934,10 @@ select#salutation {
                               	<textarea name="streetaddress" id="streetaddress" class="span4 expanding" style="min-height:60px;"><?php echo $user->getStreetAddress(); ?></textarea>
                             </td>
                             <td><label class="control-label">GPS Latitude:</label>
-                            	<input name="lat" id="lat" type="text" class="span2 hastooltip" value="<?php echo $user->getLat(); ?>" title="<?php echo $this->translate("farmer_latitude_tooltip"); ?>" />
+                            	<input name="lat" id="lat" type="text" class="span2 xhastooltip" value="<?php echo $user->getLat(); ?>" title="<?php // echo $this->translate("farmer_latitude_tooltip"); ?>" />
                             </td>
                             <td><label class="control-label">GPS Longitude:</label>
-                            	<input name="lng" id="lng" type="text" class="span2 hastooltip" value="<?php echo $user->getLng(); ?>" title="<?php echo $this->translate("farmer_longitude_tooltip"); ?>" />
+                            	<input name="lng" id="lng" type="text" class="span2 xhastooltip" value="<?php echo $user->getLng(); ?>" title="<?php // echo $this->translate("farmer_longitude_tooltip"); ?>" />
                             </td>
                         </tr>
                     </table>
@@ -964,7 +968,7 @@ select#salutation {
                     <input type="hidden" id="<?php echo SUCCESS_MESSAGE; ?>" name="<?php echo SUCCESS_MESSAGE; ?>" value="Profile updated successfully" />
                 </div>
                 <div class="divider10"></div>
-                <div class="well row marginleft0" style="min-height:75px; width:94%;"> 
+                <div class="well row marginleft0" style="min-height:75px;"> 
                     <h3 class="well-legend">Family</h3>
                     <table class="table margin0">                       
                        <tr>		  
@@ -976,7 +980,7 @@ select#salutation {
                                                         'multiOptions' => array_merge_maintain_keys(array('' => '<Select One>'), $maritalstatuses),								
                                                         'view' => new Zend_View(),
                                                         'decorators' => array('ViewHelper'),
-                                                        'class' => array('filterselect', 'hastooltip', 'span2'),
+                                                        'class' => array('filterselect', 'xhastooltip', 'span2'),
                                                         'title' => $this->translate("farmer_maritalstatus_tooltip")
                                                     )
                                                 );
@@ -984,41 +988,41 @@ select#salutation {
                                 echo $maritalstatusesdropdown->render(); 
                            ?><input type="hidden" id="maritalstatus_old" name="maritalstatus_old" value="<?php echo $user->getMaritalStatus(); ?>" /></td>
                             <td width="20%"><label class="control-label"><?php echo $this->translate("farmer_nochildren_label"); ?>:</label>
-                            <input name="numberofchildren" id="numberofchildren" type="text" class="span1 hastooltip centeralign isnumber" value="<?php echo $user->getNumberOfChildren(); ?>" title="<?php echo $this->translate("farmer_nochildren_tooltip"); ?>" />
+                            <input name="numberofchildren" id="numberofchildren" type="text" class="span1 xhastooltip centeralign isnumber" value="<?php echo $user->getNumberOfChildren(); ?>" title="<?php // echo $this->translate("farmer_nochildren_tooltip"); ?>" />
                             <input type="hidden" id="numberofchildren_old" name="numberofchildren_old" value="<?php echo $user->getNumberOfChildren(); ?>" />
                             <div id="numberofchildren_error"></div></td>
                             <td width="20%"><label class="control-label"><?php echo $this->translate("farmer_nodependants_label"); ?>:</label>
-                            <input name="numberofdependants" id="numberofdependants" type="text" class="span1 hastooltip centeralign isnumber" value="<?php echo $user->getNumberOfDependants(); ?>" title="<?php echo $this->translate("farmer_nodependants_tooltip"); ?>" />
+                            <input name="numberofdependants" id="numberofdependants" type="text" class="span1 xhastooltip centeralign isnumber" value="<?php echo $user->getNumberOfDependants(); ?>" title="<?php // echo $this->translate("farmer_nodependants_tooltip"); ?>" />
                             <input type="hidden" id="numberofdependants_old" name="numberofdependants_old" value="<?php echo $user->getNumberOfDependants(); ?>" />
                             <div id="numberofdependants_error"></div></td>
                             <td><label class="control-label"><?php echo $this->translate("farmer_totalhousehold_label"); ?>:</label>
-                            <input name="totalhousehold" id="totalhousehold" type="text" class="span1 hastooltip centeralign isnumber" value="<?php echo $user->getTotalHousehold(); ?>" title="<?php echo $this->translate("farmer_totalhousehold_tooltip"); ?>" />
+                            <input name="totalhousehold" id="totalhousehold" type="text" class="span1 xhastooltip centeralign isnumber" value="<?php echo $user->getTotalHousehold(); ?>" title="<?php // echo $this->translate("farmer_totalhousehold_tooltip"); ?>" />
                             <input type="hidden" id="totalhousehold_old" name="totalhousehold_old" value="<?php echo $user->getTotalHousehold(); ?>" />
                             <div id="totalhousehold_error"></div>
                             </td>
                         </tr>
                     </table>
                 </div>
-                <div class="well row marginleft0" style="min-height:100px; width:94%;">
+                <div class="well row marginleft0" style="min-height:100px;">
                     <h3 class="well-legend"><?php echo $this->translate("farmer_nextofkin_label"); ?></h3>
                     <table class="table">                       
                        <tr>		  
                             <td width="30%"><label class="control-label"><?php echo $this->translate("global_name_label"); ?>:</label>
-                            <input name="nextofkin_name" id="nextofkin_name" type="text" class="span3 hastooltip" style="width:150px;" value="<?php echo $user->getNextofkin_Name(); ?>" title="<?php echo $this->translate("farmer_nextofkin_name_label"); ?>" />
+                            <input name="nextofkin_name" id="nextofkin_name" type="text" class="span3 xhastooltip" style="width:150px;" value="<?php echo $user->getNextofkin_Name(); ?>" title="<?php // echo $this->translate("farmer_nextofkin_name_label"); ?>" />
                             </td>
                             <td width="30%"><label class="control-label"><?php echo $this->translate("global_phone_label"); ?>:</label>
                                 <div class="input-prepend">
-                                    <span class="add-on"><?php echo '+'.$countrycode; ?></span><input name="nextofkin_phone" id="nextofkin_phone" type="text" maxlength="10" class="span2 hastooltip isnumber" style="width:110px;" value="<?php echo $user->getNextofkin_phone(); ?>" title="<?php echo $this->translate("farmer_phone_tooltip"); ?>" placeholder="e.g 0772123456" />
+                                    <span class="add-on"><?php echo '+'.$countrycode; ?></span><input name="nextofkin_phone" id="nextofkin_phone" type="text" maxlength="10" class="span2 xhastooltip isnumber" style="width:110px;" value="<?php echo $user->getNextofkin_phone(); ?>" title="<?php // echo $this->translate("farmer_phone_tooltip"); ?>" placeholder="e.g 0772123456" />
                                 </div>
                                 <div id="nextofkin_phone_error"></div>
                             </td>
                             <td><label class="control-label"><?php echo $this->translate("global_email_label"); ?>:</label>
-                            <input name="nextofkin_email" id="nextofkin_email" type="text" class="span3 hastooltip" style="width:180px;" value="<?php echo $user->getNextofkin_email(); ?>" title="<?php echo $this->translate("farmer_nextofkin_email_label"); ?>" /><div id="nextofkin_email_error"></div>
+                            <input name="nextofkin_email" id="nextofkin_email" type="text" class="span3 xhastooltip" style="width:180px;" value="<?php echo $user->getNextofkin_email(); ?>" title="<?php // echo $this->translate("farmer_nextofkin_email_label"); ?>" /><div id="nextofkin_email_error"></div>
                             </td>
                         </tr>
                     </table>
                 </div>
-				<div class="well row marginleft0" style="min-height:100px; width:94%;">
+				<div class="well row marginleft0" style="min-height:100px;">
                     <h3 class="well-legend">Other Information</h3>                       
                     <table class="table">
                         <tr>		  
@@ -1030,7 +1034,7 @@ select#salutation {
                                                                 'multiOptions' => array_merge_maintain_keys(array('' => '<Select One>'), $educlevels),								
                                                                 'view' => new Zend_View(),
                                                                 'decorators' => array('ViewHelper'),
-                                                                'class' => array('filterselect', 'hastooltip', 'span2'),
+                                                                'class' => array('filterselect', 'xhastooltip', 'span2'),
                                                                 'title' => $this->translate("farmer_educationlevel_tooltip")
                                                             )
                                                         );
@@ -1062,14 +1066,14 @@ select#salutation {
                             <input type="hidden" id="<?php echo SUCCESS_MESSAGE; ?>" name="<?php echo SUCCESS_MESSAGE; ?>" value="Profile updated successfully" />
                         </div> 
                         <div class="divider10"></div>
-                        <div class="row margin0 padding0" style="width:96%;">
+                        <div class="row margin0 padding0" style="width:98%;">
                             <span style="width:49%; float:left;">
                                 <div class="well lighter row marginleft0" id="farmleft" style="min-height:325px;"> 
                                     <h3 class="well-legend">Manage Farm</h3>
                                     <table class="table"> 
                                         <tr>
                                             <td><label class="control-label"><?php echo $this->translate("farm_name_label"); ?>:</label>
-                                            <input type="text" name="businessname" id="businessname" value="<?php echo $user->getName(); ?>" class="hastooltip" style="width:80%;" title="<?php echo $this->translate("farm_businessname_tooltip"); ?>" /><div id="businessname_error"></div>
+                                            <input type="text" name="businessname" id="businessname" value="<?php echo $user->getName(); ?>" class="xhastooltip" style="width:80%;" title="<?php // echo $this->translate("farm_businessname_tooltip"); ?>" /><div id="businessname_error"></div>
                                             </td>
                                         </tr>
                                         <tr>
@@ -1112,7 +1116,7 @@ select#salutation {
                                         </tr>
                                         <tr>
                                             <td><label class="control-label"><?php echo $this->translate("farm_numberofemployees_label"); ?>:</label>
-                                            <input name="numberofemployees" id="numberofemployees" type="text" class="span1 isnumber hastooltip" value="<?php echo $user->getNumberOfEmployees(); ?>" title="<?php echo $this->translate("farm_numberofemployees_tooltip"); ?>" /><div class="numberofemployees_error"></div>
+                                            <input name="numberofemployees" id="numberofemployees" type="text" class="span1 isnumber xhastooltip" value="<?php echo $user->getNumberOfEmployees(); ?>" title="<?php // echo $this->translate("farm_numberofemployees_tooltip"); ?>" /><div class="numberofemployees_error"></div>
                                             <input type="hidden" id="numberofemployees_old" name="numberofemployees_old" value="<?php echo $user->getnumberofemployees(); ?>" />
                                             </td>
                                         </tr>
@@ -1125,7 +1129,7 @@ select#salutation {
                                                                       'multiOptions' => getFarmingTypes(),
                                                                       'view' => new Zend_View(),
                                                                       'decorators' => array(array('ViewHelper')),
-                                                                      'class' => array('chzn-select','multipleselect','span5','hastooltip_custom'),
+                                                                      'class' => array('chzn-select','multipleselect','span5','xhastooltip_custom'),
                                                                       'title' => $this->translate("farmer_farmingtypes_tooltip")
                                                               )
                                                       );
@@ -1145,7 +1149,7 @@ select#salutation {
                                                               'multiOptions' => getFarmingTools(),
                                                               'view' => new Zend_View(),
                                                               'decorators' => array(array('ViewHelper')),
-                                                              'class' => array('chzn-select','multipleselect','span4','hastooltip_custom'),
+                                                              'class' => array('chzn-select','multipleselect','span4','xhastooltip_custom'),
                                                               'title' => $this->translate("farmer_farmingtools_tooltip")
                                                           )
                                                   );
@@ -1165,7 +1169,7 @@ select#salutation {
                                                                       'multiOptions' => getOtherActivityTypes(),
                                                                       'view' => new Zend_View(),
                                                                       'decorators' => array(array('ViewHelper')),
-                                                                      'class' => array('chzn-select','multipleselect','span5','hastooltip_custom'),
+                                                                      'class' => array('chzn-select','multipleselect','span5','xhastooltip_custom'),
                                                                       'title' => $this->translate("farmer_activitytypes_tooltip")
                                                               )
                                                       );
@@ -1182,7 +1186,7 @@ select#salutation {
                                 </div>
                             </span>
                             <span style="width:49%; float:right;">
-                                <div class="well lighter row marginleft0" id="farmright" style="min-height:450px; width:98%">
+                                <div class="well lighter row marginleft0" id="farmright" style="min-height:450px; width:100%">
                                     <h3 class="well-legend">Land Usage</h3>                       
                                     <table class="table higherpadding"> 
                                         <tr>
@@ -1195,7 +1199,7 @@ select#salutation {
                                                                             'multiOptions' => array_merge_maintain_keys(array('' => '<Select>'), $landunits),								
                                                                             'view' => new Zend_View(),
                                                                             'decorators' => array('ViewHelper'),
-                                                                            'class' => array('filterselect', 'hastooltip', 'unitselect'),
+                                                                            'class' => array('filterselect', 'xhastooltip', 'unitselect'),
                                                                             'title' => $this->translate("farm_landunits_tooltip"),
 																			'style' => 'width:80px;'
                                                                         )
@@ -1209,7 +1213,7 @@ select#salutation {
                                         </tr>
                                         <tr>
                                             <td class="nowrapping"><label class="control-label"><?php echo $this->translate("farm_landsizeactive_label"); ?>:</label></td>
-                                            <td><input name="landactivesize" id="landactivesize" type="text" class="span1 isnumber hastooltip" value="<?php echo clean_num($user->getLandActiveSize()); ?>" title="<?php echo $this->translate("farm_landsize_tooltip"); ?>" /> <span class="pagedescription" id="activeland"></span><div id="landactivesize_error"></div>
+                                            <td><input name="landactivesize" id="landactivesize" type="text" class="span1 isnumber xhastooltip" value="<?php echo clean_num($user->getLandActiveSize()); ?>" title="<?php // echo $this->translate("farm_landsize_tooltip"); ?>" /> <span class="pagedescription" id="activeland"></span><div id="landactivesize_error"></div>
                                             <input type="hidden" id="landactivesize_old" name="landactivesize_old" value="<?php echo $user->getlandactivesize(); ?>" />
                                             </td>
                                         </tr>
@@ -1222,7 +1226,7 @@ select#salutation {
 																			'multiOptions' => array_merge_maintain_keys(array('' => '<Select>'), $landmethods),								
 																			'view' => new Zend_View(),
 																			'decorators' => array('ViewHelper'),
-																			'class' => array('filterselect', 'hastooltip', 'span2'),
+																			'class' => array('filterselect', 'xhastooltip', 'span2'),
 																			'title' => $this->translate("farm_landacquiremethod_tooltip"),
 																			'style' => 'width:80px;'
 																		)
@@ -1243,7 +1247,7 @@ select#salutation {
                                                                             'multiOptions' => $fieldcount,								
                                                                             'view' => new Zend_View(),
                                                                             'decorators' => array('ViewHelper'),
-                                                                            'class' => array('filterselect', 'hastooltip', 'unitselect'),
+                                                                            'class' => array('filterselect', 'xhastooltip', 'unitselect'),
                                                                             'title' => $this->translate("farm_numberoffields_tooltip"),
 																			'style' => 'width:80px;'
                                                                         )

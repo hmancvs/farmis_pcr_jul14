@@ -64,25 +64,19 @@
    <h4><?php echo $title; ?></h4>
   </div>
     <div class="control-group well actions" id="topactions">
-        <?php if(isAdmin() || isManagement()){ ?>
-            <a class="btn btn-primary" href="<?php echo $this->baseUrl('mobile/addgroup/country/'.$country); ?>"><i class="icon-plus icon-white"></i> New DNA</a>
-        <?php } ?>
-        <?php if(isAdmin() || isManagement() || isDataClerk() || isFarmGroupAdmin()){ ?>
-            <a class="btn btn-primary" href="<?php echo $this->baseUrl('mobile/addgroup/type/1/parentid/'.$farmgroup->getID().'/country/'.$country); ?>"><i class="icon-plus icon-white"></i> New Farm Group</a>
-        <?php } ?>
-        <?php if((isAdmin() || isManagement() || isFarmGroupAdmin()) && $farmgroup->isGroup()){ ?>
+        <?php if($acl->checkPermission('DNA', ACTION_EDIT) && $farmgroup->isGroup()){ ?>
             <a class="btn btn-primary clearfix" href="<?php echo $this->baseUrl('mobile/addgroup/id/'.encode($farmgroup->getID()).'/country/'.$country); ?>"><i class="icon-pencil icon-white"></i> Update</a>
         <?php } ?>
-        <?php if((isAdmin() || isManagement() || isDataClerk() || isFarmGroupAdmin()) && $farmgroup->isSubGroup()){ ?>
+        <?php if($acl->checkPermission('Farm Group', ACTION_EDIT) && $farmgroup->isSubGroup()){ ?>
             <a class="btn btn-primary clearfix" href="<?php echo $this->baseUrl('mobile/addgroup/id/'.encode($farmgroup->getID()).'/country/'.$country); ?>"><i class="icon-pencil icon-white"></i> Update</a>
         <?php } ?>
-        <?php if(isAdmin() || isManagement()){ ?>
+        <?php if($acl->checkPermission('DNA', ACTION_DELETE)){ ?>
             <a class="btn deleteline gonowhere" action="<?php echo $this->baseUrl('mobile/delete/id/'.$farmgroup->getID()."/entityname/FarmGroup/successurl/".encode($this->baseUrl('mobile/groups'.$typestring))); ?>"><i class="icon-trash"></i> Delete</a>
         <?php } ?>    
-        <?php if(isAdmin() || isManagement() || isDataClerk()){ ?>
+        <?php if($acl->checkPermission('DNA', ACTION_LIST)){ ?>
             <a class="btn" href="<?php echo $this->baseUrl('mobile/groups'); ?>"><i class="icon-list"></i> DNA Profiles</a>
         <?php } ?>    
-        <?php if(isAdmin() || isManagement() || isDataClerk() || isFarmGroupAdmin()){ ?>
+        <?php if($acl->checkPermission('Farm Group', ACTION_LIST)){ ?>
             <a class="btn" href="<?php echo $this->baseUrl('mobile/groups/type/6'.$groupfilter); ?>"><i class="icon-list"></i> Farm Groups</a>
         <?php } ?>    
         <a class="btn" href="<?php echo $this->baseUrl('mobile/home'); ?>"><i class="icon-home"></i> Home</a>
@@ -119,7 +113,7 @@
             <div class="control-group" style="margin-bottom:0;">
                 <div class="well lighter clearfix padding2 nobg" id="profiletop">
                     <div id="profileinfo"> 
-                        <?php if(isAdmin() || isManagement() || isDataClerk() || isFarmGroupAdmin()){ ?>
+                        <?php if($acl->checkPermission('DNA', ACTION_EDIT)){ ?>
                             <a href="<?php echo $this->baseUrl('mobile/gpicture/id/'.encode($farmgroup->getID()).'/type/photo'); ?>"><img id="profileimage" src="<?php echo $farmgroup->getMediumLogoPath(); ?>" /><pre id="uploadlink" class="hide absoluteupload"><i class="icon-pencil"></i> Upload Image</pre></a>
                         <?php } else { ?>
                             <img id="profileimage" src="<?php echo $farmgroup->getMediumLogoPath(); ?>" />

@@ -148,7 +148,8 @@
 	}
 	
 	$paginate->processPost($request->getParams());
-	$all_results_query = "SELECT u.id as id, u.id as userid, u.farmgroupid as fmgroupid, u.firstname, u.lastname, u.othernames, u.subgroupid, u.gender, u.isactive, u.locationid as districtid, u.email as email, u.email as femail, u.refno, u.regno as regno, u.phone as phone, u.regdate as fregdate, u.profilephoto as profilephoto, fg.orgname as orgname, fgs.orgname as sorgname, l.name as district, u.isphoneinvited, u.hasacceptedinvite, u.isinvited, u.selfregistered, concat(ua.firstname, ' ', ua.lastname) as addedby, u.datecreated as dateadded FROM useraccount u LEFT JOIN farmgroup as fg on (u.farmgroupid = fg.id) LEFT JOIN location l on (u.locationid = l.id AND l.locationtype = 2) INNER JOIN useraccount ua on (u.createdby = ua.id) LEFT JOIN farmgroup as fgs on (u.subgroupid = fgs.id) ".$where_query." AND u.type = 2 AND u.country = UPPER('".$session->getVar('country')."') ".$paginate->getSearchAndFilterSQL($customwhere)." GROUP BY u.id ".$order_query;
+	$all_results_query = "SELECT u.id as id, u.id as userid, u.farmgroupid as fmgroupid, u.firstname, u.lastname, u.othernames, u.subgroupid, u.gender, u.isactive, u.locationid as districtid, u.email as email, u.email as femail, u.refno, u.regno as regno, u.phone as phone, u.regdate as fregdate, u.profilephoto as profilephoto, fg.orgname as orgname, fgs.orgname as sorgname, l.name as district, u.isphoneinvited, u.hasacceptedinvite, u.isinvited, u.selfregistered, concat(ua.firstname, ' ', ua.lastname) as addedby, u.datecreated as dateadded, u.paymentstatus FROM useraccount u LEFT JOIN farmgroup as fg on (u.farmgroupid = fg.id) LEFT JOIN location l on (u.locationid = l.id AND l.locationtype = 2) INNER JOIN useraccount ua on (u.createdby = ua.id) LEFT JOIN farmgroup as fgs on (u.subgroupid = fgs.id) ".$where_query." AND u.type = 2 AND u.country = UPPER('".$session->getVar('country')."') ".$paginate->getSearchAndFilterSQL($customwhere)." GROUP BY u.id ".$order_query;
+	
 	
 	// debugMessage($all_results_query); // exit();
 	// determine total number of records found
@@ -203,15 +204,15 @@ $(document).ready(function() {
       <?php } ?>
       <ul class="peoplegroup">
             <li><a class="btn" href="<?php echo $this->baseUrl('mobile/home'); ?>" style="padding:6px 10px;"><i class="icon-home"></i></a></li>
-            <?php if(isAdmin() || isManagement() || isDataClerk() || isFarmGroupAdmin()){ ?>
+            <?php if($acl->checkPermission('Farmer', ACTION_CREATE)) { ?>	
             	<li><a href="<?php echo $addfarmerurl; ?>" class="btn btn-primary"><i class="icon-plus icon-white"></i> Add Farmer</a></li>
             <?php } ?>
-            <?php if($loggedinuser->isUgandan() && isUganda() && (isAdmin() || isManagement())){ ?>
+            <?php if($loggedinuser->isUgandan() && isUganda() && $acl->checkPermission('Can Administer Kenya', ACTION_VIEW)){ ?>
 				<?php if(isEmptyString($request->country) || $countryreq == 'ug'){ ?>
                     <li><a class="btn" href="<?php echo $this->baseUrl('mobile/list/country/ke'); ?>" title="Browse Kenya Directory"><i class="icon-list"></i> Browse Kenya</a></li>
                 <?php } ?>
             <?php } ?>
-            <?php if($loggedinuser->isUgandan() && isKenya() && (isAdmin() || isManagement())){ ?>
+            <?php if($loggedinuser->isUgandan() && isKenya() && $acl->checkPermission('Can Administer Kenya', ACTION_VIEW)){ ?>
                 <?php if(!isEmptyString($request->country) && strtolower($countryreq) == 'ke'){ ?>
                     <li><a class="btn" href="<?php echo $this->baseUrl('mobile/list/country/ug'); ?>" title="Browse Uganda Directory"><i class="icon-list"></i> Browse Uganda</a></li>
                 <?php } ?>
@@ -231,7 +232,7 @@ $(document).ready(function() {
 					echo $districtdropdown->render(); 
                   ?>
             </li>
-            <?php if(isAdmin() || isManagement() || isDataClerk()){ ?>
+            <?php if(!isFarmGroupAdmin()){ ?>
             <li>
                 <?php
                     $groupdropdown = new Zend_Form_Element_Select('farmgroupid',
@@ -296,7 +297,7 @@ $(document).ready(function() {
         <?php if($has_no_data) { ?>
             <div style="clear:both;" class="alert alert-info margin5"><?php echo $this->translate("farmer_list_norecords"); ?></div>
         <?php } else { ?>
-              <?php require APPLICATION_PATH."/views/scripts/farmer/contentloop.phtml"; ?>
+              <?php require APPLICATION_PATH."/views/scripts/farmer/farmerloop.phtml"; ?>
 		<?php } ?>              
   </form>
 </div>

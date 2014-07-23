@@ -3,7 +3,7 @@
 class ProfileController extends SecureController  {
 	
 	public function addAction(){
-    	$this->_helper->layout->disableLayout();
+    	// $this->_helper->layout->disableLayout();
 		// $this->_helper->viewRenderer->setNoRender(TRUE);
     }
     
@@ -19,7 +19,7 @@ class ProfileController extends SecureController  {
 			$action == "changephone" || $action == "processchangephone" || $action == "addcrop" || 
 			$action == "processadd" || $action == "processaddcrop" || $action == "processother" || 
 			$action == "processvalidatephone" || $action == 'validatephone' || $action == 'changesettings' || 
-			$action == 'processgps'
+			$action == 'processgps' || $action == "picture" || $action == "processpicture" || $action == "croppicture" 
 		){
 			return ACTION_EDIT; 
 		}
@@ -27,7 +27,7 @@ class ProfileController extends SecureController  {
 	    	$action == "addsuccess"  || $action == "adderror" ||
 	    	$action == "invite" || $action == "inviteone" || $action == "inviteonebyphone" || $action == "invitemany" || 
 	    	$action == "invitemanyconfirm" || $action == "invitefriends" || $action == "invitefriendsconfirm" || 
-	    	$action == "picture" || $action == "processpicture" || $action == "croppicture" ||
+	    	
 	    	$action == "autosearch" || $action == "delete" || 
 	    	$action == "delete" || $action == "privacy" || $action == "resetprivacy" || $action == "processadd" || 
 	    	$action == "report" || $action == 'validatephonesuccess' || $action == 'verifyphone' || 

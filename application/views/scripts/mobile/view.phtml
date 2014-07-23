@@ -105,6 +105,10 @@
 		$userlisturl = $this->baseUrl('mobile/list/farmgroupid/'.$user->getFarmGroupID());
 		$addfarmerurl = $this->baseUrl('mobile/farmer/farmgroupid/'.$user->getFarmGroupID()); 
 	}
+	$resourcename = 'Farmer';
+	if($request->type == 'other' || !$user->isFarmer()){
+		$resourcename = 'User Account';
+	}
 	
 	$loadgps = true;
 	
@@ -172,35 +176,37 @@
   </div>
         <div class="control-group well actions" id="topactions">
             <a class="btn noimgbutton" href="<?php echo $this->baseUrl('mobile/home'); ?>"><i class="icon-home"></i></a>
-			<?php if(isAdmin() || isManagement() || isDataClerk() || isFarmGroupAdmin() || $isme){ ?>
+			<?php if($acl->checkPermission($resourcename, ACTION_EDIT) || $isme){ ?>
                 <a class="btn btn-primary" href="<?php echo $this->baseUrl('mobile/farmer/id/'.encode($id)); ?>"><i class="icon-pencil icon-white"></i> Update</a>
             <?php } ?>
-            <?php if((isAdmin() || isManagement() || isDataClerk() || isFarmGroupAdmin()) && $user->isFarmer()){ ?>    
+            <?php if($acl->checkPermission('Farmer', ACTION_LIST) && $user->isFarmer()){ ?>    
                 <a class="btn" href="<?php echo $userlisturl; ?>"><i class="icon-list"></i> Farmers</a>
             <?php } ?>
-            <?php if((isAdmin() || isManagement()) && !$user->isFarmer()){ ?>    
+            <?php if($acl->checkPermission('User Account', ACTION_LIST) && !$user->isFarmer()){ ?>    
                 <a class="btn" href="<?php echo $profilelisturl; ?>"><i class="icon-list"></i> Profiles</a>
             <?php } ?> 
             <div class="btn-group">
                 <button class="btn btn-primary dropdown-toggle centeralign" data-toggle="dropdown" id="" href="javascript: void(0)" style="width:110px; padding-left:0;"><i class="icon-plus icon-white"></i> Quick Links</button>
                 <button class="btn btn-primary dropdown-toggle" data-toggle="dropdown" style="padding-bottom:12px;"><span class="caret"></span></button>
                 <ul class="dropdown-menu">
-                    <?php if((isAdmin() || isManagement() || isDataClerk() || isFarmGroupAdmin() || isFarmer())  && $user->isFarmer()){  ?>  
+                    <?php if(($acl->checkPermission($resourcename, ACTION_EDIT))  && $user->isFarmer()){  ?>  
                         <li><a href="<?php echo $this->baseUrl('mobile/addseason/userid/'.encode($user->getID())); ?>"><i class="icon-plus"></i> Start new Season</a></li>
                         <li><a href="<?php echo $this->baseUrl('mobile/seasons/userid/'.$user->getID()); ?>"><i class="icon-list"></i> View Seasons</a></li>
                         <li><a class="selectseason" id="selectseason" rel="Browse Season" title="Select Season" href="<?php echo $this->baseUrl('mobile/selectseason/pgc/true/stage/input/type/2/userid/'.encode($user->getID())); ?>" submittext="Continue"><i class="icon-plus"></i> Record Expense</a></li>
                         <li><a href="<?php echo $this->baseUrl('mobile/expenses/userid/'.$user->getID()); ?>"><i class="icon-list"></i> Manage Expenses</a></li>
                         <li><a class="selectseason" id="selectseason" rel="Browse Season" title="Select Season" href="<?php echo $this->baseUrl('mobile/selectseason/pgc/true/stage/sale/userid/'.encode($user->getID())); ?>" submittext="Continue"><i class="icon-plus"></i> Record Sale</a></li>
                         <li><a href="<?php echo $this->baseUrl('mobile/sales/userid/'.$user->getID()); ?>"><i class="icon-list"></i> Manage Sales</a></li>
-                    <?php } ?>    
-                    <li><a href="<?php echo $this->baseUrl('mobile/picture/id/'.encode($user->getID()).'/type/photo'); ?>"><i class="icon-pencil"></i> Upload Photo</a></li>
-                    <?php if((isAdmin() || isManagement() || isDataClerk() || isFarmGroupAdmin()) && $user->isFarmer()){ ?>    
+                    <?php } ?>
+                    <?php if($acl->checkPermission($resourcename, ACTION_EDIT)){  ?> 
+                    	<li><a href="<?php echo $this->baseUrl('mobile/picture/id/'.encode($user->getID()).'/type/photo'); ?>"><i class="icon-pencil"></i> Upload Photo</a></li>
+                    <?php } ?>
+                    <?php if($acl->checkPermission('Payments', ACTION_CREATE) && $user->isFarmer()){ ?>    
                         <li><a href="<?php echo $this->baseUrl('mobile/addpayment/userid/'.encode($user->getID())); ?>"><i class="icon-plus"></i> New Payment</a></li>
                     <?php } ?>
-                    <?php if((isAdmin() || isManagement())){ ?>
+                    <?php if($acl->checkPermission($resourcename, ACTION_DELETE)){ ?>
                         <li><a class="deleteline gonowhere" action="<?php echo $this->baseUrl('mobile/delete/id/'.$user->getID()."/entityname/UserAccount/successurl/".encode($this->baseUrl('mobile/list'))); ?>"><i class="icon-trash"></i> Delete</a></li>
                     <?php } ?> 
-                    <?php if((isAdmin() || isManagement()) && !$isme && $user->isUserActive()){ ?>
+                    <?php if(($acl->checkPermission($resourcename, ACTION_DELETE)) && !$isme && $user->isUserActive()){ ?>
                         <li><a action="<?php echo $this->baseUrl('mobile/deactivate/id/'.$user->getID()."/entityname/UserAccount/successurl/".encode($this->baseUrl('mobile/list'))); ?>"><i class="icon-trash"></i> Deactivate</a></li>
                     <?php } ?>
                     <?php if($isme && $user->isUserActive()){ ?>
@@ -241,13 +247,13 @@
             <div class="control-group" style="margin-bottom:0;">
                 <div class="well lighter clearfix padding2 nobg" id="profiletop">
                     <div id="profileinfo"> 
-                        <?php if($isme || isFarmGroupAdmin() || isAdmin()){ ?>
+                        <?php if($isme || $acl->checkPermission($resourcename, ACTION_EDIT)){ ?>
                             <a href="<?php echo $this->baseUrl('mobile/picture/id/'.encode($user->getID()).'/type/photo'); ?>"><img id="profileimage" src="<?php echo $user->getMediumPicturePath(); ?>" /><pre id="uploadlink" class="hide absoluteupload"><i class="icon-pencil"></i> Upload Photo</pre></a>
                         <?php } else { ?>
                             <img id="profileimage" src="<?php echo $user->getMediumPicturePath(); ?>" />
                         <?php } ?>
                     </div>
-                    <?php if($isme || isFarmGroupAdmin() || isAdmin()){ ?>
+                    <?php if($isme || $acl->checkPermission($resourcename, ACTION_EDIT)){ ?>
                         <a style="display:block; width:155px; text-align:center;" href="<?php echo $this->baseUrl('mobile/picture/id/'.encode($user->getID()).'/type/photo'); ?>" class="btn btn-mini">Upload Photo</a>
                     <?php } ?>
                 </div>

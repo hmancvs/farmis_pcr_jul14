@@ -38,7 +38,7 @@
 		}
 	}
 	
-	$posturl = $this->baseUrl("profile/processpicture");
+	$posturl = $this->baseUrl($controllername."/processpicture");
 	$this->headTitle($title);
 	
 ?>
@@ -123,17 +123,13 @@ h3.well-legend {
 	color:#333333;
 	font-size:14px;
 }
-#contentcolumn {
-	height:auto;
-	min-height:0;
-}
 </style>
 <div class="row margin0">
 	<span class="span11 margin0">        
-       <table class="table noborder margin0">
+       <table class="table noborder nohover margin0">
             <tr>
                 <td style="vertical-align:top; width:190px; padding-left:40px; padding-right:25px;">
-                    <table class="table noborder margin0" style="width:180px;">
+                    <table class="table noborder nohover margin0" style="width:180px;">
                         <tr>
                             <td>
                             	<?php if($type == 'photo'){ ?>
@@ -165,8 +161,8 @@ h3.well-legend {
                         <div class="alert alert-error"><?php echo $session->getVar(ERROR_MESSAGE); ?></div>
                     <?php } ?>
 					<?php if(isEmptyString($request->crop)){ ?>
-                        <form id="pictureform" action="<?php echo $posturl; ?>" method="post" enctype="multipart/form-data">					
-                            <table class="table noborder margin0">
+                        <form id="indexform" action="<?php echo $posturl; ?>" method="post" enctype="multipart/form-data">					
+                            <table class="table noborder margin0 nohover">
                                 <tr>
                                     <td style="vertical-align:top; border-bottom:2px dotted #e2e2e2; padding-bottom:50px;">
                                         
@@ -186,14 +182,14 @@ h3.well-legend {
                                     </td>
                                 </tr>  
                                 <tr>
-                                    <td style="padding-top:25px;"><button style="" type="submit" class="btn btn-primary" id="upload" name="submit" title="Upload"><i class="icon-upload icon-white"></i>&nbsp; Upload</button> or <a href="<?php echo $this->baseUrl("profile/view/id/".encode($user->getID())); ?>" title="<?php echo $this->translate("global_button_cancel"); ?>"><?php echo $this->translate('global_button_cancel'); ?></a>&nbsp;
+                                    <td style="padding-top:25px;"><button style="" type="submit" class="btn btn-primary" id="upload" name="submit" title="Upload"><i class="icon-upload icon-white"></i>&nbsp; Upload</button> or <a href="<?php echo $this->baseUrl($controllername."/view/id/".encode($user->getID())); ?>" title="<?php echo $this->translate("global_button_cancel"); ?>"><?php echo $this->translate('global_button_cancel'); ?></a>&nbsp;
                                     </td>
                                 </tr>       
                             </table>
                         </form>	
 					<?php } else { ?>
-                        <form action="<?php echo $this->baseUrl("profile/croppicture"); ?>" id="indexform" method="post">
-                            <table class="table noborder margin0">
+                        <form action="<?php echo $this->baseUrl($controllername."/croppicture"); ?>" id="indexform" method="post">
+                            <table class="table noborder margin0 nohover">
                                 <tr>
                                     <td style="vertical-align:top; border-bottom:2px dotted #e2e2e2; padding-bottom:30px;">
                                         <?php if($type == 'photo'){ ?>

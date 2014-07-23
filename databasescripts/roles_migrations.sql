@@ -3,24 +3,7 @@
 -- ------------------------------------------------------
 -- Server version	5.5.24
 
-
-/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
-/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
-/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
-/*!40101 SET NAMES utf8 */;
-
-/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
-/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
-/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
-
-
---
--- Create schema farmis
---
-
-CREATE DATABASE IF NOT EXISTS farmis;
-USE farmis;
-
+SET FOREIGN_KEY_CHECKS = 0;
 --
 -- Definition of table `aclgroup`
 --
@@ -36,7 +19,7 @@ CREATE TABLE `aclgroup` (
   `lastupdatedby` int(11) unsigned DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `unique_name` (`name`)
-) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8;
 
 --
 -- Dumping data for table `aclgroup`
@@ -44,13 +27,14 @@ CREATE TABLE `aclgroup` (
 
 /*!40000 ALTER TABLE `aclgroup` DISABLE KEYS */;
 INSERT INTO `aclgroup` (`id`,`name`,`description`,`datecreated`,`createdby`,`lastupdatedate`,`lastupdatedby`) VALUES 
- (1,'Administrator','System configuration users','2012-09-01 12:00:00',1,NULL,NULL),
+ (1,'Super Administrator','System configuration users','2012-09-01 12:00:00',1,NULL,NULL),
  (2,'Farmer','Farmis main entity','2012-09-01 12:00:00',1,NULL,NULL),
  (3,'DNA Admin','Farmis support data clerk','2012-09-01 12:00:00',1,NULL,NULL),
  (4,'PIA','Farm Group users','2012-09-01 12:00:00',1,NULL,NULL),
  (5,'Management','FIT uganda managerial role','2012-09-01 12:00:00',1,NULL,NULL),
  (6,'Partner','Farmis Partners','2014-07-01 12:00:00',1,NULL,NULL),
- (7,'Infotrade Staff','Infotrade Staff','2014-07-01 12:00:00',1,NULL,NULL);
+ (7,'FARMIS Staff','Infotrade Staff','2014-07-01 12:00:00',1,NULL,NULL),
+ (8,'Administrator','Highest level of permissions','2014-07-01 12:00:00',1,NULL,NULL);
 /*!40000 ALTER TABLE `aclgroup` ENABLE KEYS */;
 
 
@@ -76,7 +60,7 @@ CREATE TABLE `aclpermission` (
   `lastupdatedate` datetime DEFAULT NULL,
   `lastupdatedby` int(11) unsigned DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=48 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=51 DEFAULT CHARSET=utf8;
 
 --
 -- Dumping data for table `aclpermission`
@@ -130,7 +114,10 @@ INSERT INTO `aclpermission` (`id`,`groupid`,`resourceid`,`create`,`edit`,`view`,
  (44,1,23,'1','1','1','1','0','0','0','0','0000-00-00 00:00:00',0,NULL,NULL),
  (45,1,25,'0','0','1','0','0','0','0','0','0000-00-00 00:00:00',0,NULL,NULL),
  (46,1,26,'0','0','1','0','0','0','0','0','0000-00-00 00:00:00',0,NULL,NULL),
- (47,1,27,'0','0','1','0','0','0','0','0','0000-00-00 00:00:00',0,NULL,NULL);
+ (47,1,27,'0','0','1','0','0','0','0','0','0000-00-00 00:00:00',0,NULL,NULL),
+ (48,1,9,'1','1','1','1','1','0','1','0','0000-00-00 00:00:00',0,NULL,NULL),
+ (49,1,28,'1','1','1','1','1','0','1','0','0000-00-00 00:00:00',0,NULL,NULL),
+ (50,1,29,'1','1','1','1','1','0','0','0','0000-00-00 00:00:00',0,NULL,NULL);
 /*!40000 ALTER TABLE `aclpermission` ENABLE KEYS */;
 
 
@@ -156,7 +143,7 @@ CREATE TABLE `aclresource` (
   `lastupdatedate` datetime DEFAULT NULL,
   `lastupdatedby` int(11) unsigned DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=27 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=30 DEFAULT CHARSET=utf8;
 
 --
 -- Dumping data for table `aclresource`
@@ -165,12 +152,12 @@ CREATE TABLE `aclresource` (
 /*!40000 ALTER TABLE `aclresource` DISABLE KEYS */;
 INSERT INTO `aclresource` (`id`,`name`,`description`,`create`,`edit`,`view`,`list`,`delete`,`approve`,`export`,`acclist`,`datecreated`,`createdby`,`lastupdatedate`,`lastupdatedby`) VALUES 
  (1,'Lookup Type','Look up types','0','0','1','1','0','0','0','0','2012-03-01 12:00:00',1,NULL,NULL),
- (2,'Lookup Value','Values for the lookup type','1','1','1','1','1','0','0','0','2012-03-01 12:00:00',1,NULL,NULL),
+ (2,'System Variables','Values for the lookup type','1','1','1','1','1','0','0','0','2012-03-01 12:00:00',1,NULL,NULL),
  (3,'User Account','A user within the application','1','1','1','1','1','0','1','0','2012-03-01 12:00:00',1,NULL,NULL),
  (4,'Audit Trail','Log of selected transactions within the application','0','0','1','1','0','0','1','0','2012-03-01 12:00:00',1,NULL,NULL),
  (5,'Role','Actions a member can execute on resources','1','1','1','1','1','0','1','0','2012-03-01 12:00:00',1,NULL,NULL),
  (6,'Dashboard','user dashboard','0','0','1','0','0','0','0','0','2012-03-01 12:00:00',1,NULL,NULL),
- (7,'Application Settings','Application Administration','1','1','1','1','0','0','0','0','2012-03-01 12:00:00',1,NULL,NULL),
+ (7,'Global Config','Application Administration','1','1','1','1','0','0','0','0','2012-03-01 12:00:00',1,NULL,NULL),
  (8,'Report Dashboard','The different reports in the Application','0','0','1','0','0','0','0','0','2012-03-01 12:00:00',1,NULL,NULL),
  (9,'Payments','Billing and payment information','0','0','1','0','0','1','0','0','2012-03-01 12:00:00',1,NULL,NULL),
  (10,'Payments Report','Payments Report','0','0','1','0','0','0','0','0','2012-03-01 12:00:00',1,NULL,NULL),
@@ -180,22 +167,15 @@ INSERT INTO `aclresource` (`id`,`name`,`description`,`create`,`edit`,`view`,`lis
  (17,'Farm Group','Profile management for farm groups under a DNA','1','1','1','1','1','0','1','0','0000-00-00 00:00:00',0,NULL,NULL),
  (18,'Market Prices','Ability to view market prices','0','0','1','1','0','0','0','0','0000-00-00 00:00:00',0,NULL,NULL),
  (19,'Farmis Coverage Map','Permissions to the coverage map','0','0','1','0','0','0','0','0','0000-00-00 00:00:00',0,NULL,NULL),
- (20,'Commodities','Persmissions for commodities','1','1','1','1','1','0','0','0','0000-00-00 00:00:00',0,NULL,NULL),
+ (20,'Commodities','Permissions for commodities','1','1','1','1','1','0','0','0','0000-00-00 00:00:00',0,NULL,NULL),
  (21,'Business Directory','Permissions for the Business Directory','1','1','1','1','1','0','0','0','0000-00-00 00:00:00',0,NULL,NULL),
  (22,'Messaging','Messaging permissions','1','1','1','1','1','0','0','0','0000-00-00 00:00:00',0,NULL,NULL),
  (23,'Locations','Ability to view and setup locations','1','1','1','1','1','0','0','0','0000-00-00 00:00:00',0,NULL,NULL),
  (24,'Weather','Weather forecasts','0','0','1','0','0','0','0','0','0000-00-00 00:00:00',0,NULL,NULL),
  (25,'Bulk SMS','Access rights to sms','0','0','1','0','0','0','0','0','0000-00-00 00:00:00',0,NULL,NULL),
- (26,'Mass Mail','Access to email broadcast','0','0','1','0','0','0','0','0','0000-00-00 00:00:00',0,NULL,NULL);
-/*!40000 ALTER TABLE `aclresource` ENABLE KEYS */;
+ (26,'Mass Mail','Access to email broadcast','0','0','1','0','0','0','0','0','0000-00-00 00:00:00',0,NULL,NULL),
+ (27,'Can Administer Kenya','User with right to administer kenya functions','0','0','1','0','0','0','0','0','0000-00-00 00:00:00',0,NULL,NULL),
+ (28,'Community Forum','Permissions to the community forum','0','0','0','0','0','0','0','0','0000-00-00 00:00:00',0,NULL,NULL),
+ (29,'Partner','Farmis Partners','1','1','1','1','1','0','0','0','0000-00-00 00:00:00',0,NULL,NULL);
 
-
-
-
-/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
-/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
-/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
-/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
-/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
-/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
-/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+SET FOREIGN_KEY_CHECKS = 1;

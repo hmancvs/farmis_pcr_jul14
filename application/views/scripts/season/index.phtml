@@ -192,7 +192,7 @@
                 <?php } ?>
                 <div class="row margin0 padding0">
                 	<div class="divider10"></div>
-                    <a href="<?php echo $this->baseUrl('season/view/id/'.encode($season->getID())); ?>" class="btn"><i class="icon-remove"></i> <?php echo $this->translate('global_button_cancel'); ?></a>
+                    <a class="btn cancel gonowhere"><i class="icon-remove"></i> <?php echo $this->translate('global_button_cancel'); ?></a>
                     <button type="submit" class="btn btn-primary savethenview"><i class="icon-ok icon-white"></i> <?php echo $button_title; ?></button>
                     <input type="hidden" name="entityname" value="Season" />
                     <input type="hidden" id="id" name="id" value="<?php echo encode($season->getID()); ?>" />
