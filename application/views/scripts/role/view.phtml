@@ -1,12 +1,11 @@
-<?php 
+<?php
 	require_once APPLICATION_PATH.'/includes/header.php';
-	$request = Zend_Controller_Front::getInstance()->getRequest();
 	
 	$resource = "Role";	
 	$action = ACTION_VIEW;
 	
 	#create object
-	$aclgroup = new AclGroup;
+	$role = new AclGroup;
 	$resourcelookuptype = new LookupType;
 	$resourcelookuptype->setName("ALL_RESOURCES");
 	$resourcearray = $resourcelookuptype->getOptionValuesFromQuery();
@@ -14,111 +13,112 @@
 	$definedactions = ACL::getActions();
 	
 	#Populate or retrive the entry using the above id. 
-	$aclgroup->populate(decode($request->id));
+	$role->populate(decode($request->id));
+	// debugMessage($role->toArray());
+	$title = $role->getName().' Permissions';
+	$description = $role->getName()." - ".$role->getDescription();
+	$icon = $this->baseUrl('images/icon_settings.png');
+	$this->headTitle($role->getName().$browserappend);
 	
-	$title = $aclgroup->getName()."'s Permissions";
-	$this->headTitle($title); 
 ?>
 <script>
-	$(document).ready(function() {
-		$("table.formtable .delete").click(function(){
-			if(window.confirm("Are you sure you want to Delete this Role? \n Click OK to confirm or Cancel to stay on this page.")){
-				return true;
-			} else {
-				return false;
-			}
-		}); 
-	}); 
+$(document).ready(function() {
+	$("#levelone_icon").addClass('icon-lock');
+	$("#levelone_link").attr('href', '<?php echo $this->baseUrl('role/list'); ?>').html('<b>Roles</b>');
+	$("#leveltwo_link").html('> <?php echo $role->getName(); ?>');
+
+});
 </script>
-<h2><?php echo $title; ?></h2>
-<div class="pageinfo"><?php echo $this->translate("role_page_info"); ?></div>
-<?php if(isNotAnEmptyString($session->getVar(SUCCESS_MESSAGE))){ ?>
-<div class="successmessage"><?php echo $session->getVar(SUCCESS_MESSAGE); ?></div><br />
-<?php } ?>
-<table class="formtable">
-	<tr class="sectionheading">
-        <td colspan="2"><?php echo $this->translate("role_section_general"); ?></td>
-    </tr>    
-    <tr>
-        <td class="label"><?php echo $this->translate("role_name_label"); ?>:</td>
-        <td><?php echo $aclgroup->getName(); ?></td>        
-    </tr>
-    <tr>
-        <td class="label"><?php echo $this->translate("role_description_label"); ?>:</td>
-        <td><?php echo $aclgroup->getDescription(); ?></td>
-    </tr>
-</table><br />
-<table class="formtable">
-	<tr class="sectionheading">
-        <td colspan="2"><?php echo $this->translate("role_section_permissions"); ?></td>
-    </tr>
-    <tr>
-		<td colspan="2" style="border-collapse:collapse; margin:0; padding:0;">
-        	<table id="permissions" style="border-collapse:collapse; margin:0; padding:0;">
-                <thead>
-                    <tr>
-                    	<td class="label">Resources</td>                    	
-						<?php
-                            foreach($definedactions as $value) {
-                        ?>
-                        <td class="label"><?php echo ucfirst($value); ?></td>
-                        <?php 
-                            } // end creating the header column for each action
-                        ?> 
-                    </tr>
-                </thead>
-                <tbody>
-					<?php 
-						foreach($resourcearray as $resourceid => $resourceName) {
-						// load the permission instance for the specified resource, since for each group and resource there is only one permission instance
-						$theresource = new AclResource();
-						$theresource->populate($resourceid);
-						//debugMessage($resource->toArray());
-						$permission = $aclgroup->getPermissionForResource($resourceid); 
-                    ?>
-                    <tr>
-                    	<td class="label"><?php echo $resourceName; ?></td>                            
-						<?php 
-                        	foreach($definedactions as $theaction) {
-                        		if($theresource->get($theaction) == 1) {
-                        ?>
-                    			<td align="center">
-									<?php echo ($permission->checkPermissionForAction($theaction) ? 
-                                    '<img src="'.$this->baseUrl("images/tick.png").'" alt="Permission Granted" />' : 
-                                    '<img src="'.$this->baseUrl("images/cross.png").'" alt="Permission Denied" />');  
-                                    ?>
-                                </td>                        
-                    	<?php } else { ?>
-                    			<td>&nbsp;</td>     
-						<?php 
-                                }// end checking if there are available permissions
-                            } // end creating checkboxes for each available action
-                        ?>  
-                    </tr><?php 
-                    } // end creating a row for each resource
-                    ?> 
-                </tbody> 
-            </table>
-        </td>
-    </tr>   
-</table>
-<table class="formtable formactions">
-  <tfoot>
-    <tr>
-      <td><?php if ($acl->checkPermission('Role', ACTION_DELETE)) { ?>
-        <a href="<?php echo $this->baseUrl('role/delete/entityname/AclGroup/id/'.encode($aclgroup->getID()).'/'.SUCCESS_MESSAGE.'/The Role has been successfully deleted/'.URL_SUCCESS.'/'.encode($this->baseUrl("role/list"))); ?>" class="negativeaction delete" title="<?php echo $this->translate("role_button_delete_label"); ?>"><img src="<?php echo $this->baseUrl('images/cross.png'); ?>" /><?php echo $this->translate("role_button_delete_label"); ?></a>
-        <?php } ?>
-        <?php if ($acl->checkPermission('Role', ACTION_EDIT)) { ?>
-        <a href="<?php echo $this->baseUrl('role/index/id/'.encode($aclgroup->getID())); ?>" class="positiveaction" title="<?php echo $this->translate("role_button_edit_label"); ?>"><img src="<?php echo $this->baseUrl('images/edit.png'); ?>" /><?php echo $this->translate("role_button_edit_label"); ?></a>
-        <?php } ?>
-        <?php if ($acl->checkPermission('Role', ACTION_LIST)) { ?>
-        <a href="<?php echo $this->baseUrl('role/list'); ?>" class="positiveaction" title="<?php echo $this->translate("role_button_list_label"); ?>"><img src="<?php echo $this->baseUrl('images/arrow_undo.png'); ?>" /><?php echo $this->translate("role_button_list_label"); ?></a>
-        <?php } ?></td>
-    </tr>
-  </tfoot>
-</table>   
-<?php
-	$session->setVar(SUCCESS_MESSAGE, "");
-	$pageid = 11025;
-	require_once APPLICATION_PATH.'/includes/footer.php';
-?>
+<div>
+	<?php require APPLICATION_PATH."/views/scripts/index/leftcolumn.phtml"; ?>
+    <div id="centercolumn">
+        <div class="container-fluid">
+            <div class="row margin0 maxwidth">
+                <form id="viewform" class="form-horizontal">   
+                    <h1><?php echo $title; ?></h1>
+                    <div class="wellcontent">
+                    	<div class="blocked clear makerelative">
+                            <ul class="peoplegroup">
+                                <?php if ($acl->checkPermission('Role', ACTION_EDIT)) { ?>	
+                                    <li><a class="btn btn-primary" style="" href="<?php echo $this->baseUrl('role/index/id/'.encode($role->getID())); ?>" id="update"><i class="icon-pencil icon-white"></i> Update</a> &nbsp;</li>
+                                <?php } ?>
+                                <?php if ($acl->checkPermission('Role', ACTION_LIST)) { ?>
+                                    <li><a class="btn" href="<?php echo $this->baseUrl('role/list'); ?>"><i class="icon-list"></i> Roles</a> &nbsp;</li>
+                                <?php } ?>
+                                <?php if ($acl->checkPermission('Role', ACTION_DELETE)) { ?>	
+                                    <li><a title="Delete" class="btn noimglink <?php echo $role->getID() == '1' ? 'disabled alert-dialog' : 'deleteline' ?> gonowhere " action="<?php echo $this->baseUrl('role/delete/id/'.encode($role->getID())."/entityname/AclGroup/successurl/".encode($this->baseUrl('role/list'))); ?>" message="<?php echo $this->translate('global_delete_confirm_message'); ?>" warning="Delete disabled on this entry."><i class="icon-trash"></i></a> &nbsp;</li>
+                                <?php } ?>
+                                <li style="float:right;"></button>
+                                </li>
+                            </ul>
+                      	</div>
+						<?php if(!isEmptyString($session->getVar(SUCCESS_MESSAGE))){ ?>
+                            <div class="alert alert-success clear"><a class="close" data-dismiss="alert">×</a><?php echo $session->getVar(SUCCESS_MESSAGE); ?></div>
+                        <?php } ?>
+                        <?php if(!isEmptyString($session->getVar(ERROR_MESSAGE))){ ?>
+                            <div class="alert alert-error clear"><?php echo $session->getVar(ERROR_MESSAGE); ?></div>
+                        <?php } ?>
+                        
+                        <div class="tab-content">
+                            <div class="tab-pane active">
+                                <div class="widgetbox box-inverse tabcontent">
+                                    <!--<h4 class="widgettitle">Permissions - <?php // echo $role->getName(); ?></h4>-->
+                                    <div class="widgetcontent wc1 clearfix">
+                                        <table class="table contentviewtable table-bordered">
+                                            <thead>
+                                                <tr>
+                                                    <th>Resources</th>
+                                                    <?php
+                                                        foreach($definedactions as $value) {
+                                                    ?>
+                                                    <th style="width:9.2%; text-align:center;"><?php echo $value == 'flag' ? 'Yes / No' : ucfirst($value); ?></th>
+                                                    <?php 
+                                                       } // end creating the header column for each action
+                                                    ?> 
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <?php 
+                                                    foreach($resourcearray as $resourceid => $resourceName) {
+                                                    // load the permission instance for the specified resource, since for each group and resource there is only one permission instance
+                                                    $theresource = new AclResource();
+                                                    $theresource->populate($resourceid);
+                                                    //debugMessage($resource->toArray());
+                                                    $permission = $role->getPermissionForResource($resourceid); 
+                                                ?>
+                                                <tr>
+                                                    <td class="xlabel"><?php echo $resourceName; ?></td>                            
+                                                    <?php 
+                                                        foreach($definedactions as $theaction) {
+                                                            if($theresource->get($theaction) == 1) {
+                                                    ?>
+                                                            <td align="center" style="text-align:center;">
+                                                                <?php echo ($permission->checkPermissionForAction($theaction) ? 
+                                                                '<img src="'.$this->baseUrl("images/approve.png").'" alt="Permission Granted" />' : 
+                                                                '<img src="'.$this->baseUrl("images/cancel.png").'" alt="Permission Denied" />');  
+                                                                ?>
+                                                            </td>                        
+                                                    <?php } else { ?>
+                                                            <td>&nbsp;</td>     
+                                                    <?php 
+                                                        	}// end checking if there are available permissions
+                                                        } // end creating checkboxes for each available action
+                                                    ?>  
+                                                </tr><?php 
+                                                } // end creating a row for each resource
+                                                ?> 
+                                            </tbody>                             
+                                        </table>
+                                    </div>
+                                </div>
+                                
+                            </div>
+                            
+                        </div>
+                        <div class="divider30"></div>
+                    </div>
+              	</form>
+       		</div>
+    	</div>
+   	</div>
+</div>    

@@ -1,6 +1,6 @@
 <?php
 
-class FarmerController extends SecureController   {
+class FarmerController extends ProfileController   {
 
 	public function getResourceForACL(){
 		return "Farmer";
@@ -561,28 +561,6 @@ class FarmerController extends SecureController   {
 				echo '<div class="alert alert-error"><a class="close" data-dismiss="alert"></a>'.$e->getMessage().'</div>';
 			}
 		}
-	}
-	
-	function deleteAction() {
-		$session = SessionWrapper::getInstance();
-		$this->_helper->layout->disableLayout();
-		$this->_helper->viewRenderer->setNoRender(TRUE);
-	
-		$formvalues = $this->_getAllParams();
-		$successurl = decode($formvalues['successurl']);
-		$classname = $formvalues['entityname'];
-		// debugMessage($successurl);
-	
-		$obj = new $classname;
-		$obj->populate($formvalues['id']);
-		// debugMessage($obj->toArray());
-		// exit();
-		if($obj->delete()) {
-			$session->setVar(SUCCESS_MESSAGE, $this->_translate->translate("global_delete_success"));
-			$this->_helper->redirector->gotoUrl($successurl);
-		}
-		 
-		return false;
 	}
 	
 	function reportAction(){

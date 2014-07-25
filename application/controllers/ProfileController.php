@@ -2,11 +2,10 @@
 
 class ProfileController extends SecureController  {
 	
-	public function addAction(){
-    	// $this->_helper->layout->disableLayout();
-		// $this->_helper->viewRenderer->setNoRender(TRUE);
-    }
-    
+	public function getResourceForACL(){
+		return "User Account";
+	}
+	
     public function getActionforACL() {
         $action = strtolower($this->getRequest()->getActionName()); 
 		if($action == "add" || $action == "other" || $action == "processother" || $action == "processadd" 
@@ -36,14 +35,12 @@ class ProfileController extends SecureController  {
     	) {
 			return ACTION_VIEW; 
 		}
-		if($action == "users" || $action == "userssearch"){
-			return ACTION_LIST;
+		
+		if($action == "deactivate"){
+			return ACTION_DELETE;
 		}
+		
 		return parent::getActionforACL(); 
-    }
-    
-    public function getResourceForACL(){
-        return "User Account"; 
     }
     
 	public function editAction() {
@@ -568,28 +565,6 @@ class ProfileController extends SecureController  {
 		}
     }
     
-	function deleteAction() {
-    	$session = SessionWrapper::getInstance(); 
-    	$this->_helper->layout->disableLayout();
-		$this->_helper->viewRenderer->setNoRender(TRUE);
-		
-		$formvalues = $this->_getAllParams();
-		$successurl = decode($formvalues['successurl']);
-		$classname = $formvalues['entityname'];
-		// debugMessage($successurl);
-		
-    	$obj = new $classname;
-    	$obj->populate($formvalues['id']);
-    	// debugMessage($obj->toArray());
-    	// exit();
-    	if($obj->delete()) {
-    		$session->setVar(SUCCESS_MESSAGE, $this->_translate->translate("global_delete_success"));
-    		$this->_helper->redirector->gotoUrl($successurl);
-    	}
-    	
-    	return false;
-    }
-    
     function reportAction(){
     	
     }
@@ -990,5 +965,35 @@ class ProfileController extends SecureController  {
 		
 		// debugMessage($jsondata);
 		echo json_encode($jsondata); 
+	}
+	
+	public function deactivateAction() {
+		$this->_setParam("action", ACTION_DELETE);
+	
+		$session = SessionWrapper::getInstance();
+		$this->_helper->layout->disableLayout();
+		$this->_helper->viewRenderer->setNoRender(TRUE);
+	
+		$formvalues = $this->_getAllParams(); //debugMessage($formvalues);
+		$successurl = decode($formvalues[URL_SUCCESS]);
+		$successmessage = '';
+		if(!isArrayKeyAnEmptyString(SUCCESS_MESSAGE, $formvalues)){
+			$successmessage = $formvalues[SUCCESS_MESSAGE];
+		}
+	
+		$user = new UserAccount();
+		$id = is_numeric($formvalues['id']) ? $formvalues['id'] : decode($formvalues['id']);
+		$user->populate($id);
+		 
+		/*debugMessage($user->toArray());
+		 exit();*/
+		if($user->deactivateAccount($formvalues['status'])) {
+			if(!isEmptyString($successmessage)){
+				$session->setVar(SUCCESS_MESSAGE, $successmessage);
+			}
+			$this->_helper->redirector->gotoUrl($successurl);
+		}
+		 
+		return false;
 	}
 }

@@ -34,6 +34,12 @@ abstract class BaseEntity extends BaseRecord {
 									'foreign' => 'id',
 								)
 						);
+		$this->hasOne('UserAccount as updator', 
+								array(
+									'local' => 'lastupdatedby',
+									'foreign' => 'id',
+								)
+						);
 	}
 	
 	public function construct() {

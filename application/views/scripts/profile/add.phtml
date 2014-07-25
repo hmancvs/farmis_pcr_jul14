@@ -33,7 +33,10 @@
 			$isfarmer = false;
 			$title = "New User";
 		}
-		
+		if(!isEmptyString($request->companyid)){
+			$user->setCompanyID($request->companyid);
+			$user->setType(6);
+		}
 	} else {
 		$user->populate(decode($request->id));
 		$title = "Update Farmer"; 
@@ -130,7 +133,8 @@
 					// farmgroupid: "required",
 				<?php //} ?>
 				type: "required",
-				profiledby: "required"
+				profiledby: "required",
+				companyid: "required"
 			}, 
 			// the messages for each of the fields being validated
 			messages: {		
@@ -166,7 +170,8 @@
 					//farmgroupid: "Please select DNA",
 				<?php //} ?>
 				type: "<?php echo $this->translate("farmer_role_error"); ?>",
-				profiledby: "Please select profiling user"
+				profiledby: "Please select profiling user",
+				companyid: "Please select a Partner"
 			},
 			// custom error positions
 			errorPlacement: function(error, element) {
@@ -427,7 +432,16 @@
 				$(".subgroup_text input").val('');
 			}
 		});
-
+		
+		$("#type").change(function(){
+			var type = $(this).val();
+			if(type == '6'){
+				enableContainerByID("partnerrow");
+			} else { 
+				disableContainerByID("partnerrow");
+			}
+		});
+		$("#type").trigger('change');
 	}); 
 </script>
 <div>
@@ -444,7 +458,7 @@
                         <?php if(!isEmptyString($session->getVar(ERROR_MESSAGE))){ ?>
                             <div class="alert alert-error clear"><?php echo $session->getVar(ERROR_MESSAGE); ?></div>
                         <?php } ?>
-                        <?php require APPLICATION_PATH."/views/scripts/farmer/addtemplate.phtml"; ?>
+                        <?php require APPLICATION_PATH."/views/scripts/profile/addtemplate.phtml"; ?>
                     </div>
               	</form>
           	</div>

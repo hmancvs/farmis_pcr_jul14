@@ -4,19 +4,15 @@
 	$user = new UserAccount();
 	$user->populate($session->getVar('userid'));
 	
-	//$controllername = $request->getControllerName();
-	//$controlleraction = $request->getActionName();
-	$thecontroller = $controllername;
-	$theaction = $controlleraction;
-	$publiccontrollers = array("index", "signup","aboutus","howitworks","benefits","news","help","user","tour","forum","faqs","testimonials","billing"); 
+	$publiccontrollers = array("index","signup","aboutus","howitworks","benefits","news","help","user","tour","forum","faqs","testimonials","billing"); 
 	if(isEmptyString($userid)){
 		$publiccontrollers[] = 'contactus';
 	}
-	if(($thecontroller == 'index' && $theaction == 'accessdenied')){
+	if(($controllername == 'index' && $controlleraction == 'accessdenied')){
 		unset($publiccontrollers['0']);
 	}
 	
-	if (in_array($thecontroller, $publiccontrollers)){
+	if (in_array($controllername, $publiccontrollers)){
 		$logopath = $this->baseUrl('images/logopublic.png');
 	} else {
 		$logopath = $this->baseUrl('images/logo2.png');
@@ -24,8 +20,7 @@
 	
 ?>
 <?php if($isloggedin){ ?>
-    <div id="header_left">
-        <div class="divider10"></div>
+    <div id="header_left"><div class="divider10"></div>
         <a class="brand blocked" id="thelogo" href="<?php echo $this->baseUrl('index'); ?>" style="text-align:center;"><img src="<?php echo $logopath; ?>" /></a>
     </div>
     <div id="header_right">
@@ -47,17 +42,19 @@
                         </a>
                     </li>
                 <?php } ?>
-                <?php if(isFarmer() && $acl->checkPermission('Farmer', ACTION_VEIW)){ ?>
+                <?php if(isFarmer() && $acl->checkPermission('Farmer', ACTION_VIEW)){ ?>
                 	<li class="<?php echo ($controllername == 'profile') ? 'active' : ''; ?>">
-                        <a href="<?php echo $this->baseUrl('profile/view/id/'.encode($session->getVar('farmerid'))); ?>">
+                        <a href="<?php echo $this->baseUrl('farmer/view/id/'.encode($userid)); ?>">
                             <span class="head-icon head-icon2"></span>
                             <span class="headmenu-label">My Profile</span>
                         </a>
                     </li>
-                    <li class="<?php echo ($controllername == 'farm' || $controllername == 'season' || $controllername == 'inventory' || $controllername == 'finance') ? 'active' : ''; ?>">
-                        <a href="<?php echo $this->baseUrl('profile/view/id/'.encode($userid).'/tab/farm'); ?>">
-                            <span class="head-icon head-icon2"></span>
-                            <span class="headmenu-label">Manage Farm</span>
+                <?php } ?>    
+               	<?php if($acl->checkPermission('Season Activities', ACTION_VIEW) && isFarmer()){ ?>
+                    <li class="<?php echo ($controllername == 'season') ? 'active' : ''; ?>">
+                        <a href="<?php echo $this->baseUrl('farmer/view/id/'.encode($userid).'/tab/seasons'); ?>">
+                            <span class="head-icon head-icon6"></span>
+                            <span class="headmenu-label">Manage Seasons</span>
                         </a>
                     </li>
                 <?php } ?>
@@ -80,7 +77,7 @@
                 <?php } ?>
                 <?php if ($acl->checkPermission('Report Dashboard', ACTION_VIEW)) { ?>	
                     <li class="odd <?php echo ($controllername == 'report') ? 'active' : ''; ?>">
-                        <a href="<?php echo $this->baseUrl('report/overview'); ?>">
+                        <a href="<?php echo $this->baseUrl('report/dashboard'); ?>">
                             <span class="head-icon head-icon5"></span>
                             <span class="headmenu-label">Reports</span>
                         </a>
@@ -89,7 +86,8 @@
                 <li class="right">
                     <table class="userloggedinfo table margin0 padding0 nohover border0">
                         <tr>
-                            <td style="width:30%;"><a class="profileimg" href="<?php echo $this->baseUrl("profile/view/id/".encode($user->getID())); ?>">
+                            <td style="width:30%;">
+                            	<a class="profileimg" href="<?php echo $this->baseUrl("profile/view/id/".encode($user->getID())); ?>">
                                 <img src="<?php echo $user->getMediumPicturePath(); ?>" /></a>
                             </td>
                             <td style="width:auto; padding-left:0"><div class="userinfo">

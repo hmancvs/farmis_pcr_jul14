@@ -68,15 +68,13 @@ $(document).ready(function() {
                 <img id="profileimage" src="<?php echo $user->getMediumPicturePath(); ?>" alt="Update Profile Photo" />
             <?php } ?>
             <?php if($isme || $acl->checkPermission($resourcename, ACTION_EDIT)){ ?>
-                <a style="display:block; width:155px; text-align:center;" href="<?php echo $this->baseUrl($controller.'/picture/id/'.encode($user->getID()).'/type/photo'); ?>" class="btn btn-mini">Upload Photo</a>
+                <a style="display:block; width:155px; text-align:center;" href="<?php echo $this->baseUrl($controller.'/picture/id/'.encode($user->getID()).'/type/photo'); ?>" class="btn btn-mini noround">Upload Photo</a>
             <?php } ?>
         </div>
     </div>
     <ul id="leftnav" style="width:97%;">
-        <li id="tab_basics"><a href="#basics" class="basics">Profile Summary </a></li>
-        <li id="tab_contacts"><a href="#contacts" class="contacts">Contacts</a></li>
+        <li id="tab_basics"><a href="#basics" class="basics">Profile</a></li>
         <?php if($user->isFarmer()){ ?>
-        <li id="tab_personal"><a href="#personal" class="personal">Biography</a></li>
         <li id="tab_farm"><a href="#farm" class="farm">Manage Farm</a></li>
         <li id="tab_seasons"><a href="#seasons" tab="seasons" class="seasons">Manage Seasons</a></li>
         <li id="tab_calendar"><a href="#calendar" tab="calendar" class="calendar">Activity Calendar</a></li>

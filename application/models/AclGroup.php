@@ -43,9 +43,9 @@ class AclGroup extends BaseEntity implements Zend_Acl_Role_Interface {
 	
 	function validate() {
 		# check that the permissions are specfied
-		if (($this->getPermissions()->count() == 0)) {
+		/* if (($this->getPermissions()->count() == 0)) {
 			$this->getErrorStack()->add('permissions', 'Please select at least one set of permissions for the group');
-		}
+		} */
 	}
 	
 	/**
@@ -81,39 +81,77 @@ class AclGroup extends BaseEntity implements Zend_Acl_Role_Interface {
 	 * @param Array $post_array
 	 */
 	function processPost($post_array) {
+		$session = SessionWrapper::getInstance(); 
 		// check if the groupid is blank then remove it 
+		/* $permissions = $this->getPermissions();
+		$permissions_array = $permissions->toArray();
 		if (array_key_exists('permissions', $post_array)) {
 			if (is_array($post_array['permissions'])) { 
+				$data = array();
 				foreach($post_array['permissions'] as $key => $value) {
+					$data[$key] = $value;
 					if(array_key_exists('groupid', $value)) {
 						if(isEmptyString($value['groupid'])) {
 							unset($post_array['permissions'][$key]['groupid']); 
 						}
 					}
+					if(isArrayKeyAnEmptyString('flag', $value)){
+						$post_array['permissions'][$key]['flag'] = 0;
+					} else {
+						$post_array['permissions'][$key]['flag'] = trim(intval($value['flag']));
+					}
 					if(isArrayKeyAnEmptyString('create', $value)){
-						$post_array['permissions'][$key]['create'] = "0";
+						$post_array['permissions'][$key]['create'] = 0;
+					} else {
+						$post_array['permissions'][$key]['create'] = trim(intval($value['create']));
 					}
 					if(isArrayKeyAnEmptyString('edit', $value)){
-						$post_array['permissions'][$key]['edit'] = "0";
+						$post_array['permissions'][$key]['edit'] = 0;
+					} else {
+						$post_array['permissions'][$key]['edit'] = trim(intval($value['edit']));
 					}
 					if(isArrayKeyAnEmptyString('view', $value)){
-						$post_array['permissions'][$key]['view'] = "0";
+						$post_array['permissions'][$key]['view'] = 0;
+					} else {
+						$post_array['permissions'][$key]['view'] = trim(intval($value['view']));
 					}
 					if(isArrayKeyAnEmptyString('list', $value)){
-						$post_array['permissions'][$key]['list'] = "0";
+						$post_array['permissions'][$key]['list'] = 0;
+					} else {
+						$post_array['permissions'][$key]['list'] = trim(intval($value['list']));
 					}
 					if(isArrayKeyAnEmptyString('delete', $value)){
-						$post_array['permissions'][$key]['delete'] = "0";
+						$post_array['permissions'][$key]['delete'] = 0;
+					} else {
+						$post_array['permissions'][$key]['delete'] = trim(intval($value['delete']));
 					}
 					if(isArrayKeyAnEmptyString('approve', $value)){
-						$post_array['permissions'][$key]['approve'] = "0";
+						$post_array['permissions'][$key]['approve'] = 0;
+					} else {
+						$post_array['permissions'][$key]['approve'] = trim(intval($value['approve']));
 					}
 					if(isArrayKeyAnEmptyString('export', $value)){
-						$post_array['permissions'][$key]['export'] = "0";
+						$post_array['permissions'][$key]['export'] = 0;
+					} else {
+						$post_array['permissions'][$key]['export'] = trim(intval($value['export']));
+					}
+					if(isArrayKeyAnEmptyString('id', $value)){
+						unset($post_array['permissions'][$key]['id']);
+						$post_array['permissions'][$key]['createdby'] = $session->getVar('userid');
+						$post_array['permissions'][$key]['datecreated'] = getCurrentMysqlTimestamp();
+					}
+					if(!isArrayKeyAnEmptyString('id', $value)){
+						$post_array['permissions'][$key]['lastupdatedby'] = $session->getVar('userid');
+						$post_array['permissions'][$key]['lastupdatedate'] = getCurrentMysqlTimestamp();
+						$data = $post_array['permissions'][$key];
+						unset($post_array['permissions'][$key]);
+						$newkey = array_search_key_by_id($permissions_array, $value['id']);
+						// debugMessage($data);
+						$post_array['permissions'][$newkey] = $data;
 					}	
 				} // end loop through permissions to unset empty groupids 
 			} 
-		} // end check if permissions exist 
+		} */
 		// now process the data
 		// debugMessage($post_array);
 		parent::processPost($post_array); 

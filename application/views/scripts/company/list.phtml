@@ -1,9 +1,8 @@
 <?php
 	require_once APPLICATION_PATH.'/includes/header.php';
 	
-	# Page title
-	$title = "User Roles";
-	$plural = $title;
+	$loggedinuser = new UserAccount();
+	$loggedinuser->populate($userid); 
 	
 	# Create an instance of the class to handle the pagination
 	$paginate = new Pagination();	
@@ -13,15 +12,10 @@
 	$paginate->setDefaultSortBy("name");	
 	
 	# define the letter to be clicked to ease navigation 
-	$where_query = " WHERE d.id <> '' ";
-	$allowclear = false;
-	
-	if(!isEmptyString($request->searchterm)){
-		$allowclear = true;
-	}
+	$where_query = " WHERE c.id <> '' ";
 	
 	$paginate->processPost($request->getParams());
-	$all_results_query = "select r.id AS id, aug.groupid AS `groupid`, aug.userid AS `userid`, r.name AS `Name`, r.name AS `Group`, r.description AS Description from `aclgroup` `r` left join `aclusergroup` `aug` on(`r`.`id` = `aug`.`groupid`) WHERE name <> '' ".$paginate->getSearchAndFilterSQL()." GROUP BY id ".$paginate->getSortSQL();
+	$all_results_query = "select c.* from `company` `c` WHERE c.name <> '' ".$paginate->getSearchAndFilterSQL()." GROUP BY c.id ".$paginate->getSortSQL();
 	
 	# debugMessage($all_results_query);
 	$paginate->setItemCountFromSQLQuery($all_results_query);
@@ -37,18 +31,16 @@
 	$result = $conn->fetchAll($current_results_query);
 	$has_no_data = (count($result) == 0) ? true : false; 
 	
-	$listurl = $this->baseUrl('role/list');
-	$title = $this->translate("role_pagetitle_list");
-	$listitems = $this->translate("role_list_items");
+	$listurl = $this->baseUrl('company/list');
+	$title = "FARMIS Partners";
+	$listitems = "Partners";
 	$this->headTitle($title.$browserappend);
-	$description = 'System User Groups';
-	$icon = $this->baseUrl('images/icon_settings.png');
-	$showsearch = true;
+	$description = '';
 	
 ?>
 <script>
 $(document).ready(function() {
-	$("#levelone_icon").addClass('icon-lock');
+	$("#levelone_icon").addClass('icon-list');
 	$("#levelone_link").attr('href', '<?php echo $listurl; ?>').html('<?php echo $title; ?>');
 	$("#leveltwo_link").html('');
 
@@ -59,14 +51,14 @@ $(document).ready(function() {
     <div id="centercolumn">
         <div class="container-fluid">
             <div class="row margin0 maxwidth">
-                <form action="<?php echo $this->baseUrl("role/listsearch"); ?>" method="get" id="listform" class="form-search makerelative">
+                <form action="<?php echo $this->baseUrl("partner/listsearch"); ?>" method="get" id="listform" class="form-search makerelative">
                     <h1><?php echo $title; ?></h1>
                     <div class="wellcontent">
                     	<div class="blocked clear makerelative">
                             <ul class="peoplegroup">
                                 <li>
-                                    <?php if($acl->checkPermission('Role', ACTION_CREATE)) { ?>	
-                                        <a href="<?php echo $this->baseUrl('role'); ?>" class="btn btn-primary"><i class="icon-plus icon-white"></i> New Role</a>
+                                    <?php if($acl->checkPermission('Partner', ACTION_CREATE)) { ?>	
+                                        <a href="<?php echo $this->baseUrl('company'); ?>" class="btn btn-primary"><i class="icon-plus icon-white"></i> New Partner</a>
                                     <?php } ?>
                                 </li>
                                 <li style="float:right;"><input name="searchterm" id="searchterm" value="<?php echo $request->searchterm; ?>" type="text" class="input-medium" placeholder="Search">
@@ -80,6 +72,7 @@ $(document).ready(function() {
                         <?php if(!isEmptyString($session->getVar(ERROR_MESSAGE))){ ?>
                             <div class="alert alert-error clear"><?php echo $session->getVar(ERROR_MESSAGE); ?></div>
                         <?php } ?>
+                        	
                         <?php if ($has_no_data) { ?>
                             <div style="clear:both;" class="alert alert-info margin5"><?php echo $this->translate("global_list_norecords"); ?></div>
                         <?php } else { ?>
@@ -93,12 +86,11 @@ $(document).ready(function() {
                                     <?php 				  
                                     	$counter = 1;		
                                     		foreach($result as $line){
-                                    		
 												$id = $line['id'];
-												$name = $line['Name'];
-												$description = $line['Description'];
+												$name = $line['name'];
+												$description = $line['description'];
 												
-												$viewurl = $this->baseUrl('role/view/id/'.encode($id));
+												$viewurl = $this->baseUrl('company/view/id/'.encode($id));
 												$counter_mod = $counter % 2;
 												$modclass = '';
 												// debugMessage('mod is '.$counter_mod);
@@ -114,7 +106,7 @@ $(document).ready(function() {
                                                 <div class="thumbwrapper" style="height:85px; width:110px;">
                                                     <div class="thumb">
                                                         <div id="thumbinfo"> 
-                                                            <a href="<?php echo $viewurl; ?>"><img class="imagecontainer" src="<?php echo $this->baseUrl('images/icon_users.png'); ?>" /></a>
+                                                            <a href="<?php echo $viewurl; ?>"><img class="ximagecontainer" src="<?php echo $this->baseUrl('uploads/farmgroups/default/medium_group.jpg'); ?>" /></a>
                                                         </div>
                                                     </div>
                                                 </div>

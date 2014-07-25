@@ -160,12 +160,12 @@ $(document).ready(function() {
                                             <a href="<?php echo $this->baseUrl('farmgroup/list'); ?>" class="btn margin5" title="DNA Profile">DNA Profiles</a>
                                        <?php } ?>
                                     <?php } ?>
-                                    <?php if($loggedinuser->isUgandan() && isUganda() && $acl->checkPermission('Can Administer Kenya', ACTION_VIEW)){ ?>
+                                    <?php if($loggedinuser->isUgandan() && isUganda() && $acl->checkPermission('Is UG Admin can Administer KE', ACTION_YESNO)){ ?>
                                         <?php if(isEmptyString($request->country) || $countryreq == 'ug'){ ?>
                                             <a style="margin-top: 10px; display:block; width:60%; text-align:center;" class="btn btn-mini" href="<?php echo $this->baseUrl('farmgroup/list/country/ke'); ?>" title="Browse Kenya"><i class="icon-list"></i> Browse Kenya</a>
                                         <?php } ?>
                                     <?php } ?>
-                                    <?php if($loggedinuser->isUgandan() && isKenya() && $acl->checkPermission('Can Administer Kenya', ACTION_VIEW)){ ?>
+                                    <?php if($loggedinuser->isUgandan() && isKenya() && $acl->checkPermission('Is UG Admin can Administer KE', ACTION_YESNO)){ ?>
                                         <?php if(!isEmptyString($request->country) && strtolower($countryreq) == 'ke'){ ?>
                                             <a style="margin-top: 10px; display:block; width:60%; text-align:center;" class="btn btn-mini" href="<?php echo $this->baseUrl('farmgroup/list/country/ug'); ?>" title="Browse Uganda"><i class="icon-list"></i> Browse Uganda</a>
                                         <?php } ?>

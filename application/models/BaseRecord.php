@@ -295,7 +295,7 @@ abstract class BaseRecord extends Doctrine_Record {
 	        foreach ($errorStack as $field => $errors) {
 	           		foreach ($errors as $value) {
 	           			// debugMessage($field);
-	           			if($value == "type" || $value == "notnull"){
+	           			if($value == "type" || $value == "notnull" || $value == "enum"){
 	           				$message.= "<li>".$this->getCustomErrorMessage($field, $value)." error on field ".$field."</li>"; 
 	           			} else {
 	           				$message.= "<li>".$this->getCustomErrorMessage($field, $value)." </li>"; 
@@ -340,6 +340,10 @@ abstract class BaseRecord extends Doctrine_Record {
      * @return Boolean TRUE or FALSE if an error occured
      */
     function afterSave() {
+    	// do nothing
+    	return true; 
+    }
+ 	function beforeUpdate() {
     	// do nothing
     	return true; 
     }

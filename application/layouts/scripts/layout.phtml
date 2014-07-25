@@ -482,6 +482,20 @@ $(document).ready(function() {
 		});
 	}
 	
+	$(".alert-dialog").click(function(e) {
+		e.preventDefault();
+		var message = '<label class="blockcontainer"></label>';
+		var custom_msg = $(this).attr('message');
+		var other_msg = $(this).attr('warning');
+		if(other_msg != '' && other_msg != 'undefined'){
+			custom_msg = other_msg;
+		}
+		if(!isEmptyString(custom_msg) && custom_msg != 'undefined'){
+			var message = '<label class="blockcontainer">'+custom_msg+'</label>';
+		}
+		bootbox.alert(message); 
+	});
+	
 	// hover and unhover upload icon
 	$("#profileinfo, .profileinfo").hover(function(){
 		$("#uploadlink").show();

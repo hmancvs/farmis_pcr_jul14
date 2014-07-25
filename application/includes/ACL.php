@@ -23,7 +23,7 @@ class ACL extends Zend_Acl   {
 		$resources = $conn->fetchAll("SELECT id FROM aclresource");
 		// get the permissions for the specified user
 		// TODO: HM -  Remove the need for the c_aclpermission view
-		$permissions = $conn->fetchAll("SELECT `p`.`groupid` AS `groupid`,  LOWER(`re`.`name`) AS `resource`,  `p`.`create` AS `create`, `p`.`edit` AS `edit`, `p`.`export` AS `export`,`p`.`approve` AS `approve`,  `p`.`view` AS `view`, `p`.`delete` AS `delete`, `p`.`list` AS `list` FROM ((`aclpermission` `p` JOIN `aclresource` `re`) LEFT JOIN `aclusergroup` `ur` ON ((`p`.`groupid` = `ur`.`groupid`))) WHERE ((`p`.`resourceid` = `re`.`id`) AND ur.userid = '".$auserid."')");
+		$permissions = $conn->fetchAll("SELECT `p`.`groupid` AS `groupid`,  LOWER(`re`.`name`) AS `resource`,  `p`.`create` AS `create`, `p`.`edit` AS `edit`, `p`.`export` AS `export`,`p`.`approve` AS `approve`,  `p`.`view` AS `view`, `p`.`delete` AS `delete`, `p`.`list` AS `list`, p.flag as `flag` FROM ((`aclpermission` `p` JOIN `aclresource` `re`) LEFT JOIN `aclusergroup` `ur` ON ((`p`.`groupid` = `ur`.`groupid`))) WHERE ((`p`.`resourceid` = `re`.`id`) AND ur.userid = '".$auserid."')");
 		
 		// add the groups to the ACL
 		foreach ($groups as $value) {
@@ -93,7 +93,7 @@ class ACL extends Zend_Acl   {
 	 * @return Array Array containing the defined actions
 	 */
 	static function getActions() {
-		return array(ACTION_CREATE, ACTION_EDIT, ACTION_VIEW, ACTION_LIST, ACTION_DELETE, ACTION_APPROVE, ACTION_EXPORT);
+		return array(ACTION_YESNO, ACTION_CREATE, ACTION_EDIT, ACTION_VIEW, ACTION_LIST, ACTION_DELETE, ACTION_APPROVE, ACTION_EXPORT);
 	}
 	/**
 	 * Overidden method from Zend_ACL to enable processing of multiple roles

@@ -247,12 +247,12 @@ img.ui-datepicker-trigger {
                                     <?php if($acl->checkPermission('Farmer', ACTION_CREATE)) { ?>	
                                         <a href="<?php echo $addfarmerurl; ?>" class="btn btn-primary"><i class="icon-plus icon-white"></i> New Farmer</a>
                                     <?php } ?>
-                                    <?php if($loggedinuser->isUgandan() && isUganda() && $acl->checkPermission('Can Administer Kenya', ACTION_VIEW)){ ?>
+                                    <?php if($loggedinuser->isUgandan() && isUganda() && $acl->checkPermission('Is UG Admin can Administer KE', ACTION_YESNO)){ ?>
                                         <?php if(isEmptyString($request->country) || $countryreq == 'ug'){ ?>
                                             <a class="btn btn-mini" style="margin-top: 10px; display:block;" href="<?php echo $this->baseUrl('farmer/list/country/ke'); ?>" title="Browse Kenya Directory"><i class="icon-list"></i> Browse Kenya</a>
                                         <?php } ?>
                                     <?php } ?>
-                                    <?php if($loggedinuser->isUgandan() && isKenya() && $acl->checkPermission('Can Administer Kenya', ACTION_VIEW)){ ?>
+                                    <?php if($loggedinuser->isUgandan() && isKenya() && $acl->checkPermission('Is UG Admin can Administer KE', ACTION_YESNO)){ ?>
                                         <?php if(!isEmptyString($request->country) && $countryreq == 'ke'){ ?>
                                             <a class="btn btn-mini" style="margin-top: 10px; display:block;" href="<?php echo $this->baseUrl('farmer/list/country/ug'); ?>" title="Browse Uganda Directory"><i class="icon-list"></i> Browse Uganda</a>
                                         <?php } ?>

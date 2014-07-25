@@ -207,12 +207,12 @@ $(document).ready(function() {
             <?php if($acl->checkPermission('Farmer', ACTION_CREATE)) { ?>	
             	<li><a href="<?php echo $addfarmerurl; ?>" class="btn btn-primary"><i class="icon-plus icon-white"></i> Add Farmer</a></li>
             <?php } ?>
-            <?php if($loggedinuser->isUgandan() && isUganda() && $acl->checkPermission('Can Administer Kenya', ACTION_VIEW)){ ?>
+            <?php if($loggedinuser->isUgandan() && isUganda() && $acl->checkPermission('Is UG Admin can Administer KE', ACTION_YESNO)){ ?>
 				<?php if(isEmptyString($request->country) || $countryreq == 'ug'){ ?>
                     <li><a class="btn" href="<?php echo $this->baseUrl('mobile/list/country/ke'); ?>" title="Browse Kenya Directory"><i class="icon-list"></i> Browse Kenya</a></li>
                 <?php } ?>
             <?php } ?>
-            <?php if($loggedinuser->isUgandan() && isKenya() && $acl->checkPermission('Can Administer Kenya', ACTION_VIEW)){ ?>
+            <?php if($loggedinuser->isUgandan() && isKenya() && $acl->checkPermission('Is UG Admin can Administer KE', ACTION_YESNO)){ ?>
                 <?php if(!isEmptyString($request->country) && strtolower($countryreq) == 'ke'){ ?>
                     <li><a class="btn" href="<?php echo $this->baseUrl('mobile/list/country/ug'); ?>" title="Browse Uganda Directory"><i class="icon-list"></i> Browse Uganda</a></li>
                 <?php } ?>

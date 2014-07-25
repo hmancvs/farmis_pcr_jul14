@@ -51,7 +51,7 @@
               <div class="thumbwrapper">
                     <div class="thumb">
                         <div id="thumbinfo" class="<?php echo $hasprofileimage ? 'new_pic' : 'default_pic'; ?>"> 
-                            <a href="<?php echo $this->baseUrl("mobile/view/id/".encode($id)); ?>"><img class="profileimage" src="<?php echo $photo_path; ?>" /></a>
+                            <a href="<?php echo $this->baseUrl($controllername."/view/id/".encode($id)); ?>"><img class="profileimage" src="<?php echo $photo_path; ?>" /></a>
                         </div>
                     </div>
 					<?php if($line['usertype'] == 4){ ?>

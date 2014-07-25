@@ -45,11 +45,11 @@ class Contact extends BaseEntity {
 		$this->hasColumn('tinnumber', 'string', 255);
 		
 		
-		$this->setSubclasses(array(
+		/* $this->setSubclasses(array(
 				'Person' => array('contacttype' => 1),
 				'Company' => array('contacttype' => 2)
 			)
-		);
+		); */
 		
 		// unique constraint
 		# TODO add custom validation for unique depending on contact type

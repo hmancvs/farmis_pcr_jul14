@@ -14,6 +14,7 @@ class AclResource extends BaseEntity implements Zend_Acl_Resource_Interface {
 		$this->hasColumn('delete', 'enum', null, array('values' => array(0 => '0', 1 => '1'), "default" => '0'));
 		$this->hasColumn('approve', 'enum', null, array('values' => array(0 => '0', 1 => '1'), "default" => '0'));
 		$this->hasColumn('export', 'enum', null, array('values' => array(0 => '0', 1 => '1'), "default" => '0'));
+		$this->hasColumn('flag', 'enum', null, array('values' => array(0 => '0', 1 => '1'), "default" => '0'));
 	}
 	/**
 	 * Contructor method for custom functionality - add the fields to be marked as dates

@@ -2,9 +2,9 @@
 class ReportController extends SecureController   {
 	
 	/**
-	 * Get the name of the resource being accessed 
+	 * Get the name of the resource being accessed
 	 *
-	 * @return String 
+	 * @return String
 	 */
 	function getActionforACL() {
 		return ACTION_VIEW;
@@ -17,10 +17,46 @@ class ReportController extends SecureController   {
 	 * @return String
 	 */
 	function getResourceForACL() {
-		// return "Report"; 
-		return "Farmer"; 
+		$resource = strtolower($this->getRequest()->getActionName()); 
+		if ($resource == "dashboard") {
+			return "Report Dashboard";
+		}
+		if ($resource == "certificate") {
+			return "Membership Certificate";
+		}
+		if ($resource == "primarybaseline") {
+			return "Farmers Baseline Summary Report";
+		}
+		if ($resource == "baselinedetail") {
+			return "Farmers Baseline Detail Report";
+		}
+		if ($resource == "allfarmers") {
+			return "Farmers Bio Data Report";
+		}
+		if ($resource == "dna") {
+			return "DNA Profiling Aggregated Report";
+		}
+		if ($resource == "location") {
+			return "District and Location Profiling Report";
+		}
+		if ($resource == "crop") {
+			return "Crop Profiling Aggregated Report";
+		}
+		if ($resource == "pia") {
+			return "PIA Profiling Performance Report";
+		}
+		if ($resource == "statement") {
+			return "Profit and Loss Statement";
+		}
+		if ($resource == "prices") {
+			return "Market Prices";
+		}
+		
 	}
-
+	
+	function dashboardAction() {
+		 
+	}
 	function primarybaselineAction(){
 		$userid = decode($this->_getParam('id'));
 		

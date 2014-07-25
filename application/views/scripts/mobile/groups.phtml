@@ -155,12 +155,12 @@
             <?php if($acl->checkPermission('Farm Group', ACTION_LIST) && isEmptyString($type)){ ?>
            		<li><a href="<?php echo $this->baseUrl('mobile/groups/type/6'); ?>" class="btn"><i class="icon-list"></i> Farm Groups</a></li>
             <?php } ?>
-            <?php if($loggedinuser->isUgandan() && isUganda() && $acl->checkPermission('Can Administer Kenya', ACTION_VIEW)){ ?>
+            <?php if($loggedinuser->isUgandan() && isUganda() && $acl->checkPermission('Is UG Admin can Administer KE', ACTION_YESNO)){ ?>
 				<?php if(isEmptyString($request->country) || $countryreq == 'ug'){ ?>
                     <li><a class="btn" href="<?php echo $this->baseUrl('mobile/groups/country/ke'); ?>" title="Browse Kenya"><i class="icon-list"></i> Browse Kenya</a></li>
                 <?php } ?>
             <?php } ?>
-            <?php if($loggedinuser->isUgandan() && isKenya() && $acl->checkPermission('Can Administer Kenya', ACTION_VIEW)){ ?>
+            <?php if($loggedinuser->isUgandan() && isKenya() && $acl->checkPermission('Is UG Admin can Administer KE', ACTION_YESNO)){ ?>
                 <?php if(!isEmptyString($request->country) && strtolower($countryreq) == 'ke'){ ?>
                     <li><a class="btn" href="<?php echo $this->baseUrl('mobile/groups/country/ug'); ?>" title="Browse Uganda"><i class="icon-list"></i> Browse Uganda</a></li>
                 <?php } ?>

@@ -207,12 +207,12 @@ $(document).ready(function() {
                                     <?php if($acl->checkPermission('User Account', ACTION_CREATE)) { ?>	
                                         <a href="<?php echo $this->baseUrl($controllername.'/add/type/other/country/'.$country); ?>" class="btn btn-primary" title="New User"><i class="icon-plus icon-white"></i> New User</a>
                                     <?php } ?>
-                                    <?php if($loggedinuser->isUgandan() && isUganda() && $acl->checkPermission('Can Administer Kenya', ACTION_VIEW)){ ?>
+                                    <?php if($loggedinuser->isUgandan() && isUganda() && $acl->checkPermission('Is UG Admin can Administer KE', ACTION_YESNO)){ ?>
                                         <?php if(isEmptyString($request->country) || $countryreq == 'ug'){ ?>
                                             <a style="margin-top: 10px; display:block;" class="btn btn-mini" href="<?php echo $this->baseUrl($controllername.'/users/country/ke'); ?>" title="Browse Kenya"><i class="icon-list"></i> Browse Kenya</a>
                                         <?php } ?>
                                     <?php } ?>
-                                    <?php if($loggedinuser->isUgandan() && isKenya() && $acl->checkPermission('Can Administer Kenya', ACTION_VIEW)){ ?>
+                                    <?php if($loggedinuser->isUgandan() && isKenya() && $acl->checkPermission('Is UG Admin can Administer KE', ACTION_YESNO)){ ?>
                                         <?php if(!isEmptyString($request->country) && $countryreq == 'ke'){ ?>
                                             <a style="margin-top: 10px; display:block;" class="btn btn-mini" href="<?php echo $this->baseUrl($controllername.'/users/country/ug'); ?>" title="Browse Uganda"><i class="icon-list"></i> Browse Uganda</a>
                                         <?php } ?>

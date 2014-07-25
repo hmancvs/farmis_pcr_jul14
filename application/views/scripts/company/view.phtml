@@ -1,0 +1,154 @@
+<?php
+	require_once APPLICATION_PATH.'/includes/header.php';
+	
+	$loggedinuser = new UserAccount();
+	$loggedinuser->populate($userid); 
+	
+	$company = new Company();
+	$company->populate(decode($request->id));
+	// debugMessage($company->toArray());
+	
+	$listurl = $this->baseUrl('company/list');
+	$title = "Partner Details";
+	$listitems = "Partners";
+	$this->headTitle($title.$browserappend);
+	
+?>
+<script>
+$(document).ready(function() {
+	$("#levelone_icon").addClass('icon-list');
+	$("#levelone_link").attr('href', '<?php echo $listurl; ?>').html('<b>Partners</b>');
+	$("#leveltwo_link").html('> <?php echo $title; ?>');
+
+});
+</script>
+<div>
+	<?php require APPLICATION_PATH."/views/scripts/index/leftcolumn.phtml"; ?>
+    <div id="centercolumn">
+        <div class="container-fluid">
+            <div class="row margin0 maxwidth">
+                <form id="viewform" class="form-horizontal clearfix desktop">
+                    <h1><?php echo $title; ?></h1>
+                    <div class="wellcontent">
+                    	<?php if(!isEmptyString($session->getVar(SUCCESS_MESSAGE))){ ?>
+                            <div class="alert alert-success clear"><a class="close" data-dismiss="alert">×</a><?php echo $session->getVar(SUCCESS_MESSAGE); ?></div>
+                        <?php } ?>
+                        <?php if(!isEmptyString($session->getVar(ERROR_MESSAGE))){ ?>
+                            <div class="alert alert-error clear"><?php echo $session->getVar(ERROR_MESSAGE); ?></div>
+                        <?php } ?>
+                        <div class="control-group well lighter actions" id="topactions">
+                       		<div class="blocked clear makerelative">
+                                <ul class="peoplegroup">
+                                    <?php if ($acl->checkPermission('Partner', ACTION_DELETE)) { ?>	
+                                        <li style="float:right;"><a title="Delete" class="btn noimglink <?php echo $company->getID() == 'x' ? 'disabled alert-dialog' : 'deleteline' ?> gonowhere " action="<?php echo $this->baseUrl('company/delete/id/'.encode($company->getID())."/entityname/Company/successurl/".encode($this->baseUrl('company/list'))); ?>" message="<?php echo $this->translate('global_delete_confirm_message'); ?>" warning="Delete disabled on this entry."><i class="icon-trash"></i></a></li>
+                                    <?php } ?>
+									<?php if ($acl->checkPermission('Partner', ACTION_LIST)) { ?>
+                                        <li style="float:right;"><a class="btn" href="<?php echo $this->baseUrl('company/list'); ?>"><i class="icon-list"></i> Partners</a></li>
+                                    <?php } ?>
+									<?php if ($acl->checkPermission('Partner', ACTION_EDIT)) { ?>	
+                                        <li style="float:right;"><a class="btn btn-primary" style="" href="<?php echo $this->baseUrl('company/index/id/'.encode($company->getID())); ?>"><i class="icon-pencil icon-white"></i> Update</a></li>
+                                    <?php } ?>
+                                </ul>
+                            </div>
+                        </div>
+                        <fieldset class="fieldsetcontainer well">
+                        	<legend>Account</legend>
+                            <div class="control-group">
+                                <label class="control-label">Name</label>
+                                <div class="controls"><?php echo $company->getName(); ?></div>
+                            </div>
+                            <div class="control-group">
+                                <label class="control-label">Description</label>
+                                <div class="controls"><?php echo $company->getDescription(); ?></div>
+                            </div>
+                            <div class="control-group">
+                                <label class="control-label">Contact Person:</label>
+                                <div class="controls"><?php echo $company->getContactPerson(); ?></div>
+                            </div>
+                            <div class="control-group">
+                                <label class="control-label">Phone:</label>
+                                <div class="controls"><?php echo $company->getPhone(); ?></div>
+                            </div>
+                            <div class="control-group">
+                                <label class="control-label">Email:</label>
+                                <div class="controls"><?php echo $company->getEmail(); ?></div>
+                            </div>
+                            <div class="control-group">
+                                <label class="control-label">Location:</label>
+                                <div class="controls"><?php echo $company->getLocation()->getName(); ?></div>
+                            </div>
+                        </fieldset>
+                        <fieldset class="fieldsetcontainer well">
+                        	<legend>Access Settings</legend>
+                            <div class="control-group">
+                                <label class="control-label">Allocation Type:</label>
+                                <div class="controls"><?php echo $company->getAllocationTypeLabel(); ?></div>
+                            </div>
+                            <div class="control-group">
+                                <label class="control-label">Allocation Details:</label>
+                                <div class="controls"><?php echo $company->getAllocationDetails(); ?></div>
+                            </div>
+                        </fieldset>
+                        <fieldset class="fieldsetcontainer well">
+                        	<legend>Users</legend>
+                             <div class="blocked clear makerelative padding10">
+                                <?php if($acl->checkPermission('User Account', ACTION_CREATE)) { ?>	
+                                    <a href="<?php echo $this->baseUrl('profile/add/type/other/companyid/'.$company->getID()); ?>" class="btn btn-primary btn-mini" title="New User"><i class="icon-plus icon-white"></i> New User</a>
+                                <?php } ?>
+                          	</div>
+                            <?php 
+								$users = getUsers(6, $session->getVar('country'), $company->getID());
+								$totalusers = count($users);
+							?>
+                            <?php if ($totalusers == 0) { ?>
+                                <div style="clear:both;" class="alert alert-info margin5"><?php echo $this->translate("global_list_norecords"); ?></div>
+                            <?php } else { ?>
+                            	<div class="padding10" style="padding-bottom:0;">Viewing details for <?php echo $totalusers == 1 ? '1 user' : $totalusers.' users'; ?></div>
+                                <div class="peoplelist padding10">
+                                    <?php
+                                        $counter = 1;				  
+                                        foreach($users as $key => $value){
+                                            $useracc = new UserAccount();
+                                            $useracc->populate($key);
+                                            
+                                    ?>
+                                        <?php if($counter % 2 == 1){ ?>
+                                        <div class="row-fluid">
+                                        <?php } ?>
+                                          <div class="span6">
+                                            <div class="peoplewrapper well">
+                                              <div class="thumbwrapper">
+                                                    <div class="thumb">
+                                                        <div id="thumbinfo"> 
+                                                            <a href="<?php echo $this->baseUrl("profile/view/id/".encode($useracc->getID())); ?>"><img class="profileimage" src="<?php echo $useracc->getThumbnailPicturePath(); ?>" /></a>
+                                                        </div>
+                                                    </div>
+                                              </div>
+                                              <div class="peopleinfo">
+                                                <h4><a href="<?php echo $this->baseUrl("profile/view/id/".encode($useracc->getID())); ?>"><?php echo $useracc->getName(); ?></a></h4>
+                                                <ul>
+                                                  <li><span class="nullifempty">Phone:</span> <?php echo getShortPhone($useracc->getPhone()); ?></li>
+                                                  <li><span>Email:</span> <?php echo $useracc->getEmail(); ?></li>
+                                                  <li><span>Username:</span> <?php echo $useracc->getUserName(); ?></li>
+                                                  <li><span>Status:</span> <?php echo $useracc->isUserActive() ? 'Active' : 'Inactive'; ?></li>
+                                                  <li><span>Profiled By:</span> <?php echo $useracc->getCreator()->getName(); ?></li>
+                                                  <li><span>Date:</span> <?php echo formatDateAndTime($useracc->getDateCreated(), true); ?></li>
+                                                </ul>
+                                              </div>
+                                              <!--peopleinfo--> 
+                                            </div>
+                                            <!--peoplewrapper--> 
+                                          <?php if($counter % 2 == 0){ ?>
+                                          </div>
+                                          <?php } ?>
+                                        </div>
+                                    <?php $counter++; } ?>
+                                  </div>
+                            <?php } ?>
+                        </fieldset>
+                    </div>
+              	</form>
+       		</div>
+    	</div>
+   	</div>
+</div>    

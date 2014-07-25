@@ -4,7 +4,7 @@ class MessageController extends SecureController  {
 	
 	function getResourceForACL() {
 		// return "Message";
-		return "Farmer"; 
+		return "Messaging"; 
 	}
 	/**
 	 * Get the name of the resource being accessed 

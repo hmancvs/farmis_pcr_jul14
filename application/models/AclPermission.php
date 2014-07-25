@@ -8,15 +8,16 @@ class AclPermission extends BaseEntity   {
 	public function setTableDefinition() {
 		parent::setTableDefinition();
         $this->setTableName('aclpermission');
-        $this->hasColumn('groupid', 'integer', null, array('notnull' => true, 'notblank' => true));
-        $this->hasColumn('resourceid', 'integer', null, array('notnull' => true, 'notblank' => true));
-        $this->hasColumn('create', 'enum', null, array('values' => array(0 => '0', 1 => '1'), 'default' => '0'));
-        $this->hasColumn('edit', 'enum', null, array('values' => array(0 => '0', 1 => '1'), 'default' => '0'));
-        $this->hasColumn('approve', 'enum', null, array('values' => array(0 => '0', 1 => '1'), 'default' => '0'));
-        $this->hasColumn('view', 'enum', null, array('values' => array(0 => '0', 1 => '1'), 'default' => '0'));
-		$this->hasColumn('list', 'enum', null, array('values' => array(0 => '0', 1 => '1'), 'default' => '0'));
-        $this->hasColumn('delete', 'enum', null, array('values' => array(0 => '0', 1 => '1'), 'default' => '0'));
-        $this->hasColumn('export', 'enum', null, array('values' => array(0 => '0', 1 => '1'), 'default' => '0'));
+        $this->hasColumn('groupid', 'integer', null);
+        $this->hasColumn('resourceid', 'integer', null, array('notblank' => true));
+        $this->hasColumn('create', 'integer', null, array('default' => 0));
+        $this->hasColumn('edit', 'integer', null, array('default' => 0));
+        $this->hasColumn('approve', 'integer', null, array('default' => 0));
+        $this->hasColumn('view', 'integer', null, array('default' => 0));
+		$this->hasColumn('list','integer', null, array('default' => 0));
+        $this->hasColumn('delete', 'integer', null, array('default' => 0));
+        $this->hasColumn('export', 'integer', null, array('default' => 0));
+        $this->hasColumn('flag', 'integer', null, array('default' => 0));
     }
 	/**
 	 * Contructor method for custom functionality - add the fields to be marked as dates
@@ -26,9 +27,7 @@ class AclPermission extends BaseEntity   {
 		
 		// set the custom error messages
        	$this->addCustomErrorMessages(array(
-       									"groupid.unique" => $this->translate->_("permission_groupid_unique_error"),
-       									"resourceid.unique" => $this->translate->_("permission_resourceid_unique_error"),
-       									"groupid.notblank" => $this->translate->_("permission_groupid_error"),
+       									// "groupid.notblank" => $this->translate->_("permission_groupid_error"),
        									"resourceid.notblank" => $this->translate->_("permission_resourceid_error")
        								)); 
 		
@@ -46,6 +45,39 @@ class AclPermission extends BaseEntity   {
 							'foreign' => 'id')
 					);
     }
+/*
+	 * Pre process model data
+	 */
+	function processPost($formvalues) {
+		$session = SessionWrapper::getInstance(); 
+		// trim spaces from the name field
+		if(isArrayKeyAnEmptyString('create', $formvalues)){
+			$formvalues['create']=0; 
+		}
+		if(isArrayKeyAnEmptyString('edit', $formvalues)){
+			$formvalues['edit']=0; 
+		}
+		if(isArrayKeyAnEmptyString('view', $formvalues)){
+			$formvalues['view']=0;  
+		}
+		if(isArrayKeyAnEmptyString('list', $formvalues)){
+			$formvalues['list']=0;  
+		}
+		if(isArrayKeyAnEmptyString('delete', $formvalues)){
+			$formvalues['delete']=0; 
+		}
+		if(isArrayKeyAnEmptyString('export', $formvalues)){
+			$formvalues['export']=0; 
+		}
+		if(isArrayKeyAnEmptyString('approve', $formvalues)){
+			$formvalues['approve']=0;  
+		}
+		if(isArrayKeyAnEmptyString('flag', $formvalues)){
+			$formvalues['flag']=0;
+		}
+		// debugMessage($formvalues); exit();
+		parent::processPost($formvalues);
+	}
     /**
      * Return the permission for the specified action
      *

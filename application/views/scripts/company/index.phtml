@@ -1,0 +1,290 @@
+<?php
+	require_once APPLICATION_PATH.'/includes/header.php';
+	
+	$loggedinuser = new UserAccount();
+	$loggedinuser->populate($userid); 
+	$company = new Company();
+	
+	
+	if(isEmptyString($request->id)){
+		$title = "New Partner";
+		$posturl = $this->baseUrl("company/create");
+		$successmessage = $this->translate('global_save_success');
+		$button_title = $this->translate("global_button_save");
+		$company->setType(1);
+		$company->setCountry('UG');
+		
+	} else {
+		$title = "Update Partner";
+		$posturl = $this->baseUrl("company/edit");
+		$successmessage = $this->translate('global_update_success');
+		$button_title = $this->translate("global_button_save_changes");
+		$company->populate(decode($request->id)); // debugMessage($company->toArray());
+	}
+	
+	#in case of errors in session, populate the fields from session
+	if(!isEmptyString($session->getVar(ERROR_MESSAGE))){
+		$formvalues  = $session->getVar(FORM_VALUES);
+		$company->processPost($formvalues);
+	}
+	
+	$listurl = $this->baseUrl('company/list');
+	$listitems = "Partners";
+	$this->headTitle($title.$browserappend);
+	
+?>
+<script>
+$(document).ready(function() {
+	$("#levelone_icon").addClass('icon-list');
+	$("#levelone_link").attr('href', '<?php echo $listurl; ?>').html('<b>Partners</b>');
+	$("#leveltwo_link").html('> <?php echo $title; ?>');
+	
+	// validation code for the form
+	$("#indexform").validate({		
+		// define the validation rules one field at a time
+		rules: {
+			name: "required",
+			farmistype: "required",
+			regionid: "required",
+			regionids: "required",
+			districtid: "required",
+			districtids: "required",
+			dnaid: "required",
+			dnaids: "required"
+		}, 
+		// the messages for each of the fields being validated
+		messages: {				
+			name: "Please enter Name",
+			farmistype: "Please select a Type",
+			regionid: "Please select a Region",
+			regionids: "Please select one",
+			districtid: "Please select a District",
+			districtids: "Please select one",
+			dnaid: "Please select a DNA",
+			dnaids: "Please select one"
+		},
+		ignore: ":hidden:not(select)"
+	});
+	
+	$("#farmistype").change(function(){
+		var type = $(this).val();
+		disableContainerByClass("typedetails");
+		enableContainerByID("type_"+type);
+	});
+	$("#farmistype").trigger('change');
+	
+});
+</script>
+<div>
+	<?php require APPLICATION_PATH."/views/scripts/index/leftcolumn.phtml"; ?>
+    <div id="centercolumn">
+        <div class="container-fluid">
+            <div class="row margin0 maxwidth">
+                <form id="indexform" class="form-horizontal makerelative desktop" action="<?php echo $posturl; ?>" method="post">
+                    <h1><?php echo $title; ?></h1>
+                    <div class="wellcontent">
+                    	<?php if(!isEmptyString($session->getVar(SUCCESS_MESSAGE))){ ?>
+                            <div class="alert alert-success clear"><a class="close" data-dismiss="alert">×</a><?php echo $session->getVar(SUCCESS_MESSAGE); ?></div>
+                        <?php } ?>
+                        <?php if(!isEmptyString($session->getVar(ERROR_MESSAGE))){ ?>
+                            <div class="alert alert-error clear"><?php echo $session->getVar(ERROR_MESSAGE); ?></div>
+                        <?php } ?>
+                        <div class="control-group well lighter actions" id="topactions">
+                       		<div class="blocked clear makerelative">
+                                <ul class="peoplegroup">
+                                    <li><a class="btn cancel gonowhere"><i class="icon-remove"></i> <?php echo $this->translate('global_button_cancel'); ?></a>
+                                    <input name="entityname" id="entityname" type="hidden" value="Company" />
+                                    <input type="hidden" id="id" name="id" value="<?php echo encode($company->getID()); ?>" />
+                                    <input type="hidden" id="<?php echo SUCCESS_MESSAGE; ?>" name="<?php echo SUCCESS_MESSAGE; ?>" value="<?php echo $successmessage; ?>" /> 
+                                    <button type="submit" class="btn btn-primary"><i class="icon-ok icon-white"></i> <?php echo $button_title; ?></button></li>
+                                    <li style="float:right;"></li>
+                                </ul>
+                            </div>
+                        </div>
+                        <fieldset class="fieldsetcontainer well">
+                        	<legend>Account</legend>
+                            <div class="control-group">
+                                <label class="control-label">Name: <?php echo $this->translate("global_required_field_marker"); ?></label>
+                                <div class="controls"><input type="text" name="name" id="name" class="span4" value="<?php echo $company->getName(); ?>" /><div id="name_error"></div></div>
+                            </div>
+                            <div class="control-group">
+                                <label class="control-label">Description:</label>
+                                <div class="controls"><textarea name="description" id="description" class="span6 expanding" style="min-height:60px;"><?php echo $company->getDescription(); ?></textarea></div>
+                            </div>
+                            <div class="control-group">
+                                <label class="control-label">Contact Person:</label>
+                                <div class="controls"><input type="text" name="contactperson" id="contactperson" class="span4" value="<?php echo $company->getContactPerson(); ?>" /></div>
+                            </div>
+                            <div class="control-group">
+                                <label class="control-label">Phone:</label>
+                                <div class="controls"><input type="text" name="phone" id="phone" class="span2" value="<?php echo $company->getPhone(); ?>" /></div>
+                            </div>
+                            <div class="control-group">
+                                <label class="control-label">Email:</label>
+                                <div class="controls"><input type="text" name="email" id="email" class="span4" value="<?php echo $company->getEmail(); ?>" /></div>
+                            </div>
+                            <div class="control-group">
+                                <label class="control-label">Location:</label>
+                                <div class="controls">
+                                	<?php
+										$districts = getDistricts($session->getVar('country'));
+										$districtdropdown = new Zend_Form_Element_Select('locationid',
+															array(
+																'multiOptions' => array_merge_maintain_keys(array('' => '<Select One>'), $districts),								
+																'view' => new Zend_View(),
+																'decorators' => array('ViewHelper'),
+																'class' => array('span3')
+															)
+														);
+										$districtdropdown->setValue($company->getLocationID()); 
+										echo $districtdropdown->render(); 
+								   ?><div id="locationid_error"></div>
+                            </div>
+                        </fieldset>
+                        <fieldset class="fieldsetcontainer well">
+                        	<legend>Access Settings</legend>
+                            <div class="control-group">
+                                <label class="control-label">Access Status: <?php echo $this->translate("global_required_field_marker"); ?></label>
+                                <div class="controls">
+									<?php
+										$types = getPartnerAllocationTypes();
+										$dropdown = new Zend_Form_Element_Select('status',
+															array(
+																'multiOptions' => array('0'=>'In Active','1'=>'Active'),								
+																'view' => new Zend_View(),
+																'decorators' => array('ViewHelper'),
+																'class' => array('span2')
+															)
+														);
+										$dropdown->setValue($company->getStatus()); 
+										echo $dropdown->render(); 
+								   ?><div id="status_error"></div>
+                                </div>
+                            </div>
+                            <div class="control-group">
+                                <label class="control-label">Allocation Type: <?php echo $this->translate("global_required_field_marker"); ?></label>
+                                <div class="controls">
+									<?php
+										$types = getPartnerAllocationTypes();
+										$dropdown = new Zend_Form_Element_Select('farmistype',
+															array(
+																'multiOptions' => $types,								
+																'view' => new Zend_View(),
+																'decorators' => array('ViewHelper'),
+																'class' => array('span2')
+															)
+														);
+										$dropdown->setValue($company->getFarmisType()); 
+										echo $dropdown->render(); 
+								   ?><div id="farmistype_error"></div>
+                                </div>
+                            </div>
+                            <div class="control-group">
+                                <label class="control-label">Allocation Details: <?php echo $this->translate("global_required_field_marker"); ?></label>
+                                <div class="controls">
+									<div id="type_0" class="typedetails hidden">-</div>
+                                    <div id="type_1" class="typedetails hidden">-</div>
+                                    <div id="type_2" class="typedetails hidden">
+                                    	<?php
+											$values = getRegions($session->getVar('country'));
+											$dropdown = new Zend_Form_Element_Select('regionid',
+																array(
+																	'multiOptions' => array_merge_maintain_keys(array('' => '<Select One>'), $values),								'view' => new Zend_View(),
+																	'decorators' => array('ViewHelper'),
+																	'class' => array('span3')
+																)
+															);
+											$dropdown->setValue($company->getRegionID()); 
+											echo $dropdown->render(); 
+										?><div id="regionid_error"></div>
+                                    </div>
+                                    <div id="type_3" class="typedetails hidden">
+                                    	<?php
+											$listdropdown = new Zend_Form_Element_Multiselect('theregionids',
+												array(
+													  'multiOptions' => $values,
+													  'view' => new Zend_View(),
+													  'decorators' => array(array('ViewHelper')),
+													  'class' => array('chzn-select','multipleselect','span6')
+												)
+											);
+											
+											$listdropdown->setValue($company->getTheRegionIDs());
+											$listdropdown->setAttrib("data-placeholder", 'Type to select all in category');
+											echo $listdropdown->render();
+										  ?><div id="regionids_error"></div>
+                                           <input type="hidden" name="regionids_old" id="regionids_old" value="<?php echo $company->getRegionIDs(); ?>" />
+                                    </div>
+                                    <div id="type_4" class="typedetails hidden">
+                                    	<?php
+											$districts = getDistricts($session->getVar('country'));
+											$districtdropdown = new Zend_Form_Element_Select('districtid',
+																array(
+																	'multiOptions' => array_merge_maintain_keys(array('' => '<Select One>'), $districts),								
+																	'view' => new Zend_View(),
+																	'decorators' => array('ViewHelper'),
+																	'class' => array('span3')
+																)
+															);
+											$districtdropdown->setValue($company->getDistrictID()); 
+											echo $districtdropdown->render(); 
+									   ?><div id="districtid_error"></div>
+                                    </div>
+                                    <div id="type_5" class="typedetails hidden">
+                                    	<?php
+											$listdropdown = new Zend_Form_Element_Multiselect('thedistrictids',
+												array(
+													  'multiOptions' => $districts,
+													  'view' => new Zend_View(),
+													  'decorators' => array(array('ViewHelper')),
+													  'class' => array('chzn-select','multipleselect','span6')
+												)
+											);
+											
+											$listdropdown->setValue($company->getTheDistrictIDs());
+											$listdropdown->setAttrib("data-placeholder", 'Type to select all in category');
+											echo $listdropdown->render();
+										  ?><div id="districtids_error"></div>
+                                          <input type="hidden" name="districtids_old" id="districtids_old" value="<?php echo $company->getDistrictIDs(); ?>" />
+                                    </div>
+                                    <div id="type_6" class="typedetails hidden">
+										<?php
+											$groups = getAllDNAs($session->getVar('country'));
+                                            $groupdropdown = new Zend_Form_Element_Select('dnaid',
+                                                                array(
+                                                                    'multiOptions' => array_merge_maintain_keys(array('' => '<Select One>'), $groups),								
+                                                                    'view' => new Zend_View(),
+                                                                    'decorators' => array('ViewHelper'),
+                                                                    'class' => array('span3')
+                                                                )
+                                                            );
+                                            $groupdropdown->setValue($company->getDNAID()); 
+                                            echo $groupdropdown->render(); 
+                                       ?><div id="dnaid_error"></div>
+                                    </div>
+                                    <div id="type_7" class="typedetails hidden">
+                                    	<?php
+											$listdropdown = new Zend_Form_Element_Multiselect('thednaids',
+												array(
+													  'multiOptions' => $groups,
+													  'view' => new Zend_View(),
+													  'decorators' => array(array('ViewHelper')),
+													  'class' => array('chzn-select','multipleselect','span6')
+												)
+											);
+											
+											$listdropdown->setValue($company->getTheDNAIDs());
+											$listdropdown->setAttrib("data-placeholder", 'Type to select all in category');
+											echo $listdropdown->render();
+										  ?><div id="dnaids_error"></div>
+                                          <input type="hidden" name="dnaids_old" id="dnaids_old" value="<?php echo $company->getDNAIDs(); ?>" />
+                                    </div>
+                                </div>
+                            </div>
+                        </fieldset>
+                    </div>
+              	</form>
+       		</div>
+    	</div>
+   	</div>
+</div>    

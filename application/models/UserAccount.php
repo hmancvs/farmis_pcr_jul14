@@ -120,6 +120,7 @@ class UserAccount extends BaseEntity {
 		$this->hasColumn('phone2_activationkey', 'string', 15);
 		$this->hasColumn('phone2_activationdate', 'date');
 		$this->hasColumn('phone2_isactivated', 'integer', null, array('default' => '0'));
+		$this->hasColumn('companyid', 'integer', null);
 	}
 	
 	# Contructor method for custom initialization
@@ -231,6 +232,12 @@ class UserAccount extends BaseEntity {
 									'foreign' => 'id',
 								)
 						);
+		$this->hasOne('Company as company',
+				array(
+						'local' => 'companyid',
+						'foreign' => 'id'
+				)
+		);
 		$this->hasMany('Season as seasons',
 						 array(
 								'local' => 'id',
@@ -931,7 +938,10 @@ class UserAccount extends BaseEntity {
 			}
 			$formvalues['createdby'] = $formvalues['profiledby'];
 		}
-		// debugMessage($formvalues); // exit();
+		if(isArrayKeyAnEmptyString('companyid', $formvalues)){
+			unset($formvalues['companyid']);
+		}
+		// debugMessage($formvalues); exit();
 		parent::processPost($formvalues);
 	}
 	/*
@@ -1333,28 +1343,21 @@ class UserAccount extends BaseEntity {
     * 
     * @return bool TRUE if the signup process completes successfully, false if activation key is invalid or save fails
     */
-   function deactivateAccount() {
+   function deactivateAccount($status = 0) {
    		# save to the audit trail
    		
 		# set active to true and blank out activation key
-		$this->setIsActive('0');		
+		$this->setIsActive($status);		
 		$this->setActivationKey('');
 		// $this->setActivationDate(NULL);
-		
-		# save
-		try {
-			$this->save();
-			return true;
-			
-		} catch (Exception $e){
-			$this->getErrorStack()->add("user.activation", $this->translate->_("useraccount_activation_error"));
-			$this->logger->err("Error activating useraccount ".$this->getEmail()." ".$e->getMessage());
-			# log to audit trail when an error occurs in updating payee details on user account
-			$audit_values = array("executedby" => $this->getID(), "transactiontype" => USER_SIGNUP, "success" => "N");
-			$audit_values["transactiondetails"] = "An error occured in activating account for ".$this->getFirstName()." ".$this->getLastName(). " (".$this->getEmail()."). ".$e->getMessage(); 
-			// $this->notify(new sfEvent($this, USER_SIGNUP, $audit_values));
-			return false;
+		if($this->getusergroups()->count() == 0){
+			$this->getusergroups()->get(1)->setUserID($this->getID());
+			$this->getusergroups()->get(1)->setGroupID(2);
 		}
+		
+		$this->save();
+		
+		return true;
    }
 	/**
 	 * Send a notification to agent that their account will be approved shortly
@@ -1826,6 +1829,10 @@ class UserAccount extends BaseEntity {
 	function isManagement(){
     	return $this->getType() == 5 ? true : false; 
     }
+    # determine if is a partner
+    function isPartner(){
+    	return $this->getType() == 6 ? true : false;
+    }
 	# determine if the farmer is the contact person of the farm group
 	function isFarmGroupManager(){
 		if(isEmptyString($this->getFarmGroupID())){
@@ -1866,25 +1873,10 @@ class UserAccount extends BaseEntity {
 	}
     # determine type label
 	function getTypeLabel() {
-		$text = '--';
-		switch ($this->getType()) {
-			case '1':
-				$text = 'Admin';
-				break;
-			case '2':
-				$text = 'Farmer';
-				break;
-			case '3':
-				$text = 'Group Admin';
-				break;
-			case '4':
-				$text = 'PIA';
-				break;
-			case '5':
-				$text = 'Management';
-				break;
-			default:
-				$text = '--';
+		$types = getUserType();
+		$text = '';
+		if(!isArrayKeyAnEmptyString($this->getType(), $types)){
+			$text = $types[$this->getType()];
 		}
 		return $text;
 	}

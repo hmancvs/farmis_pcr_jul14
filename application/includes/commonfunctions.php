@@ -13,6 +13,7 @@ define("ACTION_DELETE", "delete");
 define("ACTION_EXPORT", "export");
 define("ACTION_VIEW", "view");
 define("ACTION_LIST", "list");
+define("ACTION_YESNO", "flag");
 
 # redirect, success and error urls during the processing of an action 
 define("URL_REDIRECT", "redirecturl"); // url forwarded to when a user has to login 
@@ -250,6 +251,9 @@ function formatDateAndTime($mysqldate, $ignoretime = true){
 	$oDate = new DateTime($mysqldate);
 	$sDate = $oDate->format("d/m/Y".$timestr);
 	return $sDate;
+}
+function getCurrentMysqlTimestamp(){
+	return date('Y-m-d H:i:s');
 }
 
 /**
@@ -1075,6 +1079,11 @@ function isManagement() {
 	$session = SessionWrapper::getInstance(); 
 	return $session->getVar('type') == '5' ? true : false;
 }
+# determine if loggedin user is management
+function isPartner() {
+	$session = SessionWrapper::getInstance();
+	return $session->getVar('type') == '6' ? true : false;
+}
 # determine current status label
 function getStatusText($status) {
 	$text = '--';
@@ -1497,5 +1506,8 @@ function greatUser($name){
 		}
 	}
 	return $txt.', '.$name;
+}
+function format($str){
+	return isEmptyString($str) ? '--' : $str;
 }
 ?>

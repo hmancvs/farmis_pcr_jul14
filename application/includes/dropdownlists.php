@@ -828,6 +828,13 @@
 		GROUP BY f.id ORDER BY optiontext";
 		return getOptionValuesFromDatabaseQuery($query);
 	}
+	# determine all dnas
+	function getAllDNAs($country = 'UG') {
+		$query = "SELECT f.id as optionvalue, f.orgname as optiontext FROM farmgroup f WHERE f.id <> '' AND f.parentid IS NULL AND f.country = UPPER('".$country."')
+		GROUP BY f.id ORDER BY optiontext";
+		return getOptionValuesFromDatabaseQuery($query);
+	}
+	
 	# determine the available dna profiles
 	function getDNAsInDistrict($districtid) {
 		$aspedec_query = "";
@@ -1508,5 +1515,37 @@
     		$salution = ', '.$lab;
     	}
     	return $salution; 
+    }
+    # check for payment methods
+    function getPartnerAllocationTypes(){
+    	return array(
+    			0=>'None', 
+    			1=>'All Farmers', 
+    			2=>'One Region',
+    			3=>'Multiple Regions', 
+    			4=>'One District', 
+    			5=>'Multiple Districts', 
+    			6=>'One DNA', 
+    			7=>'Multiple DNAs'
+    		);
+    }
+    # determine all partners
+    function getAllPartners($country = 'UG') {
+    	$query = "SELECT c.id as optionvalue, c.name as optiontext FROM company c WHERE c.type = '1' AND c.status = '1' AND c.country = UPPER('".$country."')
+    	GROUP BY c.id ORDER BY optiontext";
+    	return getOptionValuesFromDatabaseQuery($query);
+    }
+    # determine users of type or company
+    function getUsers($type, $country = 'UG', $companyid = '', $limit = ''){
+    	$custom_query = ''; $limit_query = '';
+    	if(!isEmptyString($companyid)){
+    		$custom_query = " AND u.companyid = '".$companyid."' ";
+    	}
+    	if(!isEmptyString($limit)){
+    		$limit_query = " LIMIT 5";
+    	}
+    	$valuesquery = "SELECT u.id AS optionvalue, concat(u.firstname, ' ', u.lastname) as optiontext FROM useraccount as u WHERE u.type = '".$type."'  AND u.country = UPPER('".$country."') ".$custom_query." GROUP BY u.id ORDER BY u.datecreated desc ".$limit_query;
+    	// debugMessage($valuesquery);
+    	return getOptionValuesFromDatabaseQuery($valuesquery);
     }
 ?>
