@@ -71,6 +71,9 @@ $(document).ready(function(){
 		
 		/*var maplace = new Maplace(); 
 		maplace.Load(); */
+
+		var maplace = new Maplace(); 
+maplace.Load(); 
 	<?php } ?>
 	<?php if(!isEmptyString($request->detect)){ ?>
 		initialiseMap2();
@@ -212,682 +215,656 @@ $(document).ready(function(){
                     <div class="alert alert-success"><a class="close" data-dismiss="alert">×</a><?php echo $session->getVar("phoneinvitesuccess"); ?></div>
                 </div>
                 <?php } ?>
-                <div class="row margin0">
-                    <div class="row margin0 pull-left">
-                        <?php if($isme || $acl->checkPermission($resourcename, ACTION_EDIT)){ ?>
-                            <a class="btn btn-primary" href="<?php echo $this->baseUrl($controllername.'/index/id/'.encode($id)); ?>" id="update"><i class="icon-pencil icon-white"></i> Update Profile</a>
+            <div class="row margin0">
+                <div class="row margin0 pull-left">
+                	<?php if($isme || $acl->checkPermission($resourcename, ACTION_EDIT)){ ?>
+                        <a class="btn btn-primary" href="<?php echo $this->baseUrl($controllername.'/index/id/'.encode($id)); ?>" id="update"><i class="icon-pencil icon-white"></i> Update Profile</a>
+                    <?php } ?>
+                    <?php if($acl->checkPermission($resourcename, ACTION_LIST)){ ?>
+                    	<?php if($user->isFarmer()){ ?>
+	                        <a class="btn" href="<?php echo $this->baseUrl('farmer/list'); ?>"><i class="icon-list"></i> Farmers</a>
                         <?php } ?>
-                        <?php if($acl->checkPermission($resourcename, ACTION_LIST)){ ?>
+                        <?php if(!$user->isFarmer()){ ?>
+	                        <a class="btn" href="<?php echo $this->baseUrl('profile/list'); ?>"><i class="icon-list"></i> User Profiles</a>
+                        <?php } ?>
+                    <?php } ?>
+                </div>
+				<div class="divider10"></div>
+                <span class="span6 marginleft0" style="width:72%;">
+                    <fieldset class="fieldsetcontainer well">
+                        <legend>Summary</legend>
+                        <table class="table noborder noborder nohover margin10">                       
+                           	<tr>
+                                <td style="width:18%;"><label class="control-label"><?php echo "Full ".$this->translate("farmer_name_label"); ?>:</label></td>
+                                <td style="width:32%;"><?php echo $user->getName(); ?><?php echo $user->getSalutationLabel(); ?></td>
+                                <td style="width:18%;"><label class="control-label"><?php echo $this->translate("farmer_gender_label"); ?>:</label></td>
+                                <td><?php echo $user->getGenderLabel(); ?></td>                                                             
+                            </tr>
+                            <tr>
+                                <td><label class="control-label"><?php echo $this->translate("farmer_dateofbirth_label"); ?>:</label></td>
+                                <td><?php echo $user->getBirthDateFormatted(); ?></td>
+                                <td><label class="control-label"><?php echo $this->translate("farmer_dateregistered_label"); ?>:</label></td>
+                                <td><?php echo isEmptyString($user->getRegDate()) ? '--' : changeMySQLDateToPageFormat($user->getRegDate()); ?></td>
+                                                           
+                            </tr>
                             <?php if($user->isFarmer()){ ?>
-                                <a class="btn" href="<?php echo $this->baseUrl('farmer/list'); ?>"><i class="icon-list"></i> Farmers</a>
+								<?php if(strtolower($country) == 'ug'){ ?>
+                                    <tr>		                    
+                                        <td><label class="control-label prefix">FIN#:</label></td>
+                                        <td><?php echo $user->getRefNo(); ?></td>
+                                        <td><label class="control-label prefix">Ref#:</label></td>
+                                        <td><?php echo $user->getRegNo(); ?></td>
+                                    </tr>
+                                <?php } ?>
+                                <?php if(strtolower($country) == 'ke'){ ?>
+                                    <tr>		                    
+                                        <td><label class="control-label">National ID#:</label></td>
+                                        <td><?php echo $user->getRefNo(); ?></td>
+                                        <?php if($user->isPIA()){ ?>
+                                            <td><label class="control-label">PID#</label></td>
+                                            <td><?php echo $user->getID(); ?></td>
+                                        <?php } else { ?>
+                                            <td></td>
+                                            <td></td>
+                                        <?php } ?>
+                                    </tr>
+                                <?php } ?>
                             <?php } ?>
-                            <?php if(!$user->isFarmer()){ ?>
-                                <a class="btn" href="<?php echo $this->baseUrl('profile/list'); ?>"><i class="icon-list"></i> User Profiles</a>
+                            <tr>
+                                <td><label class="control-label">Phone:</label></td>
+								<td><?php echo isEmptyString($user->getFormattedPhone()) ? '--' : $user->getFormattedPhone(); ?></td>
+                                <td><label class="control-label">Email:</label></td>
+                                <td><?php echo isEmptyString($user->getEmail()) ? '--' : $user->getEmail(); ?></td>
+                            </tr>
+                            <tr>
+                                <td><label class="control-label">Alt Phone:</label></td>
+								<td><?php echo isEmptyString($user->getFormattedPhone2()) ? '--' : $user->getFormattedPhone2(); ?></td>
+                                <td><label class="control-label">Alt Email:</label></td>
+								<td><?php echo isEmptyString($user->getEmail2()) ? '--' : $user->getEmail2(); ?></td>
+                            </tr>
+                            <?php if($user->hasFarmGroup()){ ?>  
+                                <tr>
+                                    <td><label class="control-label"><?php echo $this->translate("farmer_dna_label"); ?>:</label></td>
+                                    <td><?php if($acl->checkPermission('DNA', ACTION_LIST)){ ?>
+                                      		<a href="<?php echo $this->baseUrl('farmgroup/view/id/'.encode($user->getFarmGroupID())); ?>"><?php echo $user->getFarmGroup()->getName(); ?></a>
+                                        <?php } else { ?>
+                                        	<?php echo $user->getFarmGroup()->getName(); ?>
+                                       	<?php } ?>
+                                    </td>
+                                    <?php if($user->hasSubGroup()){ ?> 
+                                        <td><label class="control-label"><?php echo $this->translate("farmer_subgroup_label"); ?>:</label></td>
+                                        <td><?php echo $user->getSubGroup()->getName(); ?></td>
+                                    <?php } else { ?>
+                                    	<td colspan="2"></td>
+                                    <?php } ?>
+                                </tr>
                             <?php } ?>
-                        <?php } ?>
-                    </div>
-                    <div class="divider10"></div>
-                    <span class="span6 marginleft0" style="width:72%;">
+                            <?php if($user->isPartner() && !$isme){ ?>
+                            	<tr>
+                                    <td><label class="control-label">Partner:</label></td>
+                                    <td><?php if($acl->checkPermission('Partner', ACTION_LIST)){ ?>
+                                      		<a href="<?php echo $this->baseUrl('company/view/id/'.encode($user->getCompanyID())); ?>"><?php echo $user->getCompany()->getName(); ?></a>
+                                        <?php } else { ?>
+                                        	<?php echo $user->getCompany()->getName(); ?>
+                                       	<?php } ?>
+                                    </td>
+                                    <td colspan="2"></td>
+                                </tr>
+                            <?php } ?>
+                        </table>
+                    </fieldset>
+                    <?php if($user->isFarmer()){ ?>
                         <fieldset class="fieldsetcontainer well">
-                            <legend>Summary</legend>
-                            <table class="table noborder noborder nohover margin10">                       
-                                <?php if($user->isFarmer()){ ?>
-                                    <?php if(strtolower($country) == 'ug'){ ?>
-                                        <tr>		                    
-                                            <td><label class="control-label prefix">FIN#:</label></td>
-                                            <td><?php echo $user->getRefNo(); ?></td>
-                                            <td><label class="control-label prefix">Ref#:</label></td>
-                                            <td><?php echo $user->getRegNo(); ?></td>
-                                        </tr>
-                                    <?php } ?>
-                                    <?php if(strtolower($country) == 'ke'){ ?>
-                                        <tr>		                    
-                                            <td><label class="control-label">National ID#:</label></td>
-                                            <td><?php echo $user->getRefNo(); ?></td>
-                                            <?php if($user->isPIA()){ ?>
-                                                <td><label class="control-label">PID#</label></td>
-                                                <td><?php echo $user->getID(); ?></td>
-                                            <?php } else { ?>
-                                                <td></td>
-                                                <td></td>
-                                            <?php } ?>
-                                        </tr>
-                                    <?php } ?>
-                                <?php } ?>
-                                <tr>
-                                    <td style="width:18%;"><label class="control-label"><?php echo "Full ".$this->translate("farmer_name_label"); ?>:</label></td>
-                                    <td style="width:32%;"><?php echo $user->getName(); ?><?php echo $user->getSalutationLabel(); ?></td>
-                                    <td style="width:18%;"><label class="control-label"><?php echo $this->translate("farmer_gender_label"); ?>:</label></td>
-                                    <td><?php echo $user->getGenderLabel(); ?></td>                                                             
+                            <legend>About</legend>
+                            <div class="padding10" style="min-height:30px; margin-left:10px;"><label class="control-label">Bio:</label>
+							<?php echo isEmptyString($user->getBio()) ? '--' : nl2br($user->getBio()); ?></div>
+                            <table class="table margin10 noborder nohover">  
+                                <tr>		  
+                                    <td width="35%"><label class="control-label"><?php echo $this->translate("farmer_maritalstatus_label"); ?>:</label>
+                                    <?php echo isEmptyString($user->getMaritalStatusText()) ? '--': $user->getMaritalStatusText(); ?></td>
+                                    <td width="30%"><label class="control-label"><?php echo $this->translate("farmer_educlevel_label"); ?>:</label>
+                                    <?php echo $user->getEducationLevelText(); ?></td>
+                                    <td></td>
                                 </tr>
-                                <tr>
-                                    <td><label class="control-label"><?php echo $this->translate("farmer_dateofbirth_label"); ?>:</label></td>
-                                    <td><?php echo $user->getBirthDateFormatted(); ?></td>
-                                    <td><label class="control-label"><?php echo $this->translate("farmer_dateregistered_label"); ?>:</label></td>
-                                    <td><?php echo isEmptyString($user->getRegDate()) ? '--' : changeMySQLDateToPageFormat($user->getRegDate()); ?></td>
-                                                               
+                                <tr>		  
+                                    <td><label class="control-label"><?php echo $this->translate("farmer_nochildren_label"); ?>:</label>
+                                    <?php echo isEmptyString($user->getNumberOfChildren()) ? '--': $user->getNumberOfChildren(); ?></td>
+                                    <td><label class="control-label"><?php echo $this->translate("farmer_nodependants_label"); ?>:</label>
+                                    <?php echo isEmptyString($user->getNumberOfDependants()) ? '--': $user->getNumberOfDependants(); ?></td>
+                                    <td><label class="control-label"><?php echo $this->translate("farmer_totalhousehold_label"); ?>:</label>
+                                    <?php echo isEmptyString($user->getTotalHousehold()) ? '--': $user->getTotalHousehold(); ?></td>
                                 </tr>
-                                <tr>
-                                    <td><label class="control-label">Phone:</label></td>
-                                    <td><?php echo isEmptyString($user->getFormattedPhone()) ? '--' : $user->getFormattedPhone(); ?></td>
-                                    <td><label class="control-label">Email:</label></td>
-                                    <td><?php echo isEmptyString($user->getEmail()) ? '--' : $user->getEmail(); ?></td>
+                               <tr>		  
+                                    <td width="35%"><label class="control-label"><?php echo $this->translate("farmer_nextofkin_label"); ?> <?php echo $this->translate("global_name_label"); ?>:</label>
+                                    <?php echo isEmptyString($user->getNextofkin_Name()) ? '--': $user->getNextofkin_Name(); ?>
+                                    </td>
+                                    <td width="30%"><label class="control-label"><?php echo $this->translate("farmer_nextofkin_label"); ?> <?php echo $this->translate("global_phone_label"); ?>:</label>
+                                    <?php echo isEmptyString($user->getNextofkin_phone()) ? '--': $user->getNextofkin_phone(); ?>
+                                    </td>
+                                    <td width="35%"><label class="control-label"><?php echo $this->translate("farmer_nextofkin_label"); ?> <?php echo $this->translate("global_email_label"); ?>:</label>
+                                    <?php echo isEmptyString($user->getNextofkin_email()) ? '--': $user->getNextofkin_email(); ?>
+                                    </td>
                                 </tr>
-                                <tr>
-                                    <td><label class="control-label">Alt Phone:</label></td>
-                                    <td><?php echo isEmptyString($user->getFormattedPhone2()) ? '--' : $user->getFormattedPhone2(); ?></td>
-                                    <td><label class="control-label">Alt Email:</label></td>
-                                    <td><?php echo isEmptyString($user->getEmail2()) ? '--' : $user->getEmail2(); ?></td>
-                                </tr>
-                                <?php if($user->hasFarmGroup()){ ?>  
-                                    <tr>
-                                        <td><label class="control-label"><?php echo $this->translate("farmer_dna_label"); ?>:</label></td>
-                                        <td><?php if($acl->checkPermission('DNA', ACTION_LIST)){ ?>
-                                                <a href="<?php echo $this->baseUrl('farmgroup/view/id/'.encode($user->getFarmGroupID())); ?>"><?php echo $user->getFarmGroup()->getName(); ?></a>
-                                            <?php } else { ?>
-                                                <?php echo $user->getFarmGroup()->getName(); ?>
-                                            <?php } ?>
-                                        </td>
-                                        <?php if($user->hasSubGroup()){ ?> 
-                                            <td><label class="control-label"><?php echo $this->translate("farmer_subgroup_label"); ?>:</label></td>
-                                            <td><?php echo $user->getSubGroup()->getName(); ?></td>
-                                        <?php } else { ?>
-                                            <td colspan="2"></td>
-                                        <?php } ?>
-                                    </tr>
-                                <?php } ?>
-                                <?php if(!$isme && $acl->checkPermission($resourcename, ACTION_LIST)){ ?>
-                                    <tr>
-                                        <td><label class="control-label">Type: </label></td>
-                                        <td><?php echo $user->getTypeLabel(); ?></td>
-                                        <?php if($user->isPartner()){ ?>
-                                            <td><label class="control-label">Name of Partner:</label></td>
-                                            <td><?php if($acl->checkPermission('Partner', ACTION_LIST)){ ?>
-                                                    <a href="<?php echo $this->baseUrl('company/view/id/'.encode($user->getCompanyID())); ?>"><?php echo $user->getCompany()->getName(); ?></a>
-                                                <?php } else { ?>
-                                                    <?php echo $user->getCompany()->getName(); ?>
-                                                <?php } ?>
-                                            </td>
-                                        <?php } else { ?>
-                                            <td colspan="2"></td>
-                                        <?php } ?>
-                                    </tr>
-                                <?php } ?>
                             </table>
                         </fieldset>
-                        <?php if($user->isFarmer()){ ?>
-                            <fieldset class="fieldsetcontainer well">
-                                <legend>About</legend>
-                                <div class="padding10" style="min-height:30px; margin-left:10px;"><label class="control-label">Bio:</label>
-                                <?php echo isEmptyString($user->getBio()) ? '--' : nl2br($user->getBio()); ?></div>
-                                <table class="table margin10 noborder nohover">  
-                                    <tr>		  
-                                        <td width="35%"><label class="control-label"><?php echo $this->translate("farmer_maritalstatus_label"); ?>:</label>
-                                        <?php echo isEmptyString($user->getMaritalStatusText()) ? '--': $user->getMaritalStatusText(); ?></td>
-                                        <td width="30%"><label class="control-label"><?php echo $this->translate("farmer_educlevel_label"); ?>:</label>
-                                        <?php echo $user->getEducationLevelText(); ?></td>
-                                        <td></td>
-                                    </tr>
-                                    <tr>		  
-                                        <td><label class="control-label"><?php echo $this->translate("farmer_nochildren_label"); ?>:</label>
-                                        <?php echo isEmptyString($user->getNumberOfChildren()) ? '--': $user->getNumberOfChildren(); ?></td>
-                                        <td><label class="control-label"><?php echo $this->translate("farmer_nodependants_label"); ?>:</label>
-                                        <?php echo isEmptyString($user->getNumberOfDependants()) ? '--': $user->getNumberOfDependants(); ?></td>
-                                        <td><label class="control-label"><?php echo $this->translate("farmer_totalhousehold_label"); ?>:</label>
-                                        <?php echo isEmptyString($user->getTotalHousehold()) ? '--': $user->getTotalHousehold(); ?></td>
-                                    </tr>
-                                   <tr>		  
-                                        <td width="35%"><label class="control-label"><?php echo $this->translate("farmer_nextofkin_label"); ?> <?php echo $this->translate("global_name_label"); ?>:</label>
-                                        <?php echo isEmptyString($user->getNextofkin_Name()) ? '--': $user->getNextofkin_Name(); ?>
-                                        </td>
-                                        <td width="30%"><label class="control-label"><?php echo $this->translate("farmer_nextofkin_label"); ?> <?php echo $this->translate("global_phone_label"); ?>:</label>
-                                        <?php echo isEmptyString($user->getNextofkin_phone()) ? '--': $user->getNextofkin_phone(); ?>
-                                        </td>
-                                        <td width="35%"><label class="control-label"><?php echo $this->translate("farmer_nextofkin_label"); ?> <?php echo $this->translate("global_email_label"); ?>:</label>
-                                        <?php echo isEmptyString($user->getNextofkin_email()) ? '--': $user->getNextofkin_email(); ?>
-                                        </td>
-                                    </tr>
-                                </table>
-                            </fieldset>
-                        <?php } ?>
-                        <fieldset class="fieldsetcontainer well">
-                            <legend>Location</legend>
-                            <table class="table margin10 noborder nohover">                       
-                                <tr>
-                                    <td width="35%"><label class="control-label">Country:</label>
-                                        <?php echo isEmptyString($user->getCountry()) ? '--' : $user->getCountryName(); ?>
-                                    </td>
-                                    <td width="30%"><label class="control-label"><?php echo $location_label; ?>:</label>
-                                        <?php echo isEmptyString($user->getLocationID()) ? '--' : $user->getLocation()->getName(); ?>
-                                    </td>
-                                    <td width="35%"><label class="control-label"><?php echo $county_label; ?>:</label>
-                                        <?php echo isEmptyString($user->getCountyID()) ? '--' : $user->getCounty()->getName(); ?>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td><label class="control-label"><?php echo $subcounty_label; ?>:</label>
-                                        <?php echo isEmptyString($user->getSubCountyID()) ? '--' : $user->getSubCounty()->getName(); ?>
-                                    </td>
-                                    <td>
-                                    <?php if($user->isUgandan()){ ?>
-                                        <label class="control-label">Parish:</label>
-                                        <?php echo isEmptyString($user->getParishID()) ? '--' : $user->getParish()->getName(); ?>
-                                    <?php } ?>
-                                    </td>
-                                    <td>
-                                    <?php if($user->isUgandan()){ ?>
-                                        <label class="control-label">Village:</label>
-                                        <?php echo isEmptyString($user->getVillageID()) ? '--' : $user->getVillage()->getName(); ?>
-                                    <?php } ?>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td><label class="control-label">Postal/Street Address</label>
-                                        <?php echo isEmptyString($user->getStreetAddress()) ? '--' : nl2br($user->getStreetAddress()); ?>
-                                    </td>
-                                    <td><label class="control-label">GPS Latitude:</label><?php echo $user->getLat(); ?></td>
-                                    <td><label class="control-label">GPS Longitude:</label><?php echo $user->getLng(); ?></td>
-                                </tr>
-                            </table>
-                            <div style="margin: 10px 10px 10px 15px;">
-                                <div class="divider10"></div>
-                                <label class="control-label">Map:</label>
-                                <div class="well lighter clearfix makerelative" style="min-height:500px; padding:10px;">
-                                    <?php if(isEmptyString($request->detect) && ($isme || $acl->checkPermission($resourcename, ACTION_EDIT))){ ?>
-                                        <a class="btn btn-mini makeabsolute" style="top:-25px; left:0;" href="<?php echo $this->baseUrl($controllername.'/view/id/'.encode($user->getID()).'/tab/contacts/detect/1'); ?>"><?php echo $user->hasGPSCoordinates() ? 'Update '.$metxt.'Position' : 'Compute '.$metxt.'Location'; ?></a>
-                                        <!--<div id="map_canvas" class="gmaps"></div>-->
-                                        <div id="gmap"></div>
-                                    <?php } ?>
-                                    <?php if(!isEmptyString($request->detect)){ ?>
-                                        <div id="current" class="bolded">Initializing...</div>
-                                        <input type="text" id="lat" name="lat" value="" class="form-control input-width-small isdecimal" /> &nbsp;
-                                        <input type="text" id="lng" name="lng" value="" class="form-control input-width-small isdecimal" /><input type="hidden" id="hasgps" name="hasgps" value="" /><br /><br />
-                                        
-                                        <a href="<?php echo $this->referer; ?>" class="btn"><i class="icon-remove"></i> <?php echo $this->translate('global_button_cancel'); ?></a>
-                                        <a href="<?php echo $this->baseUrl($controllername.'/view/id/'.encode($user->getID()).'/tab/contacts/detect/1'); ?>" class="btn"><i class="icon-refresh"></i> Reload</a>
-                                        <button type="submit" class="btn btn-primary hide" id="saveposition"><i class="icon-ok icon-white"></i> <?php echo $this->translate('global_button_save')." Position"; ?></button>
-                                        <div class="form-group">
-                                            <div id="hasgps_error"></div>
-                                        </div>
-                                        <div id="map_canvas" class="gmaps"></div>
-                                        <div class="divider20"></div>	
-                                        <input type="hidden" name="entityname" value="UserAccount" />
-                                        <input type="hidden" id="id" name="id" value="<?php echo encode($user->getID()); ?>" />
-                                        
-                                        
-                                        <input type="hidden" name="<?php echo URL_SUCCESS; ?>" value="<?php echo encode($this->baseUrl($controllername.'/view/id/'.encode($user->getID()).'/tab/contacts')); ?>" />
-                                        <input type="hidden" name="<?php echo URL_FAILURE; ?>" value="<?php echo encode($this->baseUrl($controllername.'/view/id/'.encode($user->getID()).'/tab/contacts/detect/1')); ?>" />
-                                        <input type="hidden" name="<?php echo SUCCESS_MESSAGE; ?>" value="global_save_success" />
-                                    <?php } ?>
-                                </div>
+                    <?php } ?>
+                    <fieldset class="fieldsetcontainer well">
+                        <legend>Location</legend>
+                        <table class="table margin10 noborder nohover">                       
+                            <tr>
+                                <td width="35%"><label class="control-label">Country:</label>
+                                    <?php echo isEmptyString($user->getCountry()) ? '--' : $user->getCountryName(); ?>
+                                </td>
+                                <td width="30%"><label class="control-label"><?php echo $location_label; ?>:</label>
+                                    <?php echo isEmptyString($user->getLocationID()) ? '--' : $user->getLocation()->getName(); ?>
+                                </td>
+                                <td width="35%"><label class="control-label"><?php echo $county_label; ?>:</label>
+                                    <?php echo isEmptyString($user->getCountyID()) ? '--' : $user->getCounty()->getName(); ?>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><label class="control-label"><?php echo $subcounty_label; ?>:</label>
+                                    <?php echo isEmptyString($user->getSubCountyID()) ? '--' : $user->getSubCounty()->getName(); ?>
+                                </td>
+                                <td>
+                                <?php if($user->isUgandan()){ ?>
+                                    <label class="control-label">Parish:</label>
+                                    <?php echo isEmptyString($user->getParishID()) ? '--' : $user->getParish()->getName(); ?>
+                                <?php } ?>
+                                </td>
+                                <td>
+                                <?php if($user->isUgandan()){ ?>
+                                    <label class="control-label">Village:</label>
+                                    <?php echo isEmptyString($user->getVillageID()) ? '--' : $user->getVillage()->getName(); ?>
+                                <?php } ?>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><label class="control-label">Postal/Street Address</label>
+                                    <?php echo isEmptyString($user->getStreetAddress()) ? '--' : nl2br($user->getStreetAddress()); ?>
+                                </td>
+                                <td><label class="control-label">GPS Latitude:</label><?php echo $user->getLat(); ?></td>
+                                <td><label class="control-label">GPS Longitude:</label><?php echo $user->getLng(); ?></td>
+                            </tr>
+                        </table>
+                        <div style="margin: 10px 10px 10px 15px;">
+                            <div class="divider10"></div>
+                            <label class="control-label">Map:</label>
+                            <div class="well lighter clearfix makerelative" style="min-height:500px; padding:10px;">
+                                <?php if(isEmptyString($request->detect)){ ?>
+                                    <a class="btn btn-mini makeabsolute" style="top:-25px; left:0;" href="<?php echo $this->baseUrl($controllername.'/view/id/'.encode($user->getID()).'/tab/contacts/detect/1'); ?>"><?php echo $user->hasGPSCoordinates() ? 'Update '.$metxt.'Position' : 'Compute '.$metxt.'Location'; ?></a>
+                                    <!--<div id="map_canvas" class="gmaps"></div>-->
+                                    <div id="gmap"></div>
+                                <?php } ?>
+                                <?php if(!isEmptyString($request->detect)){ ?>
+                                    <div id="current" class="bolded">Initializing...</div>
+                                    <input type="text" id="lat" name="lat" value="" class="form-control input-width-small isdecimal" /> &nbsp;
+                                    <input type="text" id="lng" name="lng" value="" class="form-control input-width-small isdecimal" /><input type="hidden" id="hasgps" name="hasgps" value="" /><br /><br />
+                                    
+                                    <a href="<?php echo $this->referer; ?>" class="btn"><i class="icon-remove"></i> <?php echo $this->translate('global_button_cancel'); ?></a>
+                                    <a href="<?php echo $this->baseUrl($controllername.'/view/id/'.encode($user->getID()).'/tab/contacts/detect/1'); ?>" class="btn"><i class="icon-refresh"></i> Reload</a>
+                                    <button type="submit" class="btn btn-primary hide" id="saveposition"><i class="icon-ok icon-white"></i> <?php echo $this->translate('global_button_save')." Position"; ?></button>
+                                    <div class="form-group">
+                                        <div id="hasgps_error"></div>
+                                    </div>
+                                    <div id="map_canvas" class="gmaps"></div>
+                                    <div class="divider20"></div>	
+                                    <input type="hidden" name="entityname" value="UserAccount" />
+                                    <input type="hidden" id="id" name="id" value="<?php echo encode($user->getID()); ?>" />
+                                    
+                                    
+                                    <input type="hidden" name="<?php echo URL_SUCCESS; ?>" value="<?php echo encode($this->baseUrl($controllername.'/view/id/'.encode($user->getID()).'/tab/contacts')); ?>" />
+                                    <input type="hidden" name="<?php echo URL_FAILURE; ?>" value="<?php echo encode($this->baseUrl($controllername.'/view/id/'.encode($user->getID()).'/tab/contacts/detect/1')); ?>" />
+                                    <input type="hidden" name="<?php echo SUCCESS_MESSAGE; ?>" value="global_save_success" />
+                                <?php } ?>
                             </div>
-                        </fieldset>    
-                    </span>
-                    <span class="span3 pull-right" style="width:24%;">
-                        <div id="xrow2_right" class="well lighter row" style="height:550px;">
-                            <h3 class="well-legend margin0">Account Summary</h3>
-                            <table class="table table-striped table-bordered xtable-condensed" id="stats">
-                                <?php if($user->isDataClerk() || $user->isFarmer()){ ?>
-                                    <tr>             
-                                        <td class="profilerightlabel nullifempty">
-                                        <?php if($user->isDataClerk()){ ?>
-                                            PID#:
-                                        <?php } ?>
-                                        <?php if($user->isFarmer()){ ?>
-                                            FIN#:
-                                        <?php } ?>
-                                        </td>
-                                        <td class="profilerightvalue nullifempty"><?php echo $user->isPIA() ? $user->getID() : $user->getRefNo(); ?></td>
-                                    </tr>
-                                <?php } ?>
-                                <tr>		                    
-                                    <td class="profilerightlabel">Account Type:</td>
-                                    <td class="profilerightvalue nullifempty"><?php echo $user->getTypeLabel(); ?></td>
+                       	</div>
+                    </fieldset>    
+                </span>
+                <span class="span3 pull-right" style="width:24%;">
+                    <div id="xrow2_right" class="well lighter row" style="height:550px;">
+                        <h3 class="well-legend margin0">Account Summary</h3>
+                        <table class="table table-striped table-bordered xtable-condensed" id="stats">
+                            <?php if($user->isDataClerk() || $user->isFarmer()){ ?>
+                                <tr>             
+                                    <td class="profilerightlabel nullifempty">
+                                    <?php if($user->isDataClerk()){ ?>
+                                    	PID#:
+                                    <?php } ?>
+                                    <?php if($user->isFarmer()){ ?>
+                                    	FIN#:
+                                    <?php } ?>
+                                    </td>
+                                    <td class="profilerightvalue nullifempty"><?php echo $user->isPIA() ? $user->getID() : $user->getRefNo(); ?></td>
                                 </tr>
-                                <?php if($user->isFarmer()){ ?>
-                                    <tr>		                    
-                                        <td class="profilerightlabel">Payment Status:</td>
-                                        <td class="profilerightvalue nullifempty"><?php echo $user->hasPaid() ? 'Paid' : 'Not Paid'; ?></td>
-                                    </tr>
-                                <?php } ?>
+                            <?php } ?>
+                            <tr>		                    
+                                <td class="profilerightlabel">Account Type:</td>
+                                <td class="profilerightvalue nullifempty"><?php echo $user->getTypeLabel(); ?></td>
+                            </tr>
+                            <?php if($user->isFarmer()){ ?>
                                 <tr>		                    
-                                    <td class="profilerightlabel">Login Status:</td>
-                                    <td class="profilerightvalue nullifempty"><?php echo getUserStatus($user->getisActive()); ?></td>
+                                    <td class="profilerightlabel">Payment Status:</td>
+                                    <td class="profilerightvalue nullifempty"><?php echo $user->hasPaid() ? 'Paid' : 'Not Paid'; ?></td>
                                 </tr>
-                                <tr>		                    
-                                    <td class="profilerightlabel">Activation Date:</td>
-                                    <td class="profilerightvalue nullifempty"><?php echo isEmptyString($user->getActivationDate()) ? '--' : changeMySQLDateToPageFormat($user->getActivationDate()); ?></td>
+                            <?php } ?>
+                            <tr>		                    
+                                <td class="profilerightlabel">Login Status:</td>
+                                <td class="profilerightvalue nullifempty"><?php echo getUserStatus($user->getisActive()); ?></td>
+                            </tr>
+                            <tr>		                    
+                                <td class="profilerightlabel">Activation Date:</td>
+                                <td class="profilerightvalue nullifempty"><?php echo isEmptyString($user->getActivationDate()) ? '--' : changeMySQLDateToPageFormat($user->getActivationDate()); ?></td>
+                            </tr>
+                            <?php if($user->isFarmer()){ ?>
+                            <tr>		                    
+                                <td class="profilerightlabel">Subscription Start:</td>
+                                <td class="profilerightvalue nullifempty"><?php echo changeMySQLDateToPageFormat($user->getLatestSubscription()->getStartDate()); ?></td>
+                            </tr>
+                            <tr>		                    
+                                <td class="profilerightlabel">Expiry Date:</td>
+                                <td class="profilerightvalue nullifempty"><?php echo changeMySQLDateToPageFormat($user->getLatestSubscription()->getEndDate()); ?></td>
+                            </tr>
+                            <?php } ?>
+                            <?php if($user->isFarmer()){ ?>
+                                <tr>             
+                                    <td class="profilerightlabel">No of Crops:</td>
+                                    <td class="profilerightvalue nullifempty"><a href="<?php echo $this->baseUrl('farmer/view/id/'.$user->getID().'/tab/farm'); ?>"><?php echo $user->getCrops()->count(); ?></a></td>
                                 </tr>
-                                <?php if($user->isFarmer()){ ?>
-                                <tr>		                    
-                                    <td class="profilerightlabel">Subscription Start:</td>
-                                    <td class="profilerightvalue nullifempty"><?php echo changeMySQLDateToPageFormat($user->getLatestSubscription()->getStartDate()); ?></td>
+                                <tr>             
+                                    <td class="profilerightlabel">No of Seasons:</td>
+                                    <td class="profilerightvalue nullifempty"><a href="<?php echo $this->baseUrl('farmer/view/id/'.$user->getID().'/tab/seasons'); ?>"><?php echo $user->getSeasons()->count(); ?></a></td>
                                 </tr>
-                                <tr>		                    
-                                    <td class="profilerightlabel">Expiry Date:</td>
-                                    <td class="profilerightvalue nullifempty"><?php echo changeMySQLDateToPageFormat($user->getLatestSubscription()->getEndDate()); ?></td>
-                                </tr>
-                                <?php } ?>
-                                <?php if($user->isFarmer()){ ?>
-                                    <tr>             
-                                        <td class="profilerightlabel">No of Crops:</td>
-                                        <td class="profilerightvalue nullifempty"><a href="<?php echo $this->baseUrl('farmer/view/id/'.$user->getID().'/tab/farm'); ?>"><?php echo $user->getCrops()->count(); ?></a></td>
-                                    </tr>
-                                    <tr>             
-                                        <td class="profilerightlabel">No of Seasons:</td>
-                                        <td class="profilerightvalue nullifempty"><a href="<?php echo $this->baseUrl('farmer/view/id/'.$user->getID().'/tab/seasons'); ?>"><?php echo $user->getSeasons()->count(); ?></a></td>
-                                    </tr>
-                                <?php } ?>
-                                <tr>		                    
-                                    <td class="profilerightlabel">Entry Date:</td>
-                                    <td class="profilerightvalue nullifempty"><?php echo formatDateAndTime($user->getDateCreated(), true); ?></td>
-                                </tr>
-                                <tr>		                    
-                                    <td class="profilerightlabel">Profiled By:</td>
-                                    <td class="profilerightvalue nullifempty"><?php echo $user->getCreator()->getName(); ?></td>
-                                </tr>
-                            </table>
-                        </div>
-                    </span>		
-                </div>
+                            <?php } ?>
+                            <tr>		                    
+                                <td class="profilerightlabel">Entry Date:</td>
+                                <td class="profilerightvalue nullifempty"><?php echo formatDateAndTime($user->getDateCreated(), true); ?></td>
+                            </tr>
+                            <tr>		                    
+                                <td class="profilerightlabel">Profiled By:</td>
+                                <td class="profilerightvalue nullifempty"><?php echo $user->getCreator()->getName(); ?></td>
+                            </tr>
+                        </table>
+                    </div>
+                </span>		
+        	</div>
             <?php } ?>
         	</form> 
         </div>
         <?php if($user->isFarmer()){ ?>
-            <div id="farm">
-                <h2>Manage Farm</h2>
-                <form id="profileform-farm" class="form-horizontal farm">
-                    <?php if($tab == 'farm'){ ?>
-                        <?php if(!isEmptyString($session->getVar(SUCCESS_MESSAGE)) ){ ?>
-                            <div class="alert alert-success"><a class="close" data-dismiss="alert">×</a><?php echo $session->getVar(SUCCESS_MESSAGE); ?></div>
-                        <?php } ?>
-                        <div class="row margin0 padding0">
-                             <?php if($isme || $acl->checkPermission($resourcename, ACTION_EDIT)){ ?>
-                                <a class="btn btn-primary" href="<?php echo $this->baseUrl($controllername.'/index/id/'.encode($id).'/tab/farm'); ?>" id="update"><i class="icon-pencil icon-white"></i> Update Profile</a>                                       
-                            <?php } ?>
-                        </div> 
-                        <div class="divider10"></div>
-                        <div class="row margin0 padding0" style="width:100%;">
-                            <span style="width:49%; float:left;">
-                                <div class="well lighter row marginleft0" id="farmleft" style="min-height:325px;"> 
-                                    <h3 class="well-legend">Manage Farm</h3>
-                                    <table class="table"> 
-                                        <tr>
-                                            <td width="40%"><label class="control-label" style="display:inline-block;"><?php echo $this->translate("farm_name_label"); ?>:</label></td>
-                                            <td><?php echo $user->getName(); ?></td>
-                                        </tr>
-                                        <tr>
-                                            <td><label class="control-label">Practicing Farming Since:</label></td>
-                                            <td><?php echo $user->getFullStartDate(); ?></td>
-                                        </tr>
-                                        <tr>
-                                            <td><label class="control-label"><?php echo $this->translate("farm_numberofemployees_label"); ?>:</label></td>
-                                            <td><?php echo isEmptyString($user->getNumberOfEmployees()) ? '0' : $user->getNumberOfEmployees(); ?></td>
-                                        </tr>
-                                        <tr>
-                                            <td><label class="control-label"><?php echo $this->translate("farmer_farminigtypes_label"); ?>: </label></td>
-                                            <td><?php echo $user->getFarminigTypesLabel(); ?></td>
-                                        </tr>
-                                        <tr>
-                                            <td><label class="control-label">Farming Tools Used</label></td>
-                                            <td><?php echo $user->getFarmingToolsLabel(); ?></td>
-                                        </tr>
-                                        <tr>
-                                            <td><label class="control-label"><?php echo $this->translate("farmer_activities_label"); ?>: </label></td>
-                                            <td><?php echo $user->getActivityTypesLabel(); ?></td>
-                                        </tr>
-                                    </table>
-                                </div>
-                            </span>
-                            <span style="width:49%; float:right;">
-                                <div class="well lighter row marginleft0" id="farmright" style="min-height:325px;">
-                                    <h3 class="well-legend">Land Usage</h3>                       
-                                    <table class="table higherpadding"> 
-                                        <tr>
-                                            <td width="50%" class="nowrapping"><label class="control-label"><?php echo $this->translate("farm_landsize_label"); ?>:</label></td>
-                                            <td><?php echo $user->displayLandSize(); ?></td>
-                                        </tr>
-                                        <tr>
-                                            <td class="nowrapping"><label class="control-label"><?php echo $this->translate("farm_landsizeactive_label"); ?>:</label></td>
-                                            <td><?php echo $user->displayActiveLandSize(); ?></td>
-                                        </tr>
-                                        <tr>
-                                            <td class="nowrapping"><label class="control-label"><?php echo $this->translate("farm_landacquiremethod_label"); ?>:</label></td>
-                                            <td><?php echo $user->getLandAcquireMethodLabel(); ?></td>
-                                        </tr>
-                                        <tr>
-                                            <td><label class="control-label">No of Farm Lands / Fields:</label></td>
-                                            <td><?php echo $user->getNumberOfFields(); ?></td>
-                                        </tr>
-                                    </table>
-                                </div>
-                            </span>
-                        </div>
-                        <div class="row" style="margin-left:0px; position:relative;">
-                            <h2>Crops</h2>
-                            <?php require APPLICATION_PATH."/views/scripts/profile/cropscolumn.phtml"; ?>
-                        </div>
+        <div id="farm">
+            <h2>Manage Farm</h2>
+            <form id="profileform-farm" class="form-horizontal farm">
+                <?php if($tab == 'farm'){ ?>
+                    <?php if(!isEmptyString($session->getVar(SUCCESS_MESSAGE)) ){ ?>
+                        <div class="alert alert-success"><a class="close" data-dismiss="alert">×</a><?php echo $session->getVar(SUCCESS_MESSAGE); ?></div>
                     <?php } ?>
-                </form>
-            </div>
-            <?php if($acl->checkPermission('Farmer Seasons', ACTION_LIST)){ ?> 
-                <div id="seasons">
-                    <h2>Manage Seasons</h2>
-                    <form id="profileform-seasons" class="form-horizontal seasons">
-                        <?php if($tab == 'seasons'){ ?>
-                            <div class="row" style="margin-left:0px;">
-                                <?php if(!isEmptyString($session->getVar(SUCCESS_MESSAGE)) ){ ?>
-                                    <div class="alert alert-success"><a class="close" data-dismiss="alert">×</a><?php echo $session->getVar(SUCCESS_MESSAGE); ?></div>
-                                <?php } ?>  
-                                <div class="margin0">
-                                    <?php if($isme || $acl->checkPermission("Farmer Seasons", ACTION_CREATE)){ ?>
-                                        <a class="btn btn-primary" href="<?php echo $this->baseUrl('season/index/userid/'.encode($user->getID())); ?>" title="Setup New Season"><i class="icon-plus icon-white"></i> Setup Season</a>
-                                    <?php } ?>
-                                </div> 
-                                <div class="divider10"></div>
-                                <span class="span6 marginleft0" style="width:100%;">
-                                    <div class="well row marginleft0" style="min-height:60px; padding-left:10px; position:relative;">
-                                    <?php 
-                                        $seasons = $user->getSeasons();
-                                        $scount = $seasons->count();
-                                        if($scount == 0) { ?>
-                                        <div class="alert alert-info">No seasons have been Setup. Click on 'Setup Season' to get started</div>
-                                    <?php } else { ?>                
-                                        <label class="labeldescription">Viewing <?php echo $scount; ?> <?php echo $scount == 1 ? 'season' : 'seasons'; ?></label>
-                                        <ul id="datalist" class="nav nav-stacked">
-                                            <?php 
-                                                foreach($seasons as $season){
-                                            ?>
-                                            <li style="min-height:150px;">
-                                                <table class="table noborder margin0">
-                                                    <tr>                                
-                                                        <td width="30%" style="padding-top:20px;">
-                                                            <div class="imagecontainer" style="width:90%; min-height:90px; padding:2px;">
-                                                                <img style="width:100%;" src="<?php echo $season->getCrop()->getImagePath(); ?>" />
-                                                            </div>
-                                                        </td>
-                                                        <td class="padding0">
-                                                            <div style="position:relative;">
-                                                                <table class="itemlist table noborder margin0">
-                                                                    <tr>
-                                                                        <td colspan="4"><h2 style="font-size:15px;"><a href="<?php echo $this->baseUrl("season/view/id/".encode($season->getID())); ?>" title="Season Details"><?php echo $season->getName()." - ".$season->getRef(); ?></a></h2>
-                                                                        </td>
-                                                                        <td class="actionbuttons" rowspan="4" style="padding-top:5px;">
-                                                                            <a class="btn btn-primary wrap" style="position:absolute; top:35px; right:10px;" href="<?php echo $this->baseUrl("season/view/id/".encode($season->getID())); ?>">View Details</a>
-                                                                        </td>
-                                                                    </tr>
-                                                                    <tr>
-                                                                        <td width="90"><label class="control-label">Season Start: </label></td>
-                                                                        <td width="140" class="nowrapping"><span><?php echo $season->getFullStartDate(); ?></span></td>
-                                                                        <td width="60"><label class="control-label"></label></td>
-                                                                        <td width="100" class="nowrapping"><span></span></td>
-                                                                    </tr>
-                                                                    <tr>
-                                                                        <td><label class="control-label">Projected End: </label></td>
-                                                                        <td class="nowrapping"><span><?php echo $season->getFullEndDate(); ?></span></td>
-                                                                        <td></td>
-                                                                        <td class="nowrapping"><span></span></td>
-                                                                    </tr>
-                                                                    <tr>
-                                                                        <td><label class="control-label">Status: </label></td>
-                                                                        <td class="nowrapping"><span><?php echo $season->getStatusText(); ?></span></td>
-                                                                        <td></td>
-                                                                        <td class="nowrapping"><span></span></td>
-                                                                    </tr>
-                                                                    <tr>
-                                                                        <td><label class="control-label">Crop: </label></td>
-                                                                        <td class="nowrapping"><span><?php echo $season->getCrop()->getName(); ?></span></td>
-                                                                        <td></td>
-                                                                        <td class="nowrapping"><span></span></td>
-                                                                    </tr>
-                                                                </table>
-                                                            </div>
-                                                        </td>
-                                                    </tr>
-                                                </table>
-                                            </li>
-                                            <?php } ?>    
-                                        </ul>
-                                        <?php } ?>           
-                                    </div>
-                                </span>
-                            </div>
+                    <div class="row margin0 padding0">
+                         <?php if($isme || isFarmGroupAdmin() || isAdmin() || isDataClerk()){ ?>
+                            <a class="btn btn-primary" href="<?php echo $this->baseUrl($controllername.'/index/id/'.encode($id).'/tab/farm'); ?>" id="update"><i class="icon-pencil icon-white"></i> Update Profile</a>                                       
                         <?php } ?>
-                    </form>
-                </div>
-            <?php } ?>
-            <?php if($acl->checkPermission('Farmer Calendar', ACTION_VIEW)){ ?>  
-                <div id="calendar">
-                    <h2>Season Activity Calendar</h2>
-                    <form id="profileform-calendar" class="form-horizontal calendar clearfix">
-                        <?php if($tab == 'calendar'){ ?>
-                            <script>
-                            $(document).ready(function() {
-                                $('#calendarcontainer').fullCalendar({
-                                    header: {
-                                        left: 'prev,next today',
-                                        center: 'title',
-                                        right: 'month,basicWeek,basicDay'
-                                    },
-                                    defaultView: 'month',
-                                    editable: false,
-                                    events: "<?php echo $this->baseUrl('profile/events/id/'.$user->getID()); ?>",
-                                    eventRender: function(event, element) {
-                                        var type = $("#targetposition").html();
-                                        var tippos = $("#tipposition").html();
-                                        var tooltip_title = event.formatedstart+': '+event.title+' - ['+event.seasonref+']';
-                                        var idclass = event.className;
-                                        if(!isEmptyString(event.end)){
-                                            tooltip_title = event.formatedstart+' - '+event.formatedend+'<br> '+event.title+' - ['+event.seasonref+']';
-                                        }
-                                        element.qtip({
-                                            content: {
-                                                text: '<a id="loading"><img style="margin-left:250px;" src="<?php echo $this->baseUrl('images/loader.gif'); ?>" /></a>',
-                                                title: {
-                                                    text: tooltip_title
-                                                }
-                                            },
-                                            hide: { when: 'mouseout', fixed: true },
-                                            show: { solo: true, effect: 'slide'},
-                                            position: {adjust: {x: 30, y: 0} },
-                                            position: {
-                                                corner: {target: 'bottomMiddle', tooltip: 'topMiddle'}
-                                            },
-                                            style: { 
-                                                name: 'blue', width: 350, height: 175, padding: 5, background: '#F9F9F9',
-                                                tip: {corner: 'topMiddle', size: {x: 20, y : 10 }},
-                                                border:{width: 2,radius: 4, color: '#8F8F8F'},
-                                                title: { 'color': 'white', 'background': '#81D122'}
-                                            },
-                                            api: {
-                                                onShow: function(){
-                                                    $(".qtip-content").html($("ul#"+idclass).html());
-                                                }
-                                            }
-                                        });
-                                    }
-                                });
-                            }); 
-                            </script>
-                            <div class="row margin0 padding0">
-                                <div class="divider10"></div>
+                    </div> 
+                    <div class="divider10"></div>
+                    <div class="row margin0 padding0" style="width:100%;">
+                        <span style="width:49%; float:left;">
+                            <div class="well lighter row marginleft0" id="farmleft" style="min-height:325px;"> 
+                                <h3 class="well-legend">Manage Farm</h3>
+                                <table class="table"> 
+                                    <tr>
+                                        <td width="40%"><label class="control-label" style="display:inline-block;"><?php echo $this->translate("farm_name_label"); ?>:</label></td>
+                                        <td><?php echo $user->getName(); ?></td>
+                                    </tr>
+                                    <tr>
+                                        <td><label class="control-label">Practicing Farming Since:</label></td>
+                                        <td><?php echo $user->getFullStartDate(); ?></td>
+                                    </tr>
+                                    <tr>
+                                        <td><label class="control-label"><?php echo $this->translate("farm_numberofemployees_label"); ?>:</label></td>
+                                        <td><?php echo isEmptyString($user->getNumberOfEmployees()) ? '0' : $user->getNumberOfEmployees(); ?></td>
+                                    </tr>
+                                    <tr>
+                                        <td><label class="control-label"><?php echo $this->translate("farmer_farminigtypes_label"); ?>: </label></td>
+                                        <td><?php echo $user->getFarminigTypesLabel(); ?></td>
+                                    </tr>
+                                    <tr>
+                                        <td><label class="control-label">Farming Tools Used</label></td>
+                                        <td><?php echo $user->getFarmingToolsLabel(); ?></td>
+                                    </tr>
+                                    <tr>
+                                        <td><label class="control-label"><?php echo $this->translate("farmer_activities_label"); ?>: </label></td>
+                                        <td><?php echo $user->getActivityTypesLabel(); ?></td>
+                                    </tr>
+                                </table>
                             </div>
-                            <div id='calendarcontainer' class="padding0 margin0 row clearfix" style="margin-top:10px; width:100%;"></div>
-                            <?php
-                                $seasons = $user->getOrderedSeasons();
-                                foreach ($seasons as $season){
-                                    $timeline = sort_multi_array($season->getTimeLineDetails(), 'order');
-                                    foreach($timeline as $activity){
-                            ?>
-                                <ul id="<?php echo $activity['uniqueid']; ?>" class="nav nav-stacked datalist hide" style="width:360px;">
-                                    <li>
+                        </span>
+                        <span style="width:49%; float:right;">
+                            <div class="well lighter row marginleft0" id="farmright" style="min-height:325px;">
+                                <h3 class="well-legend">Land Usage</h3>                       
+                                <table class="table higherpadding"> 
+                                    <tr>
+                                        <td width="50%" class="nowrapping"><label class="control-label"><?php echo $this->translate("farm_landsize_label"); ?>:</label></td>
+                                        <td><?php echo $user->displayLandSize(); ?></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="nowrapping"><label class="control-label"><?php echo $this->translate("farm_landsizeactive_label"); ?>:</label></td>
+                                        <td><?php echo $user->displayActiveLandSize(); ?></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="nowrapping"><label class="control-label"><?php echo $this->translate("farm_landacquiremethod_label"); ?>:</label></td>
+                                        <td><?php echo $user->getLandAcquireMethodLabel(); ?></td>
+                                    </tr>
+                                    <tr>
+                                        <td><label class="control-label">No of Farm Lands / Fields:</label></td>
+                                        <td><?php echo $user->getNumberOfFields(); ?></td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </span>
+                    </div>
+                    <div class="row" style="margin-left:0px; position:relative;">
+                        <h2>Crops</h2>
+                        <?php require APPLICATION_PATH."/views/scripts/profile/cropscolumn.phtml"; ?>
+                    </div>
+                <?php } ?>
+            </form>
+        </div>
+        <div id="seasons">
+        	<h2>Manage Seasons</h2>
+            <form id="profileform-seasons" class="form-horizontal seasons">
+            	<?php if($tab == 'seasons'){ ?>
+            		<div class="row" style="margin-left:0px;">
+						<?php if(!isEmptyString($session->getVar(SUCCESS_MESSAGE)) ){ ?>
+                            <div class="alert alert-success"><a class="close" data-dismiss="alert">×</a><?php echo $session->getVar(SUCCESS_MESSAGE); ?></div>
+                        <?php } ?>  
+                        <span class="span6 marginleft0" style="width:100%;">
+                            <div class="well row marginleft0" style="min-height:60px; padding-left:10px; position:relative;">
+                                <div class="margin0" style="position:absolute; right:15px; top:8px;">
+                                     <a class="btn btn-primary" href="<?php echo $this->baseUrl('season/index/userid/'.encode($user->getID())); ?>" title="Setup New Season"><i class="icon-plus icon-white"></i> Setup Season</a>
+                                </div>               
+                            <?php 
+								$seasons = $user->getSeasons();
+								$scount = $seasons->count();
+                                if($scount == 0) { ?>
+                                <div class="alert alert-info">No seasons have been Setup. Click on 'Setup Season' to get started</div>
+                            <?php } else { ?>                
+                                <label class="labeldescription">Viewing <?php echo $scount; ?> <?php echo $scount == 1 ? 'season' : 'seasons'; ?></label>
+                                <ul id="datalist" class="nav nav-stacked">
+                                    <?php 
+                                        foreach($seasons as $season){
+                                    ?>
+                                    <li style="min-height:150px;">
                                         <table class="table noborder margin0">
                                             <tr>                                
+                                                <td width="30%" style="padding-top:20px;">
+                                                    <div class="imagecontainer" style="width:90%; min-height:90px; padding:2px;">
+                                                        <img style="width:100%;" src="<?php echo $season->getCrop()->getImagePath(); ?>" />
+                                                    </div>
+                                                </td>
                                                 <td class="padding0">
                                                     <div style="position:relative;">
-                                                        <div style="position:absolute; top:5px; right:15px;">
-                                                            <a class="btn btn-primary btn-mini wrap"  href="<?php echo $activity['url']; ?>" title="View all details">View</a>
-                                                            <a class="btn btn-primary btn-mini wrap"  href="<?php echo $activity['editurl']; ?>" title="Update Activity">Update</a>
-                                                        </div>
                                                         <table class="itemlist table noborder margin0">
                                                             <tr>
-                                                                <td style="width:65px;"><label class="control-label pull-left">Ref#:</label></td>
-                                                                <td><span><?php echo $activity['ref']; ?></span></td>    
-                                                            </tr>      
-                                                            <tr>
-                                                                <td><label class="control-label pull-left">Details:</label></td>
-                                                                <td><span><?php echo snippet($activity['description'], 300, '...'); ?></span></td>    
+                                                                <td colspan="4"><h2 style="font-size:15px;"><a href="<?php echo $this->baseUrl("season/view/id/".encode($season->getID())); ?>" title="Season Details"><?php echo $season->getName()." - ".$season->getRef(); ?></a></h2>
+                                                                </td>
+                                                                <td class="actionbuttons" rowspan="4" style="padding-top:5px;">
+                                                                    <a class="btn btn-primary wrap" style="position:absolute; top:35px; right:10px;" href="<?php echo $this->baseUrl("season/view/id/".encode($season->getID())); ?>">View Details</a>
+                                                                </td>
                                                             </tr>
                                                             <tr>
-                                                                <td><label class="control-label pull-left">Status:</label></td>
-                                                                <td><span><?php echo $activity['status']; ?></span></td>    
+                                                                <td width="90"><label class="control-label">Season Start: </label></td>
+                                                                <td width="140" class="nowrapping"><span><?php echo $season->getFullStartDate(); ?></span></td>
+                                                                <td width="60"><label class="control-label"></label></td>
+                                                                <td width="100" class="nowrapping"><span></span></td>
                                                             </tr>
-                                                            <?php if(in_array($activity['type'], array("1","2","3","4","5","6")) && $activity['expenses'] > 0){ ?>
-                                                                <tr>
-                                                                    <td><label class="control-label pull-left">Expenses:</label></td>
-                                                                    <td><span><?php echo formatNumber($activity['expenses']); ?></span></td>    
-                                                                </tr>  
-                                                            <?php } ?> 
-                                                            <?php if($activity['type'] == "7" && $activity['sale'] > 0){ ?>
-                                                                <tr>
-                                                                    <td><label class="control-label pull-left">Revenue:</label></td>
-                                                                    <td><span><?php echo formatNumber($activity['sale']); ?></span></td>    
-                                                                </tr>  
-                                                            <?php } ?>      
+                                                            <tr>
+                                                                <td><label class="control-label">Projected End: </label></td>
+                                                                <td class="nowrapping"><span><?php echo $season->getFullEndDate(); ?></span></td>
+                                                                <td></td>
+                                                                <td class="nowrapping"><span></span></td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td><label class="control-label">Status: </label></td>
+                                                                <td class="nowrapping"><span><?php echo $season->getStatusText(); ?></span></td>
+                                                                <td></td>
+                                                                <td class="nowrapping"><span></span></td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td><label class="control-label">Crop: </label></td>
+                                                                <td class="nowrapping"><span><?php echo $season->getCrop()->getName(); ?></span></td>
+                                                                <td></td>
+                                                                <td class="nowrapping"><span></span></td>
+                                                            </tr>
                                                         </table>
                                                     </div>
                                                 </td>
                                             </tr>
                                         </table>
                                     </li>
-                                </ul>       
-                            <?php } } ?>	
-                        <?php } ?>
-                    </form>
-                </div>
-            <?php } ?>
-            <?php if($acl->checkPermission('Farmer Inventory', ACTION_LIST)){ ?> 
-                <div id="inventory">
-                    <h2>Farm Inventory</h2>
-                    <form id="profileform-inventory" class="form-horizontal inventory">
-                        <?php if($tab == 'inventory'){ 
-                            $inventories = $user->getInventoryDetails();
-                            $tcount = $inventories->count();
-                        ?>
-                            <div class="row" style="margin-left:0px;">
-                                <?php if(!isEmptyString($session->getVar(SUCCESS_MESSAGE)) ){ ?>
-                                    <div class="alert alert-success"><a class="close" data-dismiss="alert">×</a><?php echo $session->getVar(SUCCESS_MESSAGE); ?></div>
-                                <?php } ?>
-                                <div class="margin0">
-                                    <?php if($isme || $acl->checkPermission("Farmer Inventory", ACTION_CREATE)){ ?>
-                                        <a class="btn btn-primary" href="<?php echo $this->baseUrl('inventory/index/userid/'.encode($user->getID())); ?>" title="Add Inventory Item"><i class="icon-plus icon-white"></i> Add Item</a>                                       
-                                    <?php } ?>
-                                </div>
-                                <div class="divider10"></div>
-                                <span class="span6 marginleft0" style="width:100%;">
-                                    <div class="well row marginleft0" style="min-height:60px; padding-left:10px; position:relative;">
-                                    <?php 
-                                        if($tcount == 0) { ?>
-                                        <div class="alert alert-info" style="margin-top:35px;">No inventory has been done yet. Click on 'Add Item' to get started</div>
-                                    <?php } else { ?>                
-                                        <label class="labeldescription">Viewing <?php echo $tcount; ?> <?php echo $tcount == 1 ? 'item' : 'inventory items'; ?></label>
-                                        
-                                        <ul id="datalist" class="nav nav-stacked">
-                                            <?php 
-                                                foreach($inventories as $inventory){
-                                            ?>
-                                            <li style="min-height:130px;">
-                                                <table class="table noborder margin0">
-                                                    <tr>                                
-                                                        <td width="10%" style="padding-top:10px; padding-right:15px; vertical-align:middle;">
-                                                            <div class="<?php echo $inventory->hasProfileImage() ? 'imagecontainer':''; ?>" style="">
-                                                                <img style="width:140px;" src="<?php echo $inventory->getLargePicturePath(); ?>" />
-                                                            </div>
-                                                        </td>
-                                                        <td class="padding0" style="padding-right:15px;">
-                                                            <div style="position:relative;">
-                                                                <table class="itemlist table noborder margin0">
-                                                                    <tr>
-                                                                        <td colspan="4"><h2 style="font-size:15px;"><a href="<?php echo $this->baseUrl("inventory/view/id/".encode($inventory->getID())); ?>" title="Details"><?php echo $inventory->getItemName(); ?></a></h2>
-                                                                        </td>
-                                                                        <td class="actionbuttons" rowspan="4" style="padding-top:5px;">
-                                                                            <a class="btn btn-primary btn-mini wrap" style="position:absolute; top:25px; right:10px;" href="<?php echo $this->baseUrl("inventory/view/id/".encode($inventory->getID())); ?>">Details</a>
-                                                                        </td>
-                                                                    </tr>
-                                                                    <tr>
-                                                                        <td style="width:25%;"><label class="control-label">Category: </label></td>
-                                                                        <td class="nowrapping"><span><?php echo $inventory->getCategory()->getName(); ?></span></td>
-                                                                    </tr>
-                                                                    <tr>
-                                                                        <td><label class="control-label">Description: </label></td>
-                                                                        <td colspan="3" class="nowrapping"><span><?php echo nl2br($inventory->getDescription()); ?></span></td>
-                                                                    </tr>
-                                                                    <tr>
-                                                                        <td><label class="control-label">Quantity: </label></td>
-                                                                        <td class="nowrapping"><span><?php echo $inventory->getQuantityText(); ?></span></td>
-                                                                    </tr>
-                                                                </table>
-                                                            </div>
-                                                        </td>
-                                                    </tr>
-                                                </table>
-                                            </li>
-                                            <?php } ?>    
-                                        </ul>
-                                        <?php } ?>           
-                                    </div>
-                                </span>
-                            </div>
-                        <?php } ?>
-                    </form>
-                </div>
-            <?php } ?>
-            <div id="finance">
-                <h2>Reports</h2>
-                <form id="profileform-finance" class="form-horizontal finance">
-                    <?php if($tab == 'finance'){ ?>
-                        <div class="row" style="margin-left:0px;">
-                            <span class="marginleft0 span9" style="width:100%;">
-                                <ul class="sectionitems">
-                                    <?php if($acl->checkPermission('Farmer Credit History', ACTION_LIST)){ ?>
-                                        <li>
-                                            <a class="list" href="<?php echo $this->baseUrl("finance/credithistory/id/".encode($user->getID())); ?>" title="Credit History"><img src="<?php echo $this->baseUrl('images/topmenu_market.png'); ?>" /><br /><h2>Credit History</h2></a>
-                                        </li>
-                                    <?php } ?>      
-                                    <?php if($acl->checkPermission('Profit and Loss Statement', ACTION_VIEW)){ ?>
-                                        <li>
-                                            <a class="list" href="<?php echo $this->baseUrl("finance/statement/user/".$user->getID()); ?>" title="Profit and Loss Statement"><img src="<?php echo $this->baseUrl('images/topmenu_market.png'); ?>" /><br /><h2>Profit & Loss <br />Statement</h2></a>
-                                        </li>
-                                    <?php } ?>  
-                                    <?php if($acl->checkPermission('Farmers Baseline Summary Report', ACTION_VIEW)){ ?>
-                                        <li><a class="list" href="<?php echo $this->baseUrl('report/primarybaseline/id/'.$user->getID()); ?>" title="Farmis Baseline Summary Report"><img src="<?php echo $this->baseUrl('images/benefit_report.png'); ?>" /><br /><h2>Farmis Baseline <br />Summary Report</h2></a>
-                                        </li>
-                                    <?php } ?>
-                                    <?php if($acl->checkPermission('Farmers Baseline Detail Report', ACTION_VIEW)){ ?>
-                                        <li>
-                                            <a class="list" href="<?php echo $this->baseUrl('report/baselinedetail/id/'.$user->getID()); ?>" title="Farmis Baseline Detailed Report"><img src="<?php echo $this->baseUrl('images/benefit_report.png'); ?>" /><br /><h2>Farmis Baseline <br />Detailed Report</h2></a>
-                                        </li>
-                                    <?php } ?>
+                                    <?php } ?>    
                                 </ul>
-                            </span>
-                        </div>
-                    <?php } ?>
-                </form>
-            </div>
+                                <?php } ?>           
+                            </div>
+                        </span>
+                    </div>
+                    
+                    <div class="divider30"></div><div class="divider30"></div>
+                    <h2>Preseason Estimates</h2>
+            	<?php } ?>
+            </form>
+        </div>
+        <div id="calendar">
+        	<h2>Season Activity Calendar</h2>
+            <form id="profileform-calendar" class="form-horizontal calendar clearfix">
+            	<?php if($tab == 'calendar'){ ?>
+                	<script>
+					$(document).ready(function() {
+						$('#calendarcontainer').fullCalendar({
+							header: {
+								left: 'prev,next today',
+								center: 'title',
+								right: 'month,basicWeek,basicDay'
+							},
+							defaultView: 'month',
+							editable: false,
+							events: "<?php echo $this->baseUrl('profile/events/id/'.$user->getID()); ?>",
+							eventRender: function(event, element) {
+								var type = $("#targetposition").html();
+								var tippos = $("#tipposition").html();
+								var tooltip_title = event.formatedstart+': '+event.title+' - ['+event.seasonref+']';
+								var idclass = event.className;
+								if(!isEmptyString(event.end)){
+									tooltip_title = event.formatedstart+' - '+event.formatedend+'<br> '+event.title+' - ['+event.seasonref+']';
+								}
+								element.qtip({
+									content: {
+										text: '<a id="loading"><img style="margin-left:250px;" src="<?php echo $this->baseUrl('images/loader.gif'); ?>" /></a>',
+										title: {
+											text: tooltip_title
+										}
+									},
+									hide: { when: 'mouseout', fixed: true },
+									show: { solo: true, effect: 'slide'},
+									position: {adjust: {x: 30, y: 0} },
+									position: {
+										corner: {target: 'bottomMiddle', tooltip: 'topMiddle'}
+									},
+									style: { 
+										name: 'blue', width: 350, height: 175, padding: 5, background: '#F9F9F9',
+										tip: {corner: 'topMiddle', size: {x: 20, y : 10 }},
+										border:{width: 2,radius: 4, color: '#8F8F8F'},
+										title: { 'color': 'white', 'background': '#81D122'}
+									},
+									api: {
+										onShow: function(){
+											$(".qtip-content").html($("ul#"+idclass).html());
+										}
+									}
+								});
+							}
+						});
+					}); 
+					</script>
+                    <div class="row margin0 padding0">
+                        <div class="divider10"></div>
+                    </div>
+                    <div id='calendarcontainer' class="padding0 margin0 row clearfix" style="margin-top:10px; width:100%;"></div>
+                    <?php
+						$seasons = $user->getOrderedSeasons();
+						foreach ($seasons as $season){
+							$timeline = sort_multi_array($season->getTimeLineDetails(), 'order');
+							foreach($timeline as $activity){
+					?>
+                        <ul id="<?php echo $activity['uniqueid']; ?>" class="nav nav-stacked datalist hide" style="width:360px;">
+                            <li>
+                                <table class="table noborder margin0">
+                                    <tr>                                
+                                        <td class="padding0">
+                                            <div style="position:relative;">
+                                                <div style="position:absolute; top:5px; right:15px;">
+                                                    <a class="btn btn-primary btn-mini wrap"  href="<?php echo $activity['url']; ?>" title="View all details">View</a>
+                                                    <a class="btn btn-primary btn-mini wrap"  href="<?php echo $activity['editurl']; ?>" title="Update Activity">Update</a>
+                                                </div>
+                                                <table class="itemlist table noborder margin0">
+                                                    <tr>
+                                                        <td style="width:65px;"><label class="control-label pull-left">Ref#:</label></td>
+                                                        <td><span><?php echo $activity['ref']; ?></span></td>    
+                                                    </tr>      
+                                                    <tr>
+                                                        <td><label class="control-label pull-left">Details:</label></td>
+                                                        <td><span><?php echo snippet($activity['description'], 300, '...'); ?></span></td>    
+                                                    </tr>
+                                                    <tr>
+                                                        <td><label class="control-label pull-left">Status:</label></td>
+                                                        <td><span><?php echo $activity['status']; ?></span></td>    
+                                                    </tr>
+                                                    <?php if(in_array($activity['type'], array("1","2","3","4","5","6")) && $activity['expenses'] > 0){ ?>
+                                                        <tr>
+                                                            <td><label class="control-label pull-left">Expenses:</label></td>
+                                                            <td><span><?php echo formatNumber($activity['expenses']); ?></span></td>    
+                                                        </tr>  
+                                                    <?php } ?> 
+                                                    <?php if($activity['type'] == "7" && $activity['sale'] > 0){ ?>
+                                                        <tr>
+                                                            <td><label class="control-label pull-left">Revenue:</label></td>
+                                                            <td><span><?php echo formatNumber($activity['sale']); ?></span></td>    
+                                                        </tr>  
+                                                    <?php } ?>      
+                                                </table>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </li>
+                        </ul>       
+            		<?php } } ?>	
+            	<?php } ?>
+            </form>
+        </div>
+        <div id="inventory">
+        	<h2>Farm Inventory</h2>
+            <form id="profileform-inventory" class="form-horizontal inventory">
+            	<?php if($tab == 'inventory'){ 
+					$inventories = $user->getInventoryDetails();
+					$tcount = $inventories->count();
+				?>
+            		<div class="row" style="margin-left:0px;">
+						<?php if(!isEmptyString($session->getVar(SUCCESS_MESSAGE)) ){ ?>
+                            <div class="alert alert-success"><a class="close" data-dismiss="alert">×</a><?php echo $session->getVar(SUCCESS_MESSAGE); ?></div>
+                        <?php } ?>  
+                        <span class="span6 marginleft0" style="width:100%;">
+                            <div class="well row marginleft0" style="min-height:60px; padding-left:10px; position:relative;">
+                                <div class="margin0" style="position:absolute; right:10px; top:5px;">
+                                    <a class="btn btn-primary" href="<?php echo $this->baseUrl('inventory/index/userid/'.encode($user->getID())); ?>" title="Add Inventory Item"><i class="icon-plus icon-white"></i> Add Item</a>                                       
+                                </div>
+                            <?php 
+                                if($tcount == 0) { ?>
+                                <div class="alert alert-info" style="margin-top:35px;">No inventory has been done yet. Click on 'Add Item' to get started</div>
+                            <?php } else { ?>                
+                                <label class="labeldescription">Viewing <?php echo $tcount; ?> <?php echo $tcount == 1 ? 'item' : 'inventory items'; ?></label>
+                                
+                                <ul id="datalist" class="nav nav-stacked">
+                                    <?php 
+                                        foreach($inventories as $inventory){
+                                    ?>
+                                    <li style="min-height:130px;">
+                                        <table class="table noborder margin0">
+                                            <tr>                                
+                                                <td width="10%" style="padding-top:10px; padding-right:15px; vertical-align:middle;">
+                                                    <div class="<?php echo $inventory->hasProfileImage() ? 'imagecontainer':''; ?>" style="">
+                                                        <img style="width:140px;" src="<?php echo $inventory->getLargePicturePath(); ?>" />
+                                                    </div>
+                                                </td>
+                                                <td class="padding0" style="padding-right:15px;">
+                                                    <div style="position:relative;">
+                                                        <table class="itemlist table noborder margin0">
+                                                            <tr>
+                                                                <td colspan="4"><h2 style="font-size:15px;"><a href="<?php echo $this->baseUrl("inventory/view/id/".encode($inventory->getID())); ?>" title="Details"><?php echo $inventory->getItemName(); ?></a></h2>
+                                                                </td>
+                                                                <td class="actionbuttons" rowspan="4" style="padding-top:5px;">
+                                                                    <a class="btn btn-primary btn-mini wrap" style="position:absolute; top:25px; right:10px;" href="<?php echo $this->baseUrl("inventory/view/id/".encode($inventory->getID())); ?>">Details</a>
+                                                                </td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td style="width:25%;"><label class="control-label">Category: </label></td>
+                                                                <td class="nowrapping"><span><?php echo $inventory->getCategory()->getName(); ?></span></td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td><label class="control-label">Description: </label></td>
+                                                                <td colspan="3" class="nowrapping"><span><?php echo nl2br($inventory->getDescription()); ?></span></td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td><label class="control-label">Quantity: </label></td>
+                                                                <td class="nowrapping"><span><?php echo $inventory->getQuantityText(); ?></span></td>
+                                                            </tr>
+                                                        </table>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </li>
+                                    <?php } ?>    
+                                </ul>
+                                <?php } ?>           
+                            </div>
+                        </span>
+                    </div>
+            	<?php } ?>
+            </form>
+        </div>
+        <div id="finance">
+        	<h2>Reports</h2>
+            <form id="profileform-finance" class="form-horizontal finance">
+            	<?php if($tab == 'finance'){ ?>
+            		<div class="row" style="margin-left:0px;">
+                        <span class="marginleft0 span9" style="width:100%;">
+                            <ul class="sectionitems">
+                                <li>
+                                    <a class="list" href="<?php echo $this->baseUrl("finance/credithistory/id/".encode($user->getID())); ?>" title="Credit History"><img src="<?php echo $this->baseUrl('images/topmenu_market.png'); ?>" /><br /><h2>Credit History</h2></a>
+                                </li>
+                                <li>
+                                    <a class="list" href="<?php echo $this->baseUrl("finance/statement/user/".$user->getID()); ?>" title="Profit and Loss Statement"><img src="<?php echo $this->baseUrl('images/topmenu_market.png'); ?>" /><br /><h2>Profit & Loss <br />Statement</h2></a>
+                                </li>
+                                <li><a class="list" href="<?php echo $this->baseUrl('report/primarybaseline/id/'.$user->getID()); ?>" title="Farmis Baseline Summary Report"><img src="<?php echo $this->baseUrl('images/benefit_report.png'); ?>" /><br /><h2>Farmis Baseline <br />Summary Report</h2></a>
+                                </li>
+                                <li>
+                                    <a class="list" href="<?php echo $this->baseUrl('report/baselinedetail/id/'.$user->getID()); ?>" title="Farmis Baseline Detailed Report"><img src="<?php echo $this->baseUrl('images/benefit_report.png'); ?>" /><br /><h2>Farmis Baseline <br />Detailed Report</h2></a>
+                                </li>
+                            </ul>
+                        </span>
+                    </div>
+            	<?php } ?>
+            </form>
+        </div>
         <?php } ?>
-        <?php if($acl->checkPermission('Payments', ACTION_LIST)){ ?> 
-            <div id="subscription">
-                <h2>Payment History</h2>
-                <form id="profileform-subscription" class="form-horizontal subscription">
-                    <?php if($tab == 'subscription'){ ?>
-                        
-                    <?php } ?>
-                </form>
-            </div>
-        <?php } ?>
-        <?php if(($isme || $acl->checkPermission($resourcename, ACTION_EDIT)) && !isEmptyString($user->getID())){ ?> 
-        	<?php require APPLICATION_PATH."/views/scripts/profile/settings.phtml"; ?>
-        <?php } ?>    
+        <div id="subscription">
+        	<h2>Payment History</h2>
+            <form id="profileform-subscription" class="form-horizontal subscription">
+            	<?php if($tab == 'subscription'){ ?>
+            		
+            	<?php } ?>
+            </form>
+        </div>
+        <?php require APPLICATION_PATH."/views/scripts/profile/settings.phtml"; ?>
     </div> 
 </div>
 <script>

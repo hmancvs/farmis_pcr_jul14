@@ -26,6 +26,7 @@ class ProfileController extends SecureController  {
 	    	$action == "addsuccess"  || $action == "adderror" ||
 	    	$action == "invite" || $action == "inviteone" || $action == "inviteonebyphone" || $action == "invitemany" || 
 	    	$action == "invitemanyconfirm" || $action == "invitefriends" || $action == "invitefriendsconfirm" || 
+	    	
 	    	$action == "autosearch" || $action == "delete" || 
 	    	$action == "delete" || $action == "privacy" || $action == "resetprivacy" || $action == "processadd" || 
 	    	$action == "report" || $action == 'validatephonesuccess' || $action == 'verifyphone' || 
@@ -38,43 +39,15 @@ class ProfileController extends SecureController  {
 		if($action == "deactivate"){
 			return ACTION_DELETE;
 		}
-		// debugMessage('the action is '.)
+		
 		return parent::getActionforACL(); 
     }
     
 	public function editAction() {
     	$this->_setParam("action", ACTION_EDIT);
-		// debugMessage($this->_getAllParams()); // exit();
-    	
+		// debugMessage($this->_getAllParams());
+    	// exit();
     	$this->createAction();
-    }
-    
-    public function indexAction() {
-    	$session = SessionWrapper::getInstance();
-    	$failurl = $this->view->baseUrl("index/accessdenied");
-    	$acl = getACLInstance();
-    	$id = decode($this->_getParam('id'));
-    	 
-    	if(!isEmptyString($id) && isFarmer()){
-    		if($session->getVar('userid') != $id){
-    			$this->_helper->redirector->gotoUrl($failurl);
-    		}
-    	}
-    	parent::indexAction();
-    }
-    
-    public function viewAction() {
-    	$session = SessionWrapper::getInstance();
-    	$failurl = $this->view->baseUrl("index/accessdenied");
-    	$acl = getACLInstance();
-    	$id = decode($this->_getParam('id'));
-    	
-    	if(!isEmptyString($id) && isFarmer()){
-    		if($session->getVar('userid') != $id){
-    			$this->_helper->redirector->gotoUrl($failurl);
-    		}
-    	}
-    	parent::viewAction();
     }
     
     public function listAction(){
@@ -204,7 +177,7 @@ class ProfileController extends SecureController  {
 	 	$upload->addValidator('Size', false, $config->profilephoto->maximumfilesize);
 		
 		// base path for profile pictures
- 		$destination_path = BASE_PATH.DIRECTORY_SEPARATOR."uploads".DIRECTORY_SEPARATOR."user_";
+ 		$destination_path = APPLICATION_PATH.DIRECTORY_SEPARATOR."..".DIRECTORY_SEPARATOR."public".DIRECTORY_SEPARATOR."uploads".DIRECTORY_SEPARATOR."user_";
 	
 		// determine if user has destination avatar folder. Else user is editing there picture
 		if(!is_dir($destination_path.$user->getID())){
@@ -362,11 +335,11 @@ class ProfileController extends SecureController  {
 		
 		if($type == 'photo'){
 			$oldfile = "large_".$user->getProfilePhoto();
-			$base = BASE_PATH.DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR.'user_'.$userfolder.''.DIRECTORY_SEPARATOR.'avatar'.DIRECTORY_SEPARATOR;
+			$base = APPLICATION_PATH.DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.PUBLICFOLDER.DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR.'user_'.$userfolder.''.DIRECTORY_SEPARATOR.'avatar'.DIRECTORY_SEPARATOR;
 		}
 		if($type == 'sign'){
 			$oldfile = "large_".$user->getSignature();
-			$base = BASE_PATH.DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR.'user_'.$userfolder.''.DIRECTORY_SEPARATOR.'sign'.DIRECTORY_SEPARATOR;
+			$base = APPLICATION_PATH.DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.PUBLICFOLDER.DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR.'user_'.$userfolder.''.DIRECTORY_SEPARATOR.'sign'.DIRECTORY_SEPARATOR;
 		}
 		// debugMessage($user->toArray()); 
 		$src = $base.$oldfile;

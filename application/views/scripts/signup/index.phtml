@@ -1,6 +1,9 @@
 <?php
 	require_once APPLICATION_PATH.'/includes/header.php';
 	
+	$title = $this->translate("useraccount_pagetitle_signup"); 
+	$pagetile = $this->translate("appname")." | Farmer Registration"; 
+	
 	$posturl = $this->baseUrl("signup/processstep1"); 
 	$button_title = $this->translate("useraccount_button_signup"); 
 	
@@ -31,7 +34,7 @@
 		// debugMessage($user->toArray());
 		$namestring = explode(' ', $firstname);
 		// debugMessage($namestring);
-		if(count($namestring) > 1 && isEmptyString($lastname)){
+		if(count($namestring) > 1){
 			$firstname = $namestring[0];
 			$lastname = $namestring[1];
 		}
@@ -66,9 +69,6 @@
 			$isfarmer = false;
 		}
 		$posturl = $this->baseUrl("signup/processinvite"); 
-	} else {
-		$user->setType(2);
-		$type = $user->getType();
 	}
 	
 	// any errors occured in processing
@@ -93,12 +93,6 @@
 		$locationerror = $this->translate("farmer_county_error");
 	}
 	
-	$title = $this->translate("useraccount_pagetitle_signup"); 
-	$pagetile = "Farmer Registration".$browserappend;
-	if(!$user->isFarmer()){
-		$title = "Account Activation"; 
-		$pagetile = $title.$browserappend;
-	}
 	$this->headTitle($pagetile); 
 	
 ?>
@@ -468,9 +462,11 @@ img.ui-datepicker-trigger {
 	padding-left:15px;
 	margin-left:0;
 }
+
 input.pass {
 	width:153px;
 }
+
 ul#plans {
 	list-style:none;
 	padding:0;
@@ -494,21 +490,17 @@ ul#plans li {
 </style>
 <div class="row margin0 blocked maxwidth">
     <h1 class="calfont clear clearfix" style="color:#498D0F; font-size:22px; margin-top:-10px;"><?php //echo $title; ?>&nbsp;
-    <?php if(isUganda() && $user->isFarmer()){ ?>	
+    <?php if(isUganda()){ ?>	
         <a style="float:right; margin-right:10px;" href="<?php echo $this->baseUrl('signup/activate'); ?>" class="btn btn-primary" title="Activate Using Phone">Activate Existing Account</a>
     <?php } ?>
     </h1>
-    <span class="span7 marginleft0 pull-left" style="width:550px; <?php echo !$user->isFarmer() ? 'margin-left:200px;' : ''; ?>">
+    <span class="span7 marginleft0 pull-left" style="width:550px;">
         <form class="form-horizontal well" id="signupform" action="<?php echo $posturl; ?>" method="post">
         <?php if(!isEmptyString($session->getVar(SUCCESS_MESSAGE)) ){ ?>
             <div class="alert alert-success"><?php echo $session->getVar(SUCCESS_MESSAGE); ?></div>
         <?php } ?>	
             <fieldset title="<?php echo $title; ?>" id="account">
-            	<?php if($user->isFarmer()){ ?>
-	                <legend>Signup Today for your 30day Risk Free Trial</legend>
-                <?php } else { ?>
-                	<legend>Verify account details and specify a Password</legend>
-                <?php } ?>
+                <legend>Signup Today for your 30day Risk Free Trial</legend>
                 <table class="table">
                    <?php if($sessionhaserror) { ?>
                    <tr>
@@ -705,7 +697,6 @@ ul#plans li {
             <input name="spamcheck" id="spamcheck" type="hidden" value="" />
         </form>
     </span>
-    <?php if($user->isFarmer()){ ?>
     <span class="span5 pull-right">
         <div class="well contentright" id="contentright">
             <h3>Automate your Farm Records</h3>
@@ -714,13 +705,10 @@ ul#plans li {
             </div>
         </div>
     </span>
-    <?php } ?>
 </div>
-<?php if($user->isFarmer()){ ?>
-    <div class="">
-        <?php require APPLICATION_PATH."/views/scripts/billing/pricingcontent.phtml"; ?>
-    </div>
-<?php } ?>
+<div class="">
+	<?php require APPLICATION_PATH."/views/scripts/billing/pricingcontent.phtml"; ?>
+</div>
 <?php
 	require_once APPLICATION_PATH.'/includes/footer.php';
 ?>

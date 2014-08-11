@@ -197,7 +197,7 @@ function getGoogleMapsKey(){
 function loadMaps(){
 	$config = Zend_Registry::get("config");
 	// $value = $config->api->google_disablemaps;
-	$value = '1';
+	$value = '0';
 	return $value == 1 || $value == 'on' || $value == 'yes' || $value == 'true' ? true : false;
 }
 function getSmsStatus(){
@@ -477,7 +477,7 @@ function sendSMSMessage($to, $txt, $returnresult = false, $country = 'ug', $sour
 function sendSMS($to, $txt, $returnresult = false, $source = 'FARMIS') {
 	$phone = $to;
     $message = $txt;
-	$sendsms = false;
+	$sendsms = true;
 	
 	if(isUganda()){
 		$server = SMS_SERVER;
@@ -1509,33 +1509,5 @@ function greatUser($name){
 }
 function format($str){
 	return isEmptyString($str) ? '--' : $str;
-}
-function getJsIncludes(){
-	$files = array(
-		'javascript/2.jquery-1.7.1.min.js',
-		'javascript/3.jquery-ui-1.8.14.custom.min.js',
-		'javascript/5.bootbox.min.js',
-		'javascript/5.chosen.jquery.min.0.9.8.js',
-		'javascript/5.jquery.autocomplete.js',
-		'javascript/5.jquery.calculation.min.js',
-		'javascript/5.jquery.cycle.js',
-		'javascript/5.jquery.elastic.source.1.6.11.js',
-		'javascript/5.jquery.fullcalendar.min.js',
-		'javascript/5.jquery.imgareaselect.min.js',
-		'javascript/5.jquery.metadata.2.1.js',
-		'javascript/5.jquery.placeholder.min.js',
-		'javascript/5.jquery.qtip.min.js',
-		'javascript/5.jquery.stepy.js',
-		'javascript/5.jquery.tipsy.js',
-		'javascript/5.jquery.validate.min.1.9.0.js',
-		'javascript/5.pdfobject.js',
-		'javascript/5.select-chain.js',
-		'javascript/6.bootstrap.min.js',
-		'javascript/7.highcharts.js',
-		'javascript/8.exporting.js',
-		'javascript/8.app.js'
-	);
-	
-	return $files;
 }
 ?>

@@ -44,7 +44,7 @@ class CronController extends IndexController   {
 		
 		# Configure the path that this script resides on your server.
 		// $savepath = APPLICATION_PATH.$config->backup->scriptfolder; #  Full path to this directory. Do not use trailing slash!
-		$savepath = BASE_PATH.DIRECTORY_SEPARATOR.'backup'; // debugMessage($savepath); 
+		$savepath = APPLICATION_PATH.DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.PUBLICFOLDER.DIRECTORY_SEPARATOR.'backup'; // debugMessage($savepath); 
 		$send_email = $config->backup->sendemail;  #  Do you want this database backup sent to your email? Fill out the next 2 lines
 		# email address
 		$backupemail = $config->backup->backupemail;

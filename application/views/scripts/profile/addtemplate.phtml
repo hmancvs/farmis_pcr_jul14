@@ -34,7 +34,7 @@
                 ?>
                 <div id="type_error"></div>
             </div>
-            <input type="hidden" id="isfarmer" name="isfarmer" value="<?php echo $user->isFarmer() ? 0 : 1; ?>" />
+            <input type="hidden" id="isfarmer" name="isfarmer" value="0" />
         </div>
         <div class="control-group" id="partnerrow">
         	<label class="control-label" for="type">Partner: <?php echo $this->translate("global_required_field_marker"); ?></label>
@@ -261,10 +261,10 @@
                 <input type="text" name="phone" id="phone" maxlength="10" value="<?php echo getShortPhone($user->getPhone()); ?>" class="span2 minwidth100" style="margin-top:0;" />
             </div>
             <?php if(false){ ?>
-				<?php if($user->isUserInActive() || isEmptyString($user->getID())){ ?>
-                     <div class="blocked" style="margin-top:5px; width:250px; display:block;"><input type="checkbox" name="isphoneinvited" id="isphoneinvited" value="1" style="margin-top:0;" /> &nbsp;
-                     <label class="lineblocked">Invite to activate via Phone</label></div>
-                <?php } ?>
+            <?php if($user->isUserInActive() || isEmptyString($user->getID())){ ?>
+                 <div class="blocked" style="margin-top:5px; width:250px; display:block;"><input type="checkbox" name="isphoneinvited" id="isphoneinvited" value="1" style="margin-top:0;" /> &nbsp;
+                 <label class="lineblocked">Invite to activate via Phone</label></div>
+            <?php } ?>
             <?php } ?>
             <div id="phone_error"></div>
         </div>

@@ -141,32 +141,6 @@
 		}
 	}
 	
-	$partner_query = ""; $partner_details = array();
-	if($loggedinuser->isPartner()){
-		$allowedlist = $loggedinuser->getCompany()->getAllocationDetails(true);
-		$partnertype = $loggedinuser->getCompany()->getFarmisType();
-		$indtype = $loggedinuser->getCompany()->getShowInd();
-		switch($partnertype){
-			case 2:
-			case 3:
-				$partner_query = " AND l.regionid in(".$allowedlist.") ";
-				$partner_details = array("type"=>$partnertype, "allowedlist"=>$allowedlist, "regionlist" => $partner_query);
-				break;
-			case 4:
-			case 5:
-				$partner_query = " AND o.locationid in(".$allowedlist.") ";
-				$partner_details = array("type"=>$partnertype, "allowedlist"=>$allowedlist, "districtlist" => $partner_query);
-				break;
-			case 6:
-			case 7:
-				$partner_query = " AND o.id in(".$allowedlist.") ";
-				$partner_details = array("type"=>$partnertype, "allowedlist"=>$allowedlist, "dnalist" => $partner_query);
-				break;
-			default:
-				break;
-		}
-	}
-	
 	$paginate->processPost($request->getParams());
 	$all_results_query = "
 			SELECT o.id, 
@@ -182,7 +156,7 @@
 			from farmgroup o 
 			left join location l on (o.districtid = l.id and l.locationtype = 2)
 			left join useraccount u on((u.farmgroupid = o.id) AND u.type = 2)
-			where LOWER(o.country) = LOWER('".$session->getVar('country')."') and o.parentid is null ".$where_query.$partner_query."
+			where LOWER(o.country) = LOWER('".$session->getVar('country')."') and o.parentid is null ".$where_query."
 			GROUP BY o.id
 			HAVING count(u.id) > 0
 			
@@ -198,9 +172,7 @@
 			SUM(IF(u.phone <> '',1,0)) as withphone, 
 			SUM(IF(u.phone = '' || u.phone is null ,1,0)) as nophone 
 			from useraccount as u 
-			LEFT JOIN farmgroup as o on (u.farmgroupid = o.id) 
-			LEFT JOIN location l on (u.locationid = l.id AND l.locationtype = 2) 
-			where u.farmgroupid is null AND u.type = 2 AND LOWER(u.country) = LOWER('".$session->getVar('country')."') ".$where_query.$partner_query."
+			where u.farmgroupid is null AND u.type = 2 AND LOWER(u.country) = LOWER('".$session->getVar('country')."') ".$where_query."
 			GROUP BY u.farmgroupid HAVING count(u.id) > 0
 
 			order by totalfarmers desc";
@@ -394,16 +366,14 @@ pdfquicklinks {
     <?php if($request->print == 1){ ?>
     	<table class="table border0 table-condensed nohover nobg margin0">
         	<tr>
-                <td style="width:118px;">
-                	<?php if($acl->checkPermission('DNA Profiling Aggregated Report', ACTION_EXPORT)) { ?>	
-                        <a title="Export to Excel" class="btn export gonowhere " ><i class="icon-download-alt"></i> Export Data </a>&nbsp;
-                    <?php } ?>
-                </td>
+                <td style="width:118px;"><a title="Export to Excel" class="btn export gonowhere " ><i class="icon-download-alt"></i> Export Data </a>&nbsp;</td>
                 <td></td>
            	</tr>
 		</table>            
     <?php } ?>
     <div class="hideonprint" style="width:100%;">
+        <?php if((isAdmin() || isFarmGroupAdmin() || isManagement())){ ?>
+    	
         <span class="reportfilter">
         	<table class="table table-condensed noborder margin0" style="width:auto; display:inline-block;">
             	<tr>
@@ -504,22 +474,20 @@ pdfquicklinks {
                     <td>
                     	<label class="control-label">&nbsp;</label>
                     	<input type="hidden" name="csv_text" id="csv_text" value="" />
-                        <?php if($acl->checkPermission('DNA Profiling Aggregated Report', ACTION_EXPORT)) { ?>	
-                        	<button type="button" class="btn btn-primary submitexcel" title="Export to Excel" style="padding:6px 10px;"><i class='icon-download-alt icon-white'></i> Export to Excel</button>
-                       	<?php } ?>
+                        <button type="button" class="btn btn-primary submitexcel" title="Export to Excel" style="padding:6px 10px;"><i class='icon-download-alt icon-white'></i> Export to Excel</button>
                     </td>
                     <?php } ?>
                     <td><label class="control-label">&nbsp;</label><a href="<?php echo $this->baseUrl('report/dna');; ?>" id="reset" class="btn" title="Reset Report">Reset</a></td>
                 </tr>
                 <tr>
-                    <?php if($loggedinuser->isUgandan() && isUganda() && $acl->checkPermission('Is UG Admin can Administer KE', ACTION_YESNO)){ ?>
+                    <?php if($loggedinuser->isUgandan() && isUganda() && (isAdmin() || isManagement())){ ?>
 						<td colspan="2">
 							<?php if(isEmptyString($request->country) || $countryreq == 'ug'){ ?>
                                 <a class="btn" href="<?php echo $this->baseUrl('report/dna/country/ke'); ?>" title="Browse Kenya"><i class="icon-list"></i> Browse Kenya</a>
                             <?php } ?>
                         </td>
                     <?php } ?>    
-                    <?php if($loggedinuser->isUgandan() && isKenya() && $acl->checkPermission('Is UG Admin can Administer KE', ACTION_YESNO)){ ?>
+                    <?php if($loggedinuser->isUgandan() && isKenya() && (isAdmin() || isManagement())){ ?>
                     	<td colspan="2">
 							<?php if(!isEmptyString($request->country) && $countryreq == 'ke'){ ?>
                                 <a class="btn" href="<?php echo $this->baseUrl('report/dna/country/ug'); ?>" title="Browse Uganda"><i class="icon-list"></i> Browse Uganda</a>
@@ -529,6 +497,7 @@ pdfquicklinks {
 				</tr>                    
             </table>
     	</span>
+		<?php } ?>
     </div>
     <div class="pull-left" id="pageleft">
         <div class="widgetsection reportcontainer">

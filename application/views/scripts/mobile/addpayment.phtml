@@ -86,7 +86,7 @@
 	$nextmonth_ts = strtotime("next month");
 	$firstdayofnextmonth = mktime (0,0,0, date("n", $nextmonth_ts),1, date("Y", $nextmonth_ts));
 		
-	$payment->getSubscription()->setStartDate(date('Y-m-d'));
+	$payment->getSubscription()->setStartDate(date('Y-m-d', $firstdayofnextmonth));
 	
 	if(!isEmptyString($request->id)){
 		$payment->populate(decode($request->id));
@@ -170,12 +170,6 @@
 			},
 			ignore: ":hidden:not(select)"
 		});
-		
-		var dateofregOpts = datepickerOpts;
-		dateofregOpts.yearRange = "-5";
-		dateofregOpts.maxDate = new Date();
-		$(".datefield").datepicker(dateofregOpts);
-		// $('.ui-datepicker-trigger').hide();
 				
 		$("#bottomactions").html($("#topactions").html());
 		
@@ -326,16 +320,17 @@
             </div>
             <div class="control-group">
                 <label class="control-label">Subscription Start: <?php echo $this->translate("global_required_field_marker"); ?></label>
-                <div class="controls"><?php //echo changeMySQLDateToPageFormat($payment->getSubscription()->getStartDate()); ?>
+                <div class="controls"><?php echo changeMySQLDateToPageFormat($payment->getSubscription()->getStartDate()); ?>
                     <input type="text" name="start" id="start" class="datefield span2 width100" value="<?php echo changeMySQLDateToPageFormat($payment->getSubscription()->getStartDate()); ?>" /><div id="startdate_error"></div>
-                    <!--<input type="text" name="startdate" id="startdate" value="<?php //echo changeMySQLDateToPageFormat($payment->getSubscription()->getStartDate()); ?>" />-->
+                    <input type="text" name="startdate" id="startdate" value="<?php echo changeMySQLDateToPageFormat($payment->getSubscription()->getStartDate()); ?>" />
                 </div>
             </div>
+            
             <div class="control-group">
                 <label class="control-label">Subscription End: <?php echo $this->translate("global_required_field_marker"); ?></label>
                 <div class="controls">
                     <input type="text" name="enddate" id="enddate" class="datefield span2 width100" value="<?php echo changeMySQLDateToPageFormat($payment->getSubscription()->getEndDate()); ?>" /><div id="enddate_error"></div>
-                    <!--<input type="text" name="enddate" id="enddate" value="<?php //echo changeMySQLDateToPageFormat($payment->getSubscription()->getEndDate()); ?>" />-->
+                    <input type="text" name="enddate" id="enddate" value="<?php echo changeMySQLDateToPageFormat($payment->getSubscription()->getEndDate()); ?>" />
                 </div>
             </div>
             <div class="control-group">

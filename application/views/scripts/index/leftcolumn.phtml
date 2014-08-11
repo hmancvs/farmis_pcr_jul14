@@ -1,6 +1,6 @@
 <?php 
-	$leftcoluser = new UserAccount();
-	$leftcoluser->populate($userid);
+	$loggedinuser = new UserAccount();
+	$loggedinuser->populate($userid);
 	
 	$latest_discussions = getLatestForumDiscussions(3);
 ?>
@@ -17,22 +17,22 @@
                 <li><a href="<?php echo $this->baseUrl('farmgroup/list'); ?>"><i class="icon-th icon-white"></i> DNA Profiles</a></li>
             <?php } ?>
             <?php if($acl->checkPermission('DNA', ACTION_VIEW) && isFarmGroupAdmin()){ ?>
-                <li><a href="<?php echo $this->baseUrl('farmgroup/view/id/'.encode($leftcoluser->getFarmGroupID())); ?>"><i class="icon-list icon-white"></i> DNA Profile</a></li>
+                <li><a href="<?php echo $this->baseUrl('farmgroup/view/id/'.encode($loggedinuser->getFarmGroupID())); ?>"><i class="icon-list icon-white"></i> DNA Profile</a></li>
             <?php } ?>
             <?php if($acl->checkPermission('Farmer', ACTION_VIEW) && isFarmer()){ ?>
-                <li><a href="<?php echo $this->baseUrl('farmer/view/id/'.encode($leftcoluser->getID()).'/tab/farm'); ?>"><i class="icon-list icon-white"></i> My Farm</a></li>
+                <li><a href="<?php echo $this->baseUrl('farmer/view/id/'.encode($loggedinuser->getID()).'/tab/farm'); ?>"><i class="icon-list icon-white"></i> My Farm</a></li>
             <?php } ?>
-           	<?php if($acl->checkPermission('Farmer Seasons', ACTION_VIEW) && isFarmer()){ ?>
-                <li><a href="<?php echo $this->baseUrl('farmer/view/id/'.encode($leftcoluser->getID()).'/tab/seasons'); ?>" title="Manage Seasons"><i class="icon-leaf icon-white"></i> Manage Seasons</a></li>
+           	<?php if($acl->checkPermission('Season Activities', ACTION_VIEW) && isFarmer()){ ?>
+                <li><a href="<?php echo $this->baseUrl('farmer/view/id/'.encode($loggedinuser->getID()).'/tab/seasons'); ?>" title="Manage Seasons"><i class="icon-leaf icon-white"></i> Manage Seasons</a></li>
             <?php } ?>
-            <?php if($acl->checkPermission('Payments', ACTION_LIST) && false) { ?>
-                <li><a href="<?php echo $this->baseUrl('payment/list'); ?>" class="gonowhere"><i class="icon-list-alt icon-white"></i> Payments</a></li>
+            <?php if($acl->checkPermission('Payments', ACTION_LIST)) { ?>
+                <li><a href="<?php echo $this->baseUrl('payment/list'); ?>"><i class="icon-list-alt icon-white"></i> Payments</a></li>
             <?php } ?>
-            <?php if($acl->checkPermission('Weather', ACTION_VIEW) && isUganda()) { ?>
-            	<li><a href="<?php echo $this->baseUrl('weather/index'); ?>"><i class="icon-picture icon-white"></i> Weather Forecast</a></li>
+            <?php if($acl->checkPermission('Weather', ACTION_VIEW)) { ?>
+            	<li><a href="<?php echo $this->baseUrl('contact/list'); ?>"><i class="icon-picture icon-white"></i> Weather Forecast</a></li>
             <?php } ?>
             <?php if($acl->checkPermission('Market Prices', ACTION_VIEW)) { ?>
-            	<li><a href="<?php echo $this->baseUrl('report/prices'); ?>"><i class="icon-tags icon-white"></i> Market Prices Report</a></li>
+            	<li><a href="<?php echo $this->baseUrl('contact/list'); ?>"><i class="icon-tags icon-white"></i> Market Prices Report</a></li>
             <?php } ?>
 			<?php if($acl->checkPermission('Commodities', ACTION_LIST)) { ?>
                 <li><a href="<?php echo $this->baseUrl('commodity/list'); ?>"><i class="icon-star-empty icon-white"></i> Commodities</a></li>
@@ -40,22 +40,22 @@
             <?php if($acl->checkPermission('Locations', ACTION_LIST)) { ?>
                 <li><a href="<?php echo $this->baseUrl('location/list'); ?>"><i class="icon-map-marker icon-white"></i> Locations</a></li>
             <?php } ?>   
-            <?php if($acl->checkPermission('Community Forum', ACTION_LIST) && isUganda()) { ?>
-            	<li><a href="<?php echo 'communityforum/list'; ?>" target="_blank"><i class="icon-th-large icon-white"></i> Community Forum</a></li>
+            <?php if($acl->checkPermission('Community Forum', ACTION_LIST)) { ?>
+            	<li><a href="<?php echo $this->baseUrl('communityforum/list'); ?>"><i class="icon-th-large icon-white"></i> Community Forum</a></li>
             <?php } ?>
-            <?php if($acl->checkPermission('Business Directory', ACTION_LIST) && isUganda()) { ?>
-            	<li><a href="<?php echo PRICES_SERVER.'/directory'; ?>" target="_blank"><i class="icon-folder-open icon-white"></i> Business Directory</a></li>
+            <?php if($acl->checkPermission('Business Directory', ACTION_LIST)) { ?>
+            	<li><a href="<?php echo $this->baseUrl('contact/list'); ?>"><i class="icon-folder-open icon-white"></i> Business Directory</a></li>
             <?php } ?>         
-            <?php if($acl->checkPermission('Send Mass Mail', ACTION_YESNO) && false) { ?>
+            <?php if($acl->checkPermission('Send Mass Mail', ACTION_YESNO)) { ?>
                 <li><a href="<?php echo $this->baseUrl('resource/massmail'); ?>"><i class="icon-envelope icon-white"></i> Mass Mail</a></li>
             <?php } ?>
-            <?php if($acl->checkPermission('Send Bulk SMS', ACTION_YESNO) && false) { ?>
+            <?php if($acl->checkPermission('Send Bulk SMS', ACTION_YESNO)) { ?>
                 <li><a href="<?php echo $this->baseUrl('resource/bulksms'); ?>"><i class="icon-comment icon-white"></i> Bulk SMS</a></li>
             <?php } ?>
             <?php if($acl->checkPermission('Report Dashboard', ACTION_VIEW)) { ?>
                 <li><a href="<?php echo $this->baseUrl('reports/dashboard'); ?>"><i class="icon-flag icon-white"></i> Reports</a></li>
             <?php } ?>
-            <?php if($acl->checkPermission('Partner', ACTION_LIST) && isUganda()) { ?>
+            <?php if($acl->checkPermission('Partner', ACTION_LIST)) { ?>
                 <li><a href="<?php echo $this->baseUrl('company/list'); ?>"><i class="icon-list icon-white"></i> FARMIS Partners</a></li>
             <?php } ?>
 			<?php if($acl->checkPermission('System Variables', ACTION_LIST)) { ?>
@@ -67,18 +67,16 @@
 			<?php if($acl->checkPermission('Role', ACTION_LIST)) { ?>
                 <li><a href="<?php echo $this->baseUrl('role/list'); ?>"><i class="icon-lock icon-white"></i> System Roles</a></li>
             <?php } ?>
-            <?php if($acl->checkPermission('Global Config', ACTION_LIST) && false) { ?>
+            <?php if($acl->checkPermission('Global Config', ACTION_LIST)) { ?>
                 <li><a href="<?php echo $this->baseUrl('resource/config'); ?>"><i class="icon-cog icon-white"></i> Global Config</a></li>
             <?php } ?>
             <?php if($acl->checkPermission('User Account', ACTION_VIEW)) { ?>  
-            	<li><a href="<?php echo $this->baseUrl('profile/view/id/'.encode($leftcoluser->getID())); ?>"><i class="icon-user icon-white"></i> My Account</a></li>
+            	<li><a href="<?php echo $this->baseUrl('profile/view/id/'.encode($loggedinuser->getID())); ?>"><i class="icon-user icon-white"></i> My Account</a></li>
             <?php } ?>
         </ul>
     </div>
     <div class="divider10"></div>
     <div style="text-align:center; width:100%; padding:0; margin:0; margin-bottom:15px;">
-    	<?php if(isUganda()){ ?>
     	<img class="img-responsive" src="<?php echo $this->baseUrl('uploads/ads/Infotrade_banner_vertical.jpg'); ?>" />
-        <?php } ?>
     </div>
 </div>

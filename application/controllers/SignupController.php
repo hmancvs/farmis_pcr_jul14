@@ -103,11 +103,9 @@ class SignupController extends IndexController   {
 		} else {
 			try {
 				if($user->transactionInviteUpdate()){
-					# set subscription period for user (farmer only)
-					if($user->isFarmer()){
-						$user->setNewSubscription();
-					}
-					$session->setVar(SUCCESS_MESSAGE, 'Your account has been successfully activated. Please Login to continue.');
+					# set subscription period for user
+					$user->setNewSubscription();
+					$session->setVar(SUCCESS_MESSAGE, 'Your account on has been successfully activated. Please Login to continue.');
 					$this->_helper->redirector->gotoUrl(decode($this->_getParam(URL_SUCCESS))); 
 				}
 			} catch (Exception $e) {

@@ -1,5 +1,6 @@
 <?php
 	require_once APPLICATION_PATH.'/includes/header.php';
+	require_once(APPLICATION_PATH.'/../'.PUBLICFOLDER.'/mpdf/mpdf.php');
 		
 	$title = "Membership Certificate";
 	$this->headTitle($title); 
@@ -506,8 +507,8 @@ pdfquicklinks {
 			$temp_file_name = ($timestamp).".pdf";
 			$temp_file_text = ($timestamp).".html";
 			
-			$path = BASE_PATH.DIRECTORY_SEPARATOR."temp".DIRECTORY_SEPARATOR.$temp_file_name;
-			$path_txt = BASE_PATH.DIRECTORY_SEPARATOR."temp".DIRECTORY_SEPARATOR.$temp_file_text;
+			$path = APPLICATION_PATH.DIRECTORY_SEPARATOR."..".DIRECTORY_SEPARATOR."public".DIRECTORY_SEPARATOR."temp".DIRECTORY_SEPARATOR.$temp_file_name;
+			$path_txt = APPLICATION_PATH.DIRECTORY_SEPARATOR."..".DIRECTORY_SEPARATOR."public".DIRECTORY_SEPARATOR."temp".DIRECTORY_SEPARATOR.$temp_file_text;
 			$relativepathtodocument = $this->serverUrl($this->baseUrl('temp/'.$temp_file_name));
 			file_put_contents($path_txt, $pdf_html);
 			

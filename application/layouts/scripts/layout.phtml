@@ -21,8 +21,7 @@
 	$acl = getACLInstance(); 
   }
 	   
-  // $jsfiles = glob("javascript/*.js");
-  $jsfiles = getJsIncludes();
+  $jsfiles = glob("javascript/*.js");
   $cssfiles = glob("stylesheets/*.css");
   
   foreach ($cssfiles as $css) {
@@ -32,7 +31,6 @@
   echo $this->minifyHeadLink(); 
   
   foreach ($jsfiles as $js) {
-	 //  debugMessage($js);
 	// use baseURL() to output the full URL of the cached file and use it as normal with headLink(). also use setFile so that each file is added
 	$this->minifyHeadScript()->appendFile($js);
   }  
@@ -53,6 +51,7 @@
 	  $groupid = $session->getVar("farmergroupid");
 	} 
 ?>
+
 <!-- Le HTML5 shim, for IE6-8 support of HTML elements -->
 <!--[if lt IE 9]>
 <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
@@ -1033,7 +1032,7 @@ $(window).load(function() {
 	<?php require_once APPLICATION_PATH.'/views/scripts/index/navigation.phtml'; ?>	
 	<div class="row-fluid" id="contentwrapper">
 		<div id="contentcolumn">
-        	<?php if($isloggedin && $isInnerPage){ ?>
+        	<?php if($isloggedin){ ?>
         		<?php require_once APPLICATION_PATH.'/views/scripts/index/breadcrumb.phtml'; ?>	
             <?php } ?>
 			<?php echo $this->layout()->content; ?>

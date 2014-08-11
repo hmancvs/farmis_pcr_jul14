@@ -172,7 +172,7 @@ class InventoryController extends SecureController   {
 		//debugMessage($inventory->toArray());
 		
 		$oldfile = "large_".$inventory->getPhoto();
-		$base = BASE_PATH.DIRECTORY_SEPARATOR."uploads".DIRECTORY_SEPARATOR."user_".$inventory->getUserID().DIRECTORY_SEPARATOR."inventory".DIRECTORY_SEPARATOR."inventory_".$inventory->getID().DIRECTORY_SEPARATOR; 
+		$base = APPLICATION_PATH.DIRECTORY_SEPARATOR."..".DIRECTORY_SEPARATOR."public".DIRECTORY_SEPARATOR."uploads".DIRECTORY_SEPARATOR."user_".$inventory->getUserID().DIRECTORY_SEPARATOR."inventory".DIRECTORY_SEPARATOR."inventory_".$inventory->getID().DIRECTORY_SEPARATOR; 
 		$src = $base.$oldfile;
 		// debugMessage($src);
 		

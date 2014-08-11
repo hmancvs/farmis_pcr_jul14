@@ -283,7 +283,7 @@ class ResourceController extends SecureController   {
 			if($user->isFarmGroupAdmin()){
 				$user_filter = "u.farmgroupid = '".$user->getFarmGroupID()."' ";
 			}	
-			$query_seasons = "SELECT s.* FROM season as s inner join useraccount as u on (s.userid = u.id) 
+			$query_seasons = "SELECT s.* FROM season as s inner join user as u on (s.userid = u.id) 
 				WHERE
 				(".$user_filter.") AND u.country = UPPER('".$country."') AND 
 				(s.activityname like '%".$q."%' or 
@@ -353,7 +353,7 @@ class ResourceController extends SecureController   {
 			}
 			
 			# search season tillage
-			$query_activity_tillage = "SELECT s.* FROM seasontillage as s inner join useraccount u on (s.userid = u.id)
+			$query_activity_tillage = "SELECT s.* FROM seasontillage as s inner join useraccount u on (a.userid = u.id)
 				WHERE
 				(".$user_filter.")  AND u.country = UPPER('".$country."') AND  
 				(s.activityname like '%".$q."%' or 

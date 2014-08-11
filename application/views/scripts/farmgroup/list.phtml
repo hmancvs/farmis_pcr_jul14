@@ -45,32 +45,6 @@
 		// $ugcustom_query = " OR f.country is null ";
 	}
 	
-	$partner_query = ""; $partner_details = array();
-	if($loggedinuser->isPartner()){
-		$allowedlist = $loggedinuser->getCompany()->getAllocationDetails(true);
-		$partnertype = $loggedinuser->getCompany()->getFarmisType();
-		$indtype = $loggedinuser->getCompany()->getShowInd();
-		switch($partnertype){
-			case 2:
-			case 3:
-				$partner_query = " AND l.regionid in(".$allowedlist.") ";
-				$partner_details = array("type"=>$partnertype, "allowedlist"=>$allowedlist, "regionlist" => $partner_query);
-				break;
-			case 4:
-			case 5:
-				$partner_query = " AND f.locationid in(".$allowedlist.") ";
-				$partner_details = array("type"=>$partnertype, "allowedlist"=>$allowedlist, "districtlist" => $partner_query);
-				break;
-			case 6:
-			case 7:
-				$partner_query = " AND f.id in(".$allowedlist.") ";
-				$partner_details = array("type"=>$partnertype, "allowedlist"=>$allowedlist, "dnalist" => $partner_query);
-				break;
-			default:
-				break;
-		}
-	}
-	
 	# define the letter to be clicked to ease navigation 
 	$where_query = " WHERE f.id <> '' AND f.parentid IS NULL AND (LOWER(f.country) = LOWER('".$country."') ".$ugcustom_query.") ";
 	
@@ -116,17 +90,14 @@
 	}
 	
 	$paginate->processPost($request->getParams());
-	$all_results_query = "SELECT f.id FROM farmgroup f 
-	LEFT JOIN location as l ON (f.districtid = l.id AND l.locationtype = 2) 
-	".$where_query.$partner_query." ".$paginate->getSearchAndFilterSQL()." GROUP BY f.id ".$order_query;
+	$all_results_query = "SELECT f.id, count(u.farmgroupid) as totalfarmers FROM farmgroup f 
+	LEFT JOIN useraccount u ON (f.id = u.farmgroupid) 
+	LEFT JOIN location as l ON (f.districtid = l.id AND l.locationtype = 2) ".$where_query." ".$paginate->getSearchAndFilterSQL()." GROUP BY f.id ".$order_query;
 	// debugMessage($all_results_query);
 	
 	// determine total number of records found
 	$conn = Doctrine_Manager::connection(); 
-	$count_query = "SELECT SUM(f.id) as total
-	FROM farmgroup f 
-	LEFT JOIN location as l ON (f.districtid = l.id AND l.locationtype = 2)  
-	".$where_query.$partner_query." ".$paginate->getSearchAndFilterSQL()." GROUP BY f.id ";  // debugMessage($count_query);
+	$count_query = "SELECT count(f.id) as total FROM farmgroup f LEFT JOIN useraccount u ON (f.id = u.farmgroupid) LEFT JOIN location as l ON (f.districtid = l.id AND l.locationtype = 2) ".$where_query." ".$paginate->getSearchAndFilterSQL();
 	$result = $conn->fetchOne($count_query);
 	$paginate->setItemCount($result);
 		

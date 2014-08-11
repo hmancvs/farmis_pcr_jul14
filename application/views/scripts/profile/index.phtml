@@ -2,49 +2,46 @@
 	require_once APPLICATION_PATH.'/includes/header.php';
 	
 	# Load the profile, if no ID provided then use the profile of the currently logged in user
-	$user = new UserAccount(); 
-	$loggedinuser = new UserAccount();
+	$user = new UserAccount(); $loggedinuser = new UserAccount();
+	if(isEmptyString($request->id)){
+		$user->populate($userid);
+	} else {
+		$user->populate(decode($request->id));
+	}
+	
+	$dob = ""; $dateofbirth = '';  $fdateofbirth = ''; $birthday = ''; $birthmonth = ''; $birthyear = '';
+	
+	$id = $user->getID();	
+	$name = $user->getName();
+	$firstname = $user->getFirstName();
+	
+	#cleanup address
+	if(!isEmptyString($user->getID())){
+		// $user->cleanUpAddress();
+	}
+	
+	$isme = false;
+	if($userid == $user->getID()){
+		$isme = true;
+	}
+	
 	$loggedinuser->populate($userid);
 	
-	# determine if create or update
-	if(isEmptyString($request->id)){
-		if($controllername == 'farmer'){
-			$user->setType(2);
-		}
-		if($request->type == 'other'){
-		}
-		$button_title = $this->translate('global_button_save');
-		$posturl = $this->baseUrl("mobile/create"); 
-		$title = "New Farmer";
-		if(!$user->isFarmer() || $controllername != 'farmer'){
-			$title = "New User";
-		}
-	} else {
-		$user->populate(decode($request->id)); // debugMessage($user->toArray());
-		$button_title = $this->translate('global_button_save_changes');
-		$posturl = $this->baseUrl("profile/edit"); 
-		$title = "Update Profile";
-	}
-	
-	# defaults
-	$dob = ""; $dateofbirth = '';  $fdateofbirth = ''; $birthday = ''; $birthmonth = ''; $birthyear = '';
-	$tab = $request->tab;
-	if(isEmptyString($tab)) {
-		$tab = 'basics';
-		$request->setParam('tab', 'basics');
-	}
+	$button_title = $this->translate("farmer_button_save");
+	$posturl = $this->baseUrl("profile/edit"); 
 	$resourcename = 'Farmer';
 	if($controllername == 'profile'){
 		$resourcename == 'User Account';
 	}
-	$id = $user->getID();	
-	$name = $user->getName();
-	$firstname = $user->getFirstName();
-	$phone = $user->getFormattedPhone();
-	$altphone = $user->getFormattedPhone2();
-	$isme = false;
-	if($userid == $user->getID()){
-		$isme = true;
+	
+	#in case of errors in session, populate the fields from session
+	if(!isEmptyString($session->getVar(ERROR_MESSAGE))){ 
+		$user->processPost($session->getVar(FORM_VALUES));		
+	}
+	
+	$tab = $request->tab;
+	if(isEmptyString($tab)) {
+		$tab = 'basics';
 	}
 	
 	$thedays = getMonthDays();
@@ -55,6 +52,15 @@
 		$dob = $user->getDateOfBirth();
 		$dateofbirth = date('M d, Y', strtotime($dob)); 
 		$birthday = abs(date('d', strtotime($dob)));  $birthmonth = abs(date('m', strtotime($dob))); $birthyear = date('Y', strtotime($dob));
+	}
+	
+	if(isEmptyString($tab)) {
+		$request->setParam('tab', 'basics');
+	}
+	
+	if($tab == 'contacts' || $tab == 'account') {
+		$phone = $user->getFormattedPhone();
+		$altphone = $user->getFormattedPhone2();
 	}
 	
 	$country = 'UG';
@@ -78,15 +84,21 @@
 		$subcounty_label = $this->translate("global_ward_label");
 	}
 	
-	#in case of errors in session, populate the fields from session
-	if(!isEmptyString($session->getVar(ERROR_MESSAGE))){ 
-		$user->processPost($session->getVar(FORM_VALUES));		
-	}
-	// debugMessage($controllername);
+	$title = "Update Profile";
 	$this->headTitle($title);
 ?>
 <script>
 $(document).ready(function() {
+	// configure the date picker not to accept dates before today
+	var dateofbirthOpts = datepickerOpts;
+	var startfrom = '<?php echo date('Y') - 18; ?>';
+	dateofbirthOpts.yearRange = "-100:-18"; 
+	dateofbirthOpts.minDate = "-100Y";
+	datepickerOpts.maxDate = new Date("Dec 31, "+startfrom);	
+	$("#dateofbirth").datepicker(dateofbirthOpts);
+	// disable editing counntry	
+	disableField("country"); disableField("country2");	
+	
 	<?php if($tab == 'basics') { ?>
 		$("#profileform-basics").validate({		
 			// define the validation rules one field at a time
@@ -95,7 +107,7 @@ $(document).ready(function() {
 				firstname: "required",
 				lastname: "required",
 				country: "required",
-				locationid: "required",
+				locationid2: "required",
 				regdate: "required",
 				profiledby: "required",
 				<?php if(isKenya()){ ?>
@@ -105,10 +117,116 @@ $(document).ready(function() {
 						maxlength: 10					
 					},
 				<?php } ?>
+			}, 
+			// the messages for each of the fields being validated
+			messages: {		
+				gender: "<?php echo $this->translate("farmer_gender_error"); ?>",
+				firstname: "<?php echo $this->translate("farmer_firstname_error"); ?>",
+				lastname: "<?php echo $this->translate("farmer_lastname_error"); ?>",
+				country: "<?php echo $this->translate("farmer_country_error"); ?>",
+				locationid2: "<?php echo $locationerror; ?>",
+				regdate: "Please select Registration Date",
+				profiledby: "Please select profiling user",
+				<?php if(isKenya()){ ?>
+					refno: {
+						required: "Please enter ID Number", 					
+						minlength: "ID must have more than 6 Digits",
+						maxlength: "ID must not exceed 10 Digits"
+					},
+				<?php } ?>
+			},
+			// custom error positions
+			errorPlacement: function(error, element) {
+				switch(element.attr("name")){					
+					default:
+						if(element.hasClass("useid_error")){
+							error.appendTo("#"+element.attr("id")+"_error");
+						} else {
+							error.appendTo("#"+element.attr("name")+"_error");
+						}
+						break;
+				}			
+			}
+		});
+		
+		// basics custom failure and success url
+		$("#profileform-basics .savethenview").click(function() {
+			$("#profileform-basics .successurl").val('<?php echo encode($this->baseUrl($controllername.'/view/tab/basics')); ?>');
+			$("#profileform-basics .failureurl").val('<?php echo encode($this->baseUrl($controllername.'/index/id/'.encode($user->getID()).'/tab/basics')); ?>');
+		});
+		
+		var dateofregOpts = datepickerOpts;
+		dateofregOpts.yearRange = "-5";
+		dateofregOpts.maxDate = new Date();
+		<?php if(!isFarmer()){ ?>
+		$("#regdate").datepicker(dateofregOpts);
+		<?php } ?>
+		
+		<?php if($user->isUgandan()){ ?>
+			var refno = '<?php echo $user->getRefNo(); ?>';
+			$("#refno").addClass('readonly');
+			$("#refno").keyup(function(){
+				$("#regno").val('<?php echo FARMER_REG_PREFIX.'/'.$user->getFarmGroup()->getRefNo(); ?>/'+$(this).val());
+			});
+			$(".readonly").each(function(){
+				$(this).attr('readonly','readonly');
+			});
+			$("#refno").trigger('keyup');
+		<?php } ?>
+		
+		<?php if($user->getFarmGroup()->hasSubGroups()){ ?>
+			// chained select to load the subcounties for a county
+			$('#farmgroupid').selectChain({
+				target: $('#subgroupid'),
+				url: '<?php echo $this->baseUrl('profile/selectchain/'.SELECT_CHAIN_TYPE.'/farmgroup_children/country/'.$country)?>',
+				data: 'currentvalue=<?php echo $user->getSubGroupID(); ?>',
+				type: 'get'
+			});
+			$('#farmgroupid, #subgroupid').trigger("change");
+		<?php } ?>
+		
+	<?php } ?>
+	
+	<?php if($tab == 'personal') { ?>
+		$("#profileform-personal").validate({		
+			// define the validation rules one field at a time
+			rules: {
 				nextofkin_email: {
 					required: false,
 					email: true
-				},
+				}
+			}, 
+			// the messages for each of the fields being validated
+			messages: {		
+				nextofkin_email: {
+					email: "<?php echo $this->translate("useraccount_email_invalid_error"); ?>"
+				}
+			},
+			// custom error positions
+			errorPlacement: function(error, element) {
+				switch(element.attr("name")){					
+					default:
+						if(element.hasClass("useid_error")){
+							error.appendTo("#"+element.attr("id")+"_error");
+						} else {
+							error.appendTo("#"+element.attr("name")+"_error");
+						}
+						break;
+				}			
+			}
+		});
+		
+		// personal custom failure and success url
+		$("#profileform-personal .savethenview").click(function() {
+			$("#profileform-personal .successurl").val('<?php echo encode($this->baseUrl($controllername.'/view/tab/personal')); ?>');
+			$("#profileform-personal .failureurl").val('<?php echo encode($this->baseUrl($controllername.'/index/id/'.encode($user->getID()).'/tab/personal')); ?>');
+		}); 
+	<?php } ?>
+	
+	<?php if($tab == 'contacts') { ?>
+		$("#profileform-contacts").validate({		
+			// define the validation rules one field at a time
+			rules: {
 				phone: {
 					required: false, 					
 					validnumber: true,
@@ -136,29 +254,10 @@ $(document).ready(function() {
 				email: {
 					required: false, 
 					email: true
-				},
-				type: "required",
-				companyid: "required"
+				}
 			}, 
 			// the messages for each of the fields being validated
 			messages: {		
-				gender: "<?php echo $this->translate("farmer_gender_error"); ?>",
-				firstname: "<?php echo $this->translate("farmer_firstname_error"); ?>",
-				lastname: "<?php echo $this->translate("farmer_lastname_error"); ?>",
-				country: "<?php echo $this->translate("farmer_country_error"); ?>",
-				locationid: "<?php echo $locationerror; ?>",
-				regdate: "Please select Registration Date",
-				profiledby: "Please select profiling user",
-				<?php if(isKenya()){ ?>
-					refno: {
-						required: "Please enter ID Number", 					
-						minlength: "ID must have more than 6 Digits",
-						maxlength: "ID must not exceed 10 Digits"
-					},
-				<?php } ?>
-				nextofkin_email: {
-					email: "<?php echo $this->translate("useraccount_email_invalid_error"); ?>"
-				},
 				phone: {
 					validnumber: "Please enter a valid Phone Number",
 					maxlength: "Phone Number must have 10 Digits",
@@ -183,9 +282,7 @@ $(document).ready(function() {
 				},
 				email: {
 					"email": "<?php echo $this->translate("useraccount_email_invalid_error"); ?>"
-				},
-				type: "<?php echo $this->translate("farmer_role_error"); ?>",
-				companyid: "Please select a Partner"
+				}
 			},
 			// custom error positions
 			errorPlacement: function(error, element) {
@@ -199,15 +296,6 @@ $(document).ready(function() {
 						break;
 				}			
 			}
-		});
-		
-		// basics custom failure and success url
-		$("#profileform-basics .savethenview").click(function() {
-			$("#profileform-basics .successurl").val('<?php echo encode($this->baseUrl($controllername.'/view')); ?>');
-			$("#profileform-basics .failureurl").val('<?php echo encode($this->baseUrl($controllername.'/index/id/'.encode($user->getID()))); ?>');
-			<?php if(isEmptyString($user->getID())){ ?>
-				$("#profileform-basics .failureurl").val('<?php echo encode($this->baseUrl($controllername.'/index')); ?>');
-			<?php } ?>
 		});
 		
 		// add the validation for wholesale price to be less than retail price
@@ -224,45 +312,12 @@ $(document).ready(function() {
 			return true;        
 		}, "<?php echo $this->translate("globale_phonenumber_format"); ?>");
 		
-		var dateofregOpts = datepickerOpts;
-		dateofregOpts.yearRange = "-5";
-		dateofregOpts.maxDate = new Date();
-		<?php if(!isFarmer()){ ?>
-		$("#regdate").datepicker(dateofregOpts);
-		<?php } ?>
 		
-		// configure the date picker not to accept dates before today
-		var dateofbirthOpts = datepickerOpts;
-		var startfrom = '<?php echo date('Y') - 18; ?>';
-		dateofbirthOpts.yearRange = "-100:-18"; 
-		dateofbirthOpts.minDate = "-100Y";
-		datepickerOpts.maxDate = new Date("Dec 31, "+startfrom);	
-		$("#dateofbirth").datepicker(dateofbirthOpts);
-		// disable editing counntry	
-		disableField("country"); disableField("country2");	
-		
-		<?php if($user->isUgandan()){ ?>
-			var refno = '<?php echo $user->getRefNo(); ?>';
-			$("#refno").addClass('readonly');
-			$("#refno").keyup(function(){
-				$("#regno").val('<?php echo FARMER_REG_PREFIX.'/'.$user->getFarmGroup()->getRefNo(); ?>/'+$(this).val());
-			});
-			$(".readonly").each(function(){
-				$(this).attr('readonly','readonly');
-			});
-			$("#refno").trigger('keyup');
-		<?php } ?>
-		
-		<?php if($user->getFarmGroup()->hasSubGroups()){ ?>
-			// chained select to load the subcounties for a county
-			$('#farmgroupid').selectChain({
-				target: $('#subgroupid'),
-				url: '<?php echo $this->baseUrl('profile/selectchain/'.SELECT_CHAIN_TYPE.'/farmgroup_children/country/'.$country)?>',
-				data: 'currentvalue=<?php echo $user->getSubGroupID(); ?>',
-				type: 'get'
-			});
-			$('#farmgroupid, #subgroupid').trigger("change");
-		<?php } ?>
+		// contacts custom failure and success url
+		$("#profileform-contacts .savethenview").click(function() {
+			$("#profileform-contacts .successurl").val('<?php echo encode($this->baseUrl($controllername.'/view/tab/contacts')); ?>');
+			$("#profileform-contacts .failureurl").val('<?php echo encode($this->baseUrl($controllername.'/index/id/'.encode($user->getID()).'/tab/contacts')); ?>');
+		});
 		
 		$('#locationid').change(function() {
 			var locationid = $(this).val();
@@ -424,7 +479,7 @@ select.country {
 select.country2 {
 	width:150px;
 }
-select.chzn-select#locationid {
+select.chzn-select#locationid, select.chzn-select#locationid2 {
 	width:170px;
 }
 select#salutation {
@@ -440,6 +495,9 @@ select#salutation {
 	/*width:100%;*/
 	float:left;
 }
+.alert.alert-success {
+	width:90%;
+}
 </style>
 <?php if(!$isme){ ?>
 	<h1><?php echo $user->getName(); ?></h1>
@@ -448,7 +506,7 @@ select#salutation {
     <?php require APPLICATION_PATH."/views/scripts/profile/profileleftcolumn.phtml"; ?>
     <div class="span9 tab-content" id="center">   
         <div id="basics">
-            <h2><?php echo $title; ?></h2>
+            <h2>Update Profile</h2>
             <form id="profileform-basics" class="form-horizontal basics" action="<?php echo $posturl; ?>" method="post">
             <?php if($tab == 'basics'){ ?>
         	<div class="row" style="margin-left:0px;">
@@ -459,8 +517,8 @@ select#salutation {
                     <div class="alert alert-error"><?php echo $session->getVar(ERROR_MESSAGE); ?></div>
                 <?php } ?>
                 <div class="row margin0 pull-left">
-                    <a class="btn cancel gonowhere"><i class="icon-remove"></i> <?php echo $this->translate('global_button_cancel'); ?></a>
-                    <button type="submit" class="btn btn-primary savethenview"><i class="icon-ok icon-white"></i> <?php echo $button_title; ?></button>
+                    <a href="<?php echo $this->baseUrl($controllername.'/view/id/'.encode($user->getID())); ?>" class="btn"><i class="icon-remove"></i> <?php echo $this->translate('global_button_cancel'); ?></a>
+                    <button type="submit" class="btn btn-primary savethenview"><i class="icon-ok icon-white"></i> <?php echo $this->translate('global_button_save_changes'); ?></button>
                     <input type="hidden" name="entityname" value="UserAccount" />
                     <input type="hidden" id="id" name="id" value="<?php echo encode($user->getID()); ?>" />
                     <input type="hidden" id="userid" name="userid" value="<?php echo $user->getID(); ?>" />
@@ -468,19 +526,139 @@ select#salutation {
                     <input type="hidden" class="failureurl" id="<?php echo URL_FAILURE; ?>" name="<?php echo URL_FAILURE; ?>" title="general" />
                     <input type="hidden" id="<?php echo SUCCESS_MESSAGE; ?>" name="<?php echo SUCCESS_MESSAGE; ?>" value="Profile updated successfully" />    
                     <input type="hidden" name="type" id="type" value="<?php echo $user->getType(); ?>" />
-                    <input type="hidden" id="thecontroller" name="thecontroller" value="<?php echo $controllername; ?>" />
-        			<input type="hidden" id="theaction" name="theaction" value="<?php echo $controlleraction; ?>" />
                 </div>
 				<div class="divider10"></div>
-                <fieldset class="fieldsetcontainer well">
-        			<legend>Summary</legend>
-                    <table class="table noborder noborder nohover margin10">
-                        <?php if($user->isFarmer()){ ?>
+                <span class="span6 marginleft0" style="width:100%;">
+                    <div id="row1_left" class="well lighter row marginleft0" style="height:auto; padding-left:10px;">                        
+                        <table class="table">                       
+                           <tr>
+                                <td width="54%"><label class="control-label"><?php echo $this->translate("farmer_firstname_label"); ?>: <?php echo $this->translate("global_required_field_marker"); ?></label>
+                                <input name="firstname" id="firstname" type="text" class="span3 xhastooltip" value="<?php echo $user->getFirstName(); ?>" title="<?php // echo $this->translate("farmer_firstname_tooltip"); ?>" /><div id="firstname_error"></div></td>
+                                <td><label class="control-label"><?php echo $this->translate("farmer_lastname_label"); ?>: <?php echo $this->translate("global_required_field_marker"); ?></label>
+                                <input name="lastname" id="lastname" type="text" class="span3 xhastooltip" value="<?php echo $user->getLastName(); ?>" title="<?php // echo $this->translate("farmer_lastname_tooltip"); ?>" /><div id="lastname_error"></div></td>                                                             
+                            </tr>
+                            <tr>		                    
+                                <td><label class="control-label"><?php echo $this->translate("farmer_othernames_label"); ?>:</label>
+                                <input name="othernames" id="othernames" type="text" class="span3 xhastooltip" value="<?php echo $user->getOtherNames(); ?>" title="<?php // echo $this->translate("farmer_othernames_tooltip"); ?>" /></td>
+                                <td><label class="control-label"><?php echo $this->translate("farmer_gender_label"); ?>: </label>
+								<?php						  
+                                      $genderradio = new Zend_Form_Element_Radio('gender',
+                                              array(
+                                                      'multiOptions' => array('1'=>'Male','2'=>'Female'), 
+                                                      'view' => new Zend_View(),
+                                                      'disableLoadDefaultDecorators' => true,
+                                                      'separator' => '&nbsp;',										  
+                                                      'decorators' => array('ViewHelper',
+                                                                          array('HtmlTag', array('tag' => 'div', 'class' => array('inline', 'radio', 'zendradio'))) // use a sorrounding DIV with classes which are copied to the label by JQuery
+                                                                      )
+                                              )
+                                      );
+                                      $genderradio->setValue($user->getGender());
+                                      echo $genderradio->render();
+                                  ?><div id="gender_error"></div></td>  
+                            </tr> 
+                            <tr>
+                                <td><label class="control-label dateofbirth"><?php echo $this->translate("farmer_dateofbirth_label"); ?>:</label>
+                                        <?php
+                                            $daydp = new Zend_Form_Element_Select('birthday',
+                                                                array(
+                                                                    'multiOptions' => array_merge_maintain_keys(array('' => 'Day'), getMonthDays()),	
+                                                                    'view' => new Zend_View(),
+                                                                    'decorators' => array('ViewHelper'),
+                                                                    'class' => array('birth'),
+                                                                    'title' => 'Select Day'		
+                                                                )
+                                                            );
+                                            $daydp->setValue($birthday); 
+                                            echo $daydp->render(); 
+                                        ?>
+                                        <?php
+                                            $monthdp = new Zend_Form_Element_Select('birthmonth',
+                                                                array(
+                                                                    'multiOptions' => array_merge_maintain_keys(array('' => 'Month'), getAllMonthsAsShortNames()),	
+                                                                    'view' => new Zend_View(),
+                                                                    'decorators' => array('ViewHelper'),
+
+                                                                    'class' => array('birth'),
+                                                                    'title' => 'Select Month'		
+                                                                )
+                                                            );
+                                            $monthdp->setValue($birthmonth); 
+                                            echo $monthdp->render(); 
+                                        ?>
+                                        <?php
+                                            $years = getSubscribeBirthYears();
+                                            $yeardp = new Zend_Form_Element_Select('birthyear',
+                                                                array(
+                                                                    'multiOptions' => array_merge_maintain_keys(array('' => 'Year'), $years),	
+                                                                    'view' => new Zend_View(),
+                                                                    'decorators' => array('ViewHelper'),
+                                                                    'class' => array('birth'),
+                                                                    'title' => 'Select Year'		
+                                                                )
+                                                            );
+                                            $yeardp->setValue($birthyear); 
+                                            echo $yeardp->render(); 
+                                        ?>
+                                        <input name="dateofbirth" id="dateofbirth" type="text" class="span2 datefield xhastooltip" value="<?php echo $dateofbirth; ?>" `title="<?php // echo $this->translate("person_dateofbirth_tooltip"); ?>" />
+                                    	<div id="dateofbirth_error"></div>
+									</td>
+                                    <td><label class="control-label suffix"><?php echo $this->translate("farmer_suffix_label"); ?>: </label>
+                                        <?php
+                                              $suffixlookup = new LookupType();
+                                              $suffixlookup->setName("SALUTATION");
+                                              $suffixselect = new Zend_Form_Element_Select('salutation',
+                                                      array(
+                                                              'multiOptions' => array_merge_maintain_keys(array('' => '<Select>'), $suffixlookup->getOptionValuesAndDescription()),
+                                                              'view' => new Zend_View(),
+                                                              'decorators' => array(array('ViewHelper')),
+                                                              'class' => array('chzn-selectX','span1','type','xhastooltip'),
+                                                              'title' => $this->translate("farmer_suffix_tooltip")	
+                                                      )
+                                              );
+                                              
+                                              $suffixselect->setValue($user->getSalutation());
+                                              echo $suffixselect->render();
+                                          ?><input type="hidden" id="salutation_old" name="salutation_old" value="<?php echo $user->getSalutation(); ?>" />
+                                </td>
+                            </tr>                                 
+                            <tr>
+                                <td><label class="control-label"><?php echo $this->translate("farmer_country_label"); ?>:</label>
+									<?php
+                                        $countries = getCountries();
+                                        $countrydropdown = new Zend_Form_Element_Select('country2',
+                                                            array(
+                                                                'multiOptions' => array_merge_maintain_keys(array('' => "<Select One>", "UG"=>"Uganda"), $countries),
+                                                                'view' => new Zend_View(), 
+                                                                'decorators' => array('ViewHelper'),
+                                                                'class' => array('span3', 'country', 'xchzn-select', 'disabledfield')                                                            )
+                                                        );
+                                        $countrydropdown->setValue($user->getCountry()); 
+                                        echo $countrydropdown->render(); 
+                                    ?><input type="hidden" name="country2" id="country2" value="<?php echo $user->getCountry(); ?>" />
+                                </td>
+                                <td><label class="control-label"><?php echo $location_label; ?>:  <?php echo $this->translate("global_required_field_marker"); ?></label>
+									<?php
+                                        $districts = getDistricts($session->getVar('country'));
+                                        $districtdropdown = new Zend_Form_Element_Select('locationid2',
+                                                            array(
+                                                                'multiOptions' => array_merge_maintain_keys(array('' => '<Select One>'), $districts),								
+                                                                'view' => new Zend_View(),
+                                                                'decorators' => array('ViewHelper'),
+                                                                'class' => array('filterselect', 'xhastooltip_custom', 'country'),
+                                                                'title' => $this->translate("farmer_district_tooltip")
+                                                            )
+                                                        );
+                                        $districtdropdown->setValue($user->getLocationID()); 
+                                        echo $districtdropdown->render(); 
+                                   ?>
+                                   <span id="tooltip_locationid2"></span><div id="locationid2_error"></div></td>                           
+                            </tr>
                             <tr>
                                 <td><label class="control-label"><?php echo isUganda() ? "FIN No#" : "National ID"; ?>: <?php echo $this->translate("global_required_field_marker"); ?></label>
-                                    <input type="text" name="refno" id="refno" value="<?php echo $user->getRefNo(); ?>" class="span2 minwidth100" <?php echo $country_params_refno_placeholder; ?> />
+                                	<input type="text" name="refno" id="refno" value="<?php echo $user->getRefNo(); ?>" class="span2 minwidth100" <?php echo $country_params_refno_placeholder; ?> />
                                     <?php if(isUganda()){ ?>
-                                        <input type="hidden" name="refno" id="refno" value="<?php echo $user->getRefNo(); ?>" />
+	                                    <input type="hidden" name="refno" id="refno" value="<?php echo $user->getRefNo(); ?>" />
                                     <?php } ?>
                                     <div id="refno_error"></div>
                                 </td>
@@ -497,297 +675,358 @@ select#salutation {
                                 <?php } ?>
                                 </td>
                             </tr>
-						<?php } else { ?>
-                        	<input type="hidden" name="refno" id="refno" value="<?php echo $user->getRefNo(); ?>" />
-                            <input type="hidden" name="regno" id="regno" value="<?php echo $user->getRegNo(); ?>" />
-                        <?php } ?>
-                        <tr>
-                            <td width="54%"><label class="control-label"><?php echo $this->translate("farmer_firstname_label"); ?>: <?php echo $this->translate("global_required_field_marker"); ?></label>
-                            <input name="firstname" id="firstname" type="text" class="span3 xhastooltip" value="<?php echo $user->getFirstName(); ?>" title="<?php // echo $this->translate("farmer_firstname_tooltip"); ?>" /><div id="firstname_error"></div></td>
-                            <td><label class="control-label"><?php echo $this->translate("farmer_lastname_label"); ?>: <?php echo $this->translate("global_required_field_marker"); ?></label>
-                            <input name="lastname" id="lastname" type="text" class="span3 xhastooltip" value="<?php echo $user->getLastName(); ?>" title="<?php // echo $this->translate("farmer_lastname_tooltip"); ?>" /><div id="lastname_error"></div></td>                                                             
-                        </tr>
-                        <tr>		                    
-                            <td><label class="control-label"><?php echo $this->translate("farmer_othernames_label"); ?>:</label>
-                            <input name="othernames" id="othernames" type="text" class="span3 xhastooltip" value="<?php echo $user->getOtherNames(); ?>" title="<?php // echo $this->translate("farmer_othernames_tooltip"); ?>" /></td>
-                            <td><label class="control-label"><?php echo $this->translate("farmer_gender_label"); ?>: </label>
-                            <?php						  
-                                  $genderradio = new Zend_Form_Element_Radio('gender',
-                                          array(
-                                                  'multiOptions' => array('1'=>'Male','2'=>'Female'), 
-                                                  'view' => new Zend_View(),
-                                                  'disableLoadDefaultDecorators' => true,
-                                                  'separator' => '&nbsp;',										  
-                                                  'decorators' => array('ViewHelper',
-                                                                      array('HtmlTag', array('tag' => 'div', 'class' => array('inline', 'radio', 'zendradio'))) // use a sorrounding DIV with classes which are copied to the label by JQuery
-                                                                  )
-                                          )
-                                  );
-                                  $genderradio->setValue($user->getGender());
-                                  echo $genderradio->render();
-                              ?><div id="gender_error"></div></td>  
-                        </tr>
-                        <tr>
-                            <td><label class="control-label dateofbirth"><?php echo $this->translate("farmer_dateofbirth_label"); ?>:</label>
-                                    <?php
-                                        $daydp = new Zend_Form_Element_Select('birthday',
-                                                            array(
-                                                                'multiOptions' => array_merge_maintain_keys(array('' => 'Day'), getMonthDays()),	
-                                                                'view' => new Zend_View(),
-                                                                'decorators' => array('ViewHelper'),
-                                                                'class' => array('birth'),
-                                                                'title' => 'Select Day'		
-                                                            )
-                                                        );
-                                        $daydp->setValue($birthday); 
-                                        echo $daydp->render(); 
-                                    ?>
-                                    <?php
-                                        $monthdp = new Zend_Form_Element_Select('birthmonth',
-                                                            array(
-                                                                'multiOptions' => array_merge_maintain_keys(array('' => 'Month'), getAllMonthsAsShortNames()),	
-                                                                'view' => new Zend_View(),
-                                                                'decorators' => array('ViewHelper'),
-
-                                                                'class' => array('birth'),
-                                                                'title' => 'Select Month'		
-                                                            )
-                                                        );
-                                        $monthdp->setValue($birthmonth); 
-                                        echo $monthdp->render(); 
-                                    ?>
-                                    <?php
-                                        $years = getSubscribeBirthYears();
-                                        $yeardp = new Zend_Form_Element_Select('birthyear',
-                                                            array(
-                                                                'multiOptions' => array_merge_maintain_keys(array('' => 'Year'), $years),	
-                                                                'view' => new Zend_View(),
-                                                                'decorators' => array('ViewHelper'),
-                                                                'class' => array('birth'),
-                                                                'title' => 'Select Year'		
-                                                            )
-                                                        );
-                                        $yeardp->setValue($birthyear); 
-                                        echo $yeardp->render(); 
-                                    ?>
-                                    <input name="dateofbirth" id="dateofbirth" type="text" class="span2 datefield xhastooltip" value="<?php echo $dateofbirth; ?>" `title="<?php // echo $this->translate("person_dateofbirth_tooltip"); ?>" />
-                                    <div id="dateofbirth_error"></div>
-                                </td>
-                                <td><label class="control-label suffix"><?php echo $this->translate("farmer_suffix_label"); ?>: </label>
-                                    <?php
-                                          $suffixlookup = new LookupType();
-                                          $suffixlookup->setName("SALUTATION");
-                                          $suffixselect = new Zend_Form_Element_Select('salutation',
-                                                  array(
-                                                          'multiOptions' => array_merge_maintain_keys(array('' => '<Select>'), $suffixlookup->getOptionValuesAndDescription()),
-                                                          'view' => new Zend_View(),
-                                                          'decorators' => array(array('ViewHelper')),
-                                                          'class' => array('chzn-selectX','span1','type','xhastooltip'),
-                                                          'title' => $this->translate("farmer_suffix_tooltip")	
-                                                  )
-                                          );
-                                          
-                                          $suffixselect->setValue($user->getSalutation());
-                                          echo $suffixselect->render();
-                                      ?><input type="hidden" id="salutation_old" name="salutation_old" value="<?php echo $user->getSalutation(); ?>" />
-                            </td>
-                        </tr>                                 
-                        <tr>
-                            <td><label class="control-label">Phone:</label>
-                                <div class="input-prepend">
-                                    <span class="add-on"><?php echo '+'.$countrycode; ?></span><input name="phone" id="phone" type="text" maxlength="10" class="span2 xhastooltip" style="width:110px;" value="<?php echo $user->getFormattedPhone(); ?>" title="<?php // echo $this->translate("farmer_phone_tooltip"); ?>" />
-                                </div>
-                                <?php if(false){ ?>
-									<?php if($user->isUserInActive() || isEmptyString($user->getID())){ ?>
-                                         <div class="blocked" style="margin-top:5px;"><input type="checkbox" name="isphoneinvited" id="isphoneinvited" value="1" style="margin-top:0;" /> &nbsp;
-                                         <label class="lineblocked">Invite to activate via Phone</label></div>
-                                    <?php } ?>
-                                <?php } ?>
-                                <div id="phone_error"></div>
-                            </td>
-                            <td>
-                                <label class="control-label">Email:</label>
-                                <input type="text" name="email" id="email" class="span3 xhastooltip"  value="<?php echo isEmptyString($user->getEmail()) ? $user->getEmail() : $user->getEmail(); ?>" title="<?php // echo $this->translate("farmer_email_tooltip"); ?>"/>
-                                <?php if($user->isUserInActive() || isEmptyString($user->getID())){ ?>
-                                     <div class="blocked" style="margin-top:5px;"><input type="checkbox" name="isinvited" id="isinvited" value="1" /> &nbsp;
-                                     <label class="lineblocked">Invite to activate via Email</label></div>
-                                <?php } ?>
-                                
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>
-                                <label class="control-label">Alt Phone:</label>
-                                <div class="input-prepend">
-                                    <span class="add-on"><?php echo '+'.$countrycode; ?></span><input name="phone2" id="phone2" type="text" maxlength="10" class="span2 xhastooltip" style="width:110px;" value="<?php echo $user->getFormattedPhone2(); ?>" title="<?php // echo $this->translate("farmer_phone_tooltip"); ?>" />
-                                </div>
-                                <div id="phone2_error"></div>
-                            </td>
-                            <td>
-                                <label class="control-label">Alt Email:</label>
-                                <input type="text" name="email2" id="email2" class="span3 xhastooltip" value="<?php echo $user->getEmail2(); ?>" title="<?php // echo $this->translate("farmer_phone2_tooltip"); ?>" />
-                            </td>
-                        </tr>
-                        <tr>
-                            <td><label class="control-label"><?php echo $this->translate("farmer_dateregistered_label"); ?>: <?php echo $this->translate("global_required_field_marker"); ?></label>
-                                <?php if(!isFarmer()){ ?>
-                                    <input type="text" name="regdate" id="regdate" class="datefield width100" value="<?php echo changeMySQLDateToPageFormat($user->getRegDate()); ?>" />
-                                <?php } else { ?>
-                                    <input type="hidden" name="regdate" id="regdate" value="<?php echo changeMySQLDateToPageFormat($user->getRegDate()); ?>" />
-                                    <?php echo isEmptyString($user->getRegDate()) ? '--': changeMySQLDateToPageFormat($user->getRegDate()); ?>
-                                <?php } ?>   
-                                <div id="regdate_error"></div> 
-                            </td>
-                            <td>
-                                <?php if(!$isme){ ?>
-                                    <label class="control-label">Profiled By: <?php echo $this->translate("global_required_field_marker"); ?></label>
-                                    <?php if(isEmptyString($user->getCreatedBy())){ ?>
-                                        <?php
-                                            $users = getProfilingUsers($session->getVar('country'));
-                                            $dropdown = new Zend_Form_Element_Select('profiledby',
-                                                                array(
-                                                                    'multiOptions' => array_merge_maintain_keys(array('' => '<Select One>'), $users),								
-                                                                    'view' => new Zend_View(),
-                                                                    'decorators' => array('ViewHelper'),
-                                                                    'class' => array('span2')
-                                                                )
-                                                            );
-                                            $dropdown->setValue($user->getCreatedBy()); 
-                                            echo $dropdown->render(); 
-                                          ?>
-                                    <?php } else { ?>
-                                        <?php echo $loggedinuser->getName(); ?>
-                                    <?php } ?>
-                                    <div id="profiledby_error"></div>
-                                <?php } ?>
-                            </td>
-                        </tr>
-                        <?php if($user->isFarmer() || $user->isFarmGroupAdmin()){ ?>
                             <tr>
-                                <td>
-                                    <?php if($user->isSelfRegistered()){ ?>
-                                        <label class="control-label">Farmer Association / Group:</label>
-                                        <input type="text" name="supportprovider" id="supportprovider" value="<?php echo $user->getSupportProvider(); ?>" class="xhastooltip" style="width:88%;" title="<?php // echo $this->translate("farmgroup_supportprovider_tooltip"); ?>" />
-                                    <?php } ?>
-                                    <?php if($user->getCreatedBy() != $user->getID() || !$user->isSelfRegistered()){ ?>
-                                        <label class="control-label"><?php echo $this->translate("farmer_dna_label"); ?>:</label>
-                                       <?php if(!isFarmer()){ ?>
-                                            <?php
-                                                $groupdropdown = new Zend_Form_Element_Select('farmgroupid',
-                                                                    array(
-                                                                        'multiOptions' => array_merge_maintain_keys(array('' => '<Select One>'), getAllFarmGroups('', $session->getVar('country'))),								
-                                                                        'view' => new Zend_View(),
-                                                                        'decorators' => array('ViewHelper'),
-                                                                        'class' => array('width300', 'xhastooltip_custom'),
-                                                                        'title' => $this->translate("farmer_farmgroupid_tooltip")
-                                                                    )
-                                                                );
-                                                $groupdropdown->setValue($user->getFarmGroupID()); 
-                                                echo $groupdropdown->render(); 
-                                           ?>
-                                       <?php } else { ?>
-                                            <?php echo !$user->hasFarmGroup() ? "--" : $user->getFarmGroup()->getName(); ?>
-                                            <input type="hidden" id="farmgroupid" name="farmgroupid" value="<?php echo $user->getFarmGroupID(); ?>" /> 
-                                       <?php } ?>
-                                    <?php } ?>
-                                    <input type="hidden" id="farmgroupid_old" name="farmgroupid_old" value="<?php echo $user->getFarmGroupID(); ?>" />
+                                <td><label class="control-label"><?php echo $this->translate("farmer_dateregistered_label"); ?>: <?php echo $this->translate("global_required_field_marker"); ?></label>
+                                    <?php if(!isFarmer()){ ?>
+                                        <input type="text" name="regdate" id="regdate" class="datefield width100" value="<?php echo changeMySQLDateToPageFormat($user->getRegDate()); ?>" />
+                                    <?php } else { ?>
+                                        <input type="hidden" name="regdate" id="regdate" value="<?php echo changeMySQLDateToPageFormat($user->getRegDate()); ?>" />
+                                        <?php echo isEmptyString($user->getRegDate()) ? '--': changeMySQLDateToPageFormat($user->getRegDate()); ?>
+                                    <?php } ?>   
+                                    <div id="regdate_error"></div> 
                                 </td>
                                 <td>
-                                    <?php if($user->getFarmGroup()->hasSubGroups()){ ?>
-                                        <label class="control-label"><?php echo $this->translate("farmer_subgroup_label"); ?>:</label>
-                                        <?php if(!isFarmer()){ ?>
-                                            <?php
-                                                $groupdropdown = new Zend_Form_Element_Select('subgroupid',
+                                	<?php if(!$isme){ ?>
+                                        <label class="control-label">Profiled By: <?php echo $this->translate("global_required_field_marker"); ?></label>
+                                        <?php if(isEmptyString($user->getCreatedBy())){ ?>
+											<?php
+                                                $users = getProfilingUsers($session->getVar('country'));
+                                                $dropdown = new Zend_Form_Element_Select('profiledby',
                                                                     array(
-                                                                        'multiOptions' => array_merge_maintain_keys(array('' => '<Select One>'), getSubGroups($user->getFarmGroupID(), $session->getVar('country'))),								
+                                                                        'multiOptions' => array_merge_maintain_keys(array('' => '<Select One>'), $users),								
                                                                         'view' => new Zend_View(),
                                                                         'decorators' => array('ViewHelper'),
-                                                                        'class' => array('width300', 'xhastooltip_custom'),
-                                                                        'title' => $this->translate("farmer_subgroupid_tooltip")
+                                                                        'class' => array('span2')
                                                                     )
                                                                 );
-                                                $groupdropdown->setValue($user->getSubGroupID()); 
-                                                echo $groupdropdown->render(); 
-                                           ?>
-                                        <?php } else { ?>
-                                            <?php echo isEmptyString($user->getSubGroupID()) ? "--" : $user->getSubGroup()->getName(); ?>
-                                            <input type="hidden" id="subgroupid" name="subgroupid" value="<?php echo $user->getSubGroupID(); ?>" /> 
-                                       <?php } ?>
-                                    <?php } else { ?>
-                                        <input type="hidden" id="subgroupid" name="subgroupid" value="" /> 
-                                    <?php } ?>
-                                    <input type="hidden" id="subgroupid_old" name="subgroupid_old" value="<?php echo $user->getSubGroupID(); ?>" />
+                                                $dropdown->setValue($user->getCreatedBy()); 
+                                                echo $dropdown->render(); 
+                                              ?>
+                                    	<?php } else { ?>
+                                        	<?php echo $loggedinuser->getName(); ?>
+                                        <?php } ?>
+                                        <div id="profiledby_error"></div>
+                                	<?php } ?>
                                 </td>
                             </tr>
-                        <?php } ?>
-                        <?php if($acl->checkPermission($resourcename, ACTION_CREATE)){ ?>
-                        <tr>
-                        	<td><label class="control-label">Type: <?php echo $this->translate("global_required_field_marker"); ?></label>
-								<?php
-                                    $allvalues = getUserType('');
-                                    $dropdown = new Zend_Form_Element_Select('type',
-                                                        array(
-                                                            'multiOptions' => array_merge_maintain_keys(array('' => '<Select One>'), $allvalues),
-                                                            'view' => new Zend_View(),
-                                                            'decorators' => array('ViewHelper'),
-                                                            'class' => array('span3')
-                                                        )
-                                    );  
-                                    $dropdown->setValue($user->getType()); 
-                                    echo $dropdown->render();
-                                ?>
-                                <div id="type_error"></div>
-					            <input type="hidden" id="isfarmer" name="isfarmer" value="<?php echo $user->isFarmer() ? 0 : 1; ?>" />
-                        	</td>
-                            <td>
-                            	<?php if($user->isPartner() && !$isme){ ?>
-                                	<label class="control-label">Partner: <?php echo $this->translate("global_required_field_marker"); ?></label>
-									<?php
-                                        $allvalues = getAllPartners($session->getVar('country'));
-                                        $dropdown = new Zend_Form_Element_Select('companyid',
-                                                            array(
-                                                                'multiOptions' => array_merge_maintain_keys(array('' => '<Select One>'), $allvalues),
-                                                                'view' => new Zend_View(),
-                                                                'decorators' => array('ViewHelper'),
-                                                                'class' => array('span3')
-                                                            )
-                                        );  
-                                        $dropdown->setValue($user->getCompanyID()); 
-                                        echo $dropdown->render();
-                                    ?>
-                                    <div id="companyid_error"></div>
-                            	<?php } ?>
+                        </table>
+                    </div>
+                </span> 
+        	</div>
+            <div class="row margin0" style="padding:2px; margin-bottom:10px;">
+                <span class="pull-left well lighter margin0" style="width:95%; min-height:180px; height:auto; margin-bottom:10px;">
+                	<table class="table">     
+                    	<tr>
+                            <td style="width:40%;">
+								<?php if($user->isSelfRegistered()){ ?>
+                                    <label class="control-label">Farmer Association / Group:</label>
+                                    <input type="text" name="supportprovider" id="supportprovider" value="<?php echo $user->getSupportProvider(); ?>" class="xhastooltip" style="width:88%;" title="<?php // echo $this->translate("farmgroup_supportprovider_tooltip"); ?>" />
+                                <?php } ?>
+                                <?php if($user->getCreatedBy() != $user->getID() || !$user->isSelfRegistered()){ ?>
+                                	<label class="control-label"><?php echo $this->translate("farmer_dna_label"); ?>:</label>
+								   <?php if(!isFarmer()){ ?>
+                                        <?php
+                                            $groupdropdown = new Zend_Form_Element_Select('farmgroupid',
+                                                                array(
+                                                                    'multiOptions' => array_merge_maintain_keys(array('' => '<Select One>'), getAllFarmGroups('', $session->getVar('country'))),								
+                                                                    'view' => new Zend_View(),
+                                                                    'decorators' => array('ViewHelper'),
+                                                                    'class' => array('width300', 'xhastooltip_custom'),
+                                                                    'title' => $this->translate("farmer_farmgroupid_tooltip")
+                                                                )
+                                                            );
+                                            $groupdropdown->setValue($user->getFarmGroupID()); 
+                                            echo $groupdropdown->render(); 
+                                       ?>
+                                   <?php } else { ?>
+                                        <?php echo !$user->hasFarmGroup() ? "--" : $user->getFarmGroup()->getName(); ?>
+                                        <input type="hidden" id="farmgroupid" name="farmgroupid" value="<?php echo $user->getFarmGroupID(); ?>" /> 
+                                   <?php } ?>
+                                <?php } ?>
+                                <input type="hidden" id="farmgroupid_old" name="farmgroupid_old" value="<?php echo $user->getFarmGroupID(); ?>" />
                             </td>
-                       	</tr>
-                        <?php } ?>
-                    </table>
-                </fieldset>
-               	<?php if($user->isFarmer()){ ?>
-                    <fieldset class="fieldsetcontainer well">
-                        <legend>About</legend>
-                        <div class="padding10" style="min-height:30px; margin-left:10px;"><label class="control-label">Bio:</label>
-                        <?php //echo isEmptyString($user->getBio()) ? '--' : nl2br($user->getBio()); ?>
-                         <textarea name="bio" id="bio" class="span4 expanding xhastooltip" style="width:90%; min-height:100px;" title="<?php // echo $this->translate("farmer_bio_tooltip"); ?>"><?php echo $user->getBio(); ?></textarea>
+                            <td>
+                            	<?php if($user->getFarmGroup()->hasSubGroups()){ ?>
+                                	<label class="control-label"><?php echo $this->translate("farmer_subgroup_label"); ?>:</label>
+                                    <?php if(!isFarmer()){ ?>
+                                    	<?php
+                                            $groupdropdown = new Zend_Form_Element_Select('subgroupid',
+                                                                array(
+                                                                    'multiOptions' => array_merge_maintain_keys(array('' => '<Select One>'), getSubGroups($user->getFarmGroupID(), $session->getVar('country'))),								
+                                                                    'view' => new Zend_View(),
+                                                                    'decorators' => array('ViewHelper'),
+                                                                    'class' => array('width300', 'xhastooltip_custom'),
+                                                                    'title' => $this->translate("farmer_subgroupid_tooltip")
+                                                                )
+                                                            );
+                                            $groupdropdown->setValue($user->getSubGroupID()); 
+                                            echo $groupdropdown->render(); 
+                                       ?>
+                                    <?php } else { ?>
+                                        <?php echo isEmptyString($user->getSubGroupID()) ? "--" : $user->getSubGroup()->getName(); ?>
+                                        <input type="hidden" id="subgroupid" name="subgroupid" value="<?php echo $user->getSubGroupID(); ?>" /> 
+                                   <?php } ?>
+                                <?php } else { ?>
+                                	<input type="hidden" id="subgroupid" name="subgroupid" value="" /> 
+                                <?php } ?>
+                                <input type="hidden" id="subgroupid_old" name="subgroupid_old" value="<?php echo $user->getSubGroupID(); ?>" />
+                            </td>
+                        </tr>
+                    </table>	
+                </span>
+            </div>
+            <div class="well lighter row marginleft0" style="min-height:75px; width:95%;"> 
+                <h3 class="well-legend">About</h3>
+                <table class="table margin0">              
+                    <tr>		  
+                        <td style="padding-left:0;">
+                        <textarea name="bio" id="bio" class="span4 expanding xhastooltip" style="width:90%; min-height:100px;" title="<?php // echo $this->translate("farmer_bio_tooltip"); ?>"><?php echo $user->getBio(); ?></textarea></td>
+                    </tr>
+                </table>
+            </div>
+            <?php } ?>
+        	</form> 
+        </div>
+         <div id="contacts">
+            <!--<h2>Contact Information</h2>-->
+            <form id="profileform-contacts" class="form-horizontal contacts" action="<?php echo $posturl; ?>" method="post">
+            <?php if($tab == 'contacts'){ ?>
+            	<?php if(!isEmptyString($session->getVar(SUCCESS_MESSAGE)) ){ ?>
+                    <div class="alert alert-success"><a class="close" data-dismiss="alert">×</a><?php echo $session->getVar(SUCCESS_MESSAGE); ?></div>
+                <?php } ?>	
+                <?php if($sessionhaserror) { ?>
+                    <div class="alert alert-error"><?php echo $session->getVar(ERROR_MESSAGE); ?></div>
+                <?php } ?>
+                <div class="row margin0 padding0">
+                	<div class="divider10"></div>
+                    <a href="javascript:doNothing();" class="btn"><i class="icon-remove"></i> <?php echo $this->translate('global_button_cancel'); ?></a>
+                    <button type="submit" class="btn btn-primary savethenview"><i class="icon-ok icon-white"></i> <?php echo $this->translate('global_button_save_changes'); ?></button>
+                    <input type="hidden" name="entityname" value="UserAccount" />
+                    <input type="hidden" id="id" name="id" value="<?php echo encode($user->getID()); ?>" /> 
+                    <input type="hidden" id="userid" name="userid" value="<?php echo $user->getID(); ?>" /> 
+                    <input type="hidden" id="farmgroupid" name="farmgroupid" value="<?php echo $user->getFarmGroupID(); ?>" /> 
+                    <input type="hidden" class="successurl" id="<?php echo URL_SUCCESS; ?>" name="<?php echo URL_SUCCESS; ?>" title="general" />
+                    <input type="hidden" class="failureurl" id="<?php echo URL_FAILURE; ?>" name="<?php echo URL_FAILURE; ?>" title="general" />
+                    <input type="hidden" id="<?php echo SUCCESS_MESSAGE; ?>" name="<?php echo SUCCESS_MESSAGE; ?>" value="Profile updated successfully" />
+                </div>
+                <div class="divider10"></div>
+                <div class="row" style="margin-left:0px;">
+                    <span class="span6 marginleft0" style="width:100%;">
+                        <div class="well lighter row marginleft0" style="min-height:150px;">     
+                        <h3 class="well-legend">Contact Information</h3>                   
+                            <table class="table">
+                                <tr>
+                                    <td width="50%"><label class="control-label">Phone:</label>
+                                    	<div class="input-prepend">
+                                        	<span class="add-on"><?php echo '+'.$countrycode; ?></span><input name="phone" id="phone" type="text" maxlength="10" class="span2 xhastooltip" style="width:110px;" value="<?php echo $user->getFormattedPhone(); ?>" title="<?php // echo $this->translate("farmer_phone_tooltip"); ?>" />
+                                        </div>
+                                        <?php if($user->isUserInActive() || isEmptyString($user->getID())){ ?>
+                                             <div class="blocked" style="margin-top:5px;"><input type="checkbox" name="isphoneinvited" id="isphoneinvited" value="1" style="margin-top:0;" /> &nbsp;
+                                             <label class="lineblocked">Invite to activate via Phone</label></div>
+                                        <?php } ?>
+                                        <div id="phone_error"></div>
+                                    </td>
+                                    <td>
+                                    	<label class="control-label">Alt Phone:</label>
+                                        <div class="input-prepend">
+                                        	<span class="add-on"><?php echo '+'.$countrycode; ?></span><input name="phone2" id="phone2" type="text" maxlength="10" class="span2 xhastooltip" style="width:110px;" value="<?php echo $user->getFormattedPhone2(); ?>" title="<?php // echo $this->translate("farmer_phone_tooltip"); ?>" />
+                                        </div>
+                                        <div id="phone2_error"></div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><label class="control-label">Email:</label>
+                                    	<input type="text" name="email" id="email" class="span3 xhastooltip"  value="<?php echo isEmptyString($user->getEmail()) ? $user->getEmail() : $user->getEmail(); ?>" title="<?php // echo $this->translate("farmer_email_tooltip"); ?>"/>
+                                        <?php if($user->isUserInActive() || isEmptyString($user->getID())){ ?>
+                                             <div class="blocked" style="margin-top:5px;"><input type="checkbox" name="isinvited" id="isinvited" value="1" /> &nbsp;
+                                             <label class="lineblocked">Invite to activate via Email</label></div>
+                                        <?php } ?>
+                                    </td>
+                                    <td>
+                                    	<label class="control-label">Alt Email:</label>
+                                        <input type="text" name="email2" id="email2" class="span3 xhastooltip" value="<?php echo $user->getEmail2(); ?>" title="<?php // echo $this->translate("farmer_phone2_tooltip"); ?>" />
+                                    </td>
+                                </tr>
+                                
+                            </table>
                         </div>
-                        <table class="table margin10 noborder nohover">  
-                            <tr>		  
-                                <td width="35%"><label class="control-label"><?php echo $this->translate("farmer_maritalstatus_label"); ?>:</label>
-                                    <?php
-                                        $maritalstatuses = getAllMaritalStatuses();
-                                        $maritalstatusesdropdown = new Zend_Form_Element_Select('maritalstatus',
-                                                            array(
-                                                                'multiOptions' => array_merge_maintain_keys(array('' => '<Select One>'), $maritalstatuses),								
-                                                                'view' => new Zend_View(),
-                                                                'decorators' => array('ViewHelper'),
-                                                                'class' => array('filterselect', 'xhastooltip', 'span2'),
-                                                                'title' => $this->translate("farmer_maritalstatus_tooltip")
-                                                            )
-                                                        );
-                                        $maritalstatusesdropdown->setValue($user->getMaritalStatus()); 
-                                        echo $maritalstatusesdropdown->render(); 
-                                   ?><input type="hidden" id="maritalstatus_old" name="maritalstatus_old" value="<?php echo $user->getMaritalStatus(); ?>" />
-                                </td>
-                                <td width="30%"><label class="control-label"><?php echo $this->translate("farmer_educlevel_label"); ?>:</label>
+                    </span>
+                </div>
+                <div class="well lighter row marginleft0" style="min-height:100px;">
+                    <h3 class="well-legend">Address</h3>
+                    <table class="table">                       
+                       <tr>
+                            <td width="35%"><label class="control-label">Country:</label>
+								<?php
+                                    $countries = getCountries();
+                                    $countrydropdown = new Zend_Form_Element_Select('country',
+                                                        array(
+                                                            'multiOptions' => array_merge_maintain_keys(array('' => "<Select One>", "UG"=>"Uganda"), $countries),
+                                                            'view' => new Zend_View(), 
+                                                            'decorators' => array('ViewHelper'),
+                                                            'class' => array('country', 'xchzn-select', 'disabledfield')                                                            )
+                                                    );
+                                    $countrydropdown->setValue($user->getCountry()); 
+                                    echo $countrydropdown->render(); 
+                                ?><input type="hidden" name="country" id="country" value="<?php echo $user->getCountry(); ?>" />
+                                <span id="tooltip_country"></span><div id="country_error"></div>
+                            </td>
+                            <td width="30%"><label class="control-label"><?php echo $location_label; ?>:</label>
+                                <?php
+									$districts = getDistricts($session->getVar('country'));
+									$districtdropdown = new Zend_Form_Element_Select('locationid',
+														array(
+															'multiOptions' => array_merge_maintain_keys(array('' => '<Select One>'), $districts),								
+															'view' => new Zend_View(),
+															'decorators' => array('ViewHelper'),
+															'class' => array('filterselect', 'country')
+														)
+													);
+									$districtdropdown->setValue($user->getLocationID()); 
+									echo $districtdropdown->render(); 
+							   ?>
+							   <span id="tooltip_districtid"></span><div id="districtid_error"></div>
+                            </td>
+                            <td width="35%"><label class="control-label"><?php echo $county_label; ?>:</label>
+                                <select name="countyid" id="countyid" class="country">
+                                  <option value="">&lt;Select One&gt;</option>
+                                </select>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><label class="control-label"><?php echo $subcounty_label; ?>:</label>
+                                <select name="subcountyid" id="subcountyid" class="country">
+                                  <option value="">&lt;Select One&gt;</option>
+                                </select>
+                            </td>
+                            <td><?php if($user->isUgandan()){ ?>
+                            	<label class="control-label">Parish:</label>
+                                <div class="parish_text inline">
+                                    <input type="text" name="parishname" id="parishname" class="span2" value="<?php //echo $user->getVillageName(); ?>"  />
+                                </div>
+                                <div class="parish_select inline">
+                                    <select name="parishid" id="parishid" class="span2">
+                                      <option value="">&lt;Select One&gt;</option>
+                                    </select>
+                                </div>
+                                &nbsp;<input type="checkbox" name="parishtrigger" id="parishtrigger" class="lineblocked" value="1" title="Switch entry mode" placeholder="enter free text" /> 
+                                <div id="parishname_error"></div><div id="parishid_error"></div>
+                                <?php } ?>
+                            </td>
+                            <td>
+                            	<?php if($user->isUgandan()){ ?>
+                            	<label class="control-label">Village:</label>
+                            	<div class="village_text inline">
+                                    <input type="text" name="villagename" id="villagename" class="span2" value="<?php //echo $user->getVillageName(); ?>"  />
+                                </div>
+                                <div class="village_select inline">
+                                    <select name="villageid" id="villageid" class="span2">
+                                      <option value="">&lt;Select One&gt;</option>
+                                    </select>
+                                </div>
+                                &nbsp;<input type="checkbox" name="villagetrigger" id="villagetrigger" class="lineblocked" value="1" title="Switch entry mode" placeholder="enter free text" /> 
+                                <div id="villagename_error"></div><div id="villageid_error"></div>
+                                <?php } ?>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><label class="control-label">Postal/Street Address</label>
+                              	<textarea name="streetaddress" id="streetaddress" class="span4 expanding" style="min-height:60px;"><?php echo $user->getStreetAddress(); ?></textarea>
+                            </td>
+                            <td><label class="control-label">GPS Latitude:</label>
+                            	<input name="lat" id="lat" type="text" class="span2 xhastooltip" value="<?php echo $user->getLat(); ?>" title="<?php // echo $this->translate("farmer_latitude_tooltip"); ?>" />
+                            </td>
+                            <td><label class="control-label">GPS Longitude:</label>
+                            	<input name="lng" id="lng" type="text" class="span2 xhastooltip" value="<?php echo $user->getLng(); ?>" title="<?php // echo $this->translate("farmer_longitude_tooltip"); ?>" />
+                            </td>
+                        </tr>
+                    </table>
+                </div>                
+            <?php } ?>
+            </form>   	
+        </div>
+        <div id="personal">
+            <h2>Personal Information</h2>
+            <form id="profileform-personal" class="form-horizontal personal" action="<?php echo $posturl; ?>" method="post">
+            <?php if($tab == 'personal'){ ?>
+                <?php if(!isEmptyString($session->getVar(SUCCESS_MESSAGE)) ){ ?>
+                    <div class="alert alert-success"><a class="close" data-dismiss="alert">×</a><?php echo $session->getVar(SUCCESS_MESSAGE); ?></div>
+                <?php } ?>	
+                <?php if($sessionhaserror) { ?>
+                    <div class="alert alert-error"><?php echo $session->getVar(ERROR_MESSAGE); ?></div>
+                <?php } ?>
+                <div class="row margin0 padding0">
+                	<div class="divider10"></div>
+                    <a href="javascript:doNothing();" class="btn"><i class="icon-remove"></i> <?php echo $this->translate('global_button_cancel'); ?></a>
+                    <button type="submit" class="btn btn-primary savethenview"><i class="icon-ok icon-white"></i> <?php echo $this->translate('global_button_save_changes'); ?></button>
+                    <input type="hidden" name="entityname" value="UserAccount" />
+                    <input type="hidden" id="id" name="id" value="<?php echo encode($user->getID()); ?>" /> 
+                    <input type="hidden" id="userid" name="userid" value="<?php echo $user->getID(); ?>" /> 
+                    <input type="hidden" id="farmgroupid" name="farmgroupid" value="<?php echo $user->getFarmGroupID(); ?>" /> 
+                    <input type="hidden" class="successurl" id="<?php echo URL_SUCCESS; ?>" name="<?php echo URL_SUCCESS; ?>" title="general" />
+                    <input type="hidden" class="failureurl" id="<?php echo URL_FAILURE; ?>" name="<?php echo URL_FAILURE; ?>" title="general" />
+                    <input type="hidden" id="<?php echo SUCCESS_MESSAGE; ?>" name="<?php echo SUCCESS_MESSAGE; ?>" value="Profile updated successfully" />
+                </div>
+                <div class="divider10"></div>
+                <div class="well row marginleft0" style="min-height:75px;"> 
+                    <h3 class="well-legend">Family</h3>
+                    <table class="table margin0">                       
+                       <tr>		  
+                            <td width="30%" style="padding-left:0;"><label class="control-label"><?php echo $this->translate("farmer_maritalstatus_label"); ?>:</label>
+                            <?php
+                                $maritalstatuses = getAllMaritalStatuses();
+                                $maritalstatusesdropdown = new Zend_Form_Element_Select('maritalstatus',
+                                                    array(
+                                                        'multiOptions' => array_merge_maintain_keys(array('' => '<Select One>'), $maritalstatuses),								
+                                                        'view' => new Zend_View(),
+                                                        'decorators' => array('ViewHelper'),
+                                                        'class' => array('filterselect', 'xhastooltip', 'span2'),
+                                                        'title' => $this->translate("farmer_maritalstatus_tooltip")
+                                                    )
+                                                );
+                                $maritalstatusesdropdown->setValue($user->getMaritalStatus()); 
+                                echo $maritalstatusesdropdown->render(); 
+                           ?><input type="hidden" id="maritalstatus_old" name="maritalstatus_old" value="<?php echo $user->getMaritalStatus(); ?>" /></td>
+                            <td width="20%"><label class="control-label"><?php echo $this->translate("farmer_nochildren_label"); ?>:</label>
+                            <input name="numberofchildren" id="numberofchildren" type="text" class="span1 xhastooltip centeralign isnumber" value="<?php echo $user->getNumberOfChildren(); ?>" title="<?php // echo $this->translate("farmer_nochildren_tooltip"); ?>" />
+                            <input type="hidden" id="numberofchildren_old" name="numberofchildren_old" value="<?php echo $user->getNumberOfChildren(); ?>" />
+                            <div id="numberofchildren_error"></div></td>
+                            <td width="20%"><label class="control-label"><?php echo $this->translate("farmer_nodependants_label"); ?>:</label>
+                            <input name="numberofdependants" id="numberofdependants" type="text" class="span1 xhastooltip centeralign isnumber" value="<?php echo $user->getNumberOfDependants(); ?>" title="<?php // echo $this->translate("farmer_nodependants_tooltip"); ?>" />
+                            <input type="hidden" id="numberofdependants_old" name="numberofdependants_old" value="<?php echo $user->getNumberOfDependants(); ?>" />
+                            <div id="numberofdependants_error"></div></td>
+                            <td><label class="control-label"><?php echo $this->translate("farmer_totalhousehold_label"); ?>:</label>
+                            <input name="totalhousehold" id="totalhousehold" type="text" class="span1 xhastooltip centeralign isnumber" value="<?php echo $user->getTotalHousehold(); ?>" title="<?php // echo $this->translate("farmer_totalhousehold_tooltip"); ?>" />
+                            <input type="hidden" id="totalhousehold_old" name="totalhousehold_old" value="<?php echo $user->getTotalHousehold(); ?>" />
+                            <div id="totalhousehold_error"></div>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="well row marginleft0" style="min-height:100px;">
+                    <h3 class="well-legend"><?php echo $this->translate("farmer_nextofkin_label"); ?></h3>
+                    <table class="table">                       
+                       <tr>		  
+                            <td width="30%"><label class="control-label"><?php echo $this->translate("global_name_label"); ?>:</label>
+                            <input name="nextofkin_name" id="nextofkin_name" type="text" class="span3 xhastooltip" style="width:150px;" value="<?php echo $user->getNextofkin_Name(); ?>" title="<?php // echo $this->translate("farmer_nextofkin_name_label"); ?>" />
+                            </td>
+                            <td width="30%"><label class="control-label"><?php echo $this->translate("global_phone_label"); ?>:</label>
+                                <div class="input-prepend">
+                                    <span class="add-on"><?php echo '+'.$countrycode; ?></span><input name="nextofkin_phone" id="nextofkin_phone" type="text" maxlength="10" class="span2 xhastooltip isnumber" style="width:110px;" value="<?php echo $user->getNextofkin_phone(); ?>" title="<?php // echo $this->translate("farmer_phone_tooltip"); ?>" placeholder="e.g 0772123456" />
+                                </div>
+                                <div id="nextofkin_phone_error"></div>
+                            </td>
+                            <td><label class="control-label"><?php echo $this->translate("global_email_label"); ?>:</label>
+                            <input name="nextofkin_email" id="nextofkin_email" type="text" class="span3 xhastooltip" style="width:180px;" value="<?php echo $user->getNextofkin_email(); ?>" title="<?php // echo $this->translate("farmer_nextofkin_email_label"); ?>" /><div id="nextofkin_email_error"></div>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+				<div class="well row marginleft0" style="min-height:100px;">
+                    <h3 class="well-legend">Other Information</h3>                       
+                    <table class="table">
+                        <tr>		  
+                            <td width="40%"><label class="control-label"><?php echo $this->translate("farmer_educlevel_label"); ?>:</label>
                                     <?php
                                         $educlevels = getAllEducationLevels();
                                         $educleveldropdown = new Zend_Form_Element_Select('educationlevel',
@@ -803,389 +1042,255 @@ select#salutation {
                                         echo $educleveldropdown->render(); 
                                    ?>
                                    <input type="hidden" id="educationlevel_old" name="educationlevel_old" value="<?php echo $user->getEducationLevel(); ?>" /></td>
-                                <td></td>
-                            </tr>
-                            <tr>		  
-                                <td><label class="control-label"><?php echo $this->translate("farmer_nochildren_label"); ?>:</label>
-                                    <input name="numberofchildren" id="numberofchildren" type="text" class="span1 xhastooltip centeralign isnumber" value="<?php echo $user->getNumberOfChildren(); ?>" title="<?php // echo $this->translate("farmer_nochildren_tooltip"); ?>" />
-                                    <input type="hidden" id="numberofchildren_old" name="numberofchildren_old" value="<?php echo $user->getNumberOfChildren(); ?>" />
-                                    <div id="numberofchildren_error"></div>
-                                </td>
-                                <td><label class="control-label"><?php echo $this->translate("farmer_nodependants_label"); ?>:</label>
-                                    <input name="numberofdependants" id="numberofdependants" type="text" class="span1 xhastooltip centeralign isnumber" value="<?php echo $user->getNumberOfDependants(); ?>" title="<?php // echo $this->translate("farmer_nodependants_tooltip"); ?>" />
-                                    <input type="hidden" id="numberofdependants_old" name="numberofdependants_old" value="<?php echo $user->getNumberOfDependants(); ?>" />
-                                    <div id="numberofdependants_error"></div></td>
-                                <td><label class="control-label"><?php echo $this->translate("farmer_totalhousehold_label"); ?>:</label>
-                                    <input name="totalhousehold" id="totalhousehold" type="text" class="span1 xhastooltip centeralign isnumber" value="<?php echo $user->getTotalHousehold(); ?>" title="<?php // echo $this->translate("farmer_totalhousehold_tooltip"); ?>" />
-                                    <input type="hidden" id="totalhousehold_old" name="totalhousehold_old" value="<?php echo $user->getTotalHousehold(); ?>" />
-                                    <div id="totalhousehold_error"></div>
-                                </td>
-                            </tr>
-                           <tr>		  
-                                <td><label class="control-label"><?php echo $this->translate("farmer_nextofkin_label"); ?> <?php echo $this->translate("global_name_label"); ?>:</label>
-                                    <input name="nextofkin_name" id="nextofkin_name" type="text" class="span3 xhastooltip" style="width:150px;" value="<?php echo $user->getNextofkin_Name(); ?>" title="<?php // echo $this->translate("farmer_nextofkin_name_label"); ?>" />
-                                </td>
-                                <td><label class="control-label"><?php echo $this->translate("farmer_nextofkin_label"); ?> <?php echo $this->translate("global_phone_label"); ?>:</label>
-                                    <div class="input-prepend">
-                                        <span class="add-on"><?php echo '+'.$countrycode; ?></span><input name="nextofkin_phone" id="nextofkin_phone" type="text" maxlength="10" class="span2 xhastooltip isnumber" style="width:110px;" value="<?php echo $user->getNextofkin_phone(); ?>" title="<?php // echo $this->translate("farmer_phone_tooltip"); ?>" placeholder="e.g 0772123456" />
-                                    </div>
-                                    <div id="nextofkin_phone_error"></div>
-                                </td>
-                                <td><label class="control-label"><?php echo $this->translate("farmer_nextofkin_label"); ?> <?php echo $this->translate("global_email_label"); ?>:</label>
-                                    <input name="nextofkin_email" id="nextofkin_email" type="text" class="span3 xhastooltip" style="width:180px;" value="<?php echo $user->getNextofkin_email(); ?>" title="<?php // echo $this->translate("farmer_nextofkin_email_label"); ?>" /><div id="nextofkin_email_error"></div>
-                                </td>
-                            </tr>
-                        </table>
-                    </fieldset>
-            	<?php } ?>
-                <fieldset class="fieldsetcontainer well">
-                    <legend>Location</legend>
-                    <table class="table margin10 noborder nohover">                       
-                        <tr>
-                            <td width="33%"><label class="control-label">Country: <?php echo $this->translate("global_required_field_marker"); ?></label>
-                                <?php
-                                    $countries = getCountries();
-                                    $countrydropdown = new Zend_Form_Element_Select('country',
-                                                        array(
-                                                            'multiOptions' => array_merge_maintain_keys(array('' => "<Select One>", "UG"=>"Uganda"), $countries),
-                                                            'view' => new Zend_View(), 
-                                                            'decorators' => array('ViewHelper'),
-                                                            'class' => array('country', 'xchzn-select', 'disabledfield')                                                            )
-                                                    );
-                                    $countrydropdown->setValue($user->getCountry()); 
-                                    echo $countrydropdown->render(); 
-                                ?><input type="hidden" name="country" id="country" value="<?php echo $user->getCountry(); ?>" />
-                                <span id="tooltip_country"></span><div id="country_error"></div>
-                            </td>
-                            <td width="33%"><label class="control-label"><?php echo $location_label; ?>: <?php echo $this->translate("global_required_field_marker"); ?></label>
-                               <?php
-									$districts = getDistricts($session->getVar('country'));
-									$districtdropdown = new Zend_Form_Element_Select('locationid',
-														array(
-															'multiOptions' => array_merge_maintain_keys(array('' => '<Select One>'), $districts),								
-															'view' => new Zend_View(),
-															'decorators' => array('ViewHelper'),
-															'class' => array('filterselect', 'country')
-														)
-													);
-									$districtdropdown->setValue($user->getLocationID()); 
-									echo $districtdropdown->render(); 
-							   ?>
-							   <div id="locationid_error"></div>
-                            </td>
-                            <td><label class="control-label"><?php echo $county_label; ?>:</label>
-                                <select name="countyid" id="countyid" class="country">
-                                  <option value="">&lt;Select One&gt;</option>
-                                </select>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td><label class="control-label"><?php echo $subcounty_label; ?>:</label>
-                                <select name="subcountyid" id="subcountyid" class="country">
-                                  <option value="">&lt;Select One&gt;</option>
-                                </select>
-                            </td>
-                            <td>
-                            	<?php if($user->isUgandan()){ ?>
-                                    <label class="control-label">Parish:</label>
-                                    <div class="parish_text inline">
-                                        <input type="text" name="parishname" id="parishname" class="span2" value="<?php //echo $user->getVillageName(); ?>"  />
-                                    </div>
-                                    <div class="parish_select inline">
-                                        <select name="parishid" id="parishid" class="span2">
-                                          <option value="">&lt;Select One&gt;</option>
-                                        </select>
-                                    </div>
-                                    &nbsp;<input type="checkbox" name="parishtrigger" id="parishtrigger" class="lineblocked" value="1" title="Switch entry mode" placeholder="enter free text" /> 
-                                    <div id="parishname_error"></div><div id="parishid_error"></div>
-                                <?php } ?>
-                            </td>
-                            <td>
-								<?php if($user->isUgandan()){ ?>
-                                    <label class="control-label">Village:</label>
-                                    <div class="village_text inline">
-                                        <input type="text" name="villagename" id="villagename" class="span2" value="<?php //echo $user->getVillageName(); ?>"  />
-                                    </div>
-                                    <div class="village_select inline">
-                                        <select name="villageid" id="villageid" class="span2">
-                                          <option value="">&lt;Select One&gt;</option>
-                                        </select>
-                                    </div>
-                                    &nbsp;<input type="checkbox" name="villagetrigger" id="villagetrigger" class="lineblocked" value="1" title="Switch entry mode" placeholder="enter free text" /> 
-                                    <div id="villagename_error"></div><div id="villageid_error"></div>
-                                <?php } ?>                           
-                        	</td>
-                        </tr>
-                        <tr>
-                            <td><label class="control-label">Postal/Street Address</label>
-                              	<textarea name="streetaddress" id="streetaddress" class="span4 expanding" style="min-height:60px;"><?php echo $user->getStreetAddress(); ?></textarea>
-                            </td>
-                            <td><label class="control-label">GPS Latitude:</label>
-                            	<input name="lat" id="lat" type="text" class="span2 xhastooltip" value="<?php echo $user->getLat(); ?>" title="<?php // echo $this->translate("farmer_latitude_tooltip"); ?>" /></td>
-                            <td><label class="control-label">GPS Longitude:</label>
-                            	<input name="lng" id="lng" type="text" class="span2 xhastooltip" value="<?php echo $user->getLng(); ?>" title="<?php // echo $this->translate("farmer_longitude_tooltip"); ?>" /></td>
+                            <td></td>
                         </tr>
                     </table>
-              	</fieldset>
-        	</div>
-         
+                </div>                
             <?php } ?>
-        	</form> 
+            </form>  	
         </div>
-        <?php if(!isEmptyString($user->getID())){ ?>
-			<?php if($user->isFarmer()) {?>
-                <div id="farm">
-                    <h2>Manage Farm</h2>
-                    <form id="profileform-farm" class="form-horizontal farm" action="<?php echo $posturl; ?>" method="post">
-                        <?php if($tab == 'farm'){ ?>
-                            <div class="divider5"></div>
-                            <div class="row margin0 padding0">
-                                 <a href="javascript:doNothing();" class="btn"><i class="icon-remove"></i> <?php echo $this->translate('global_button_cancel'); ?></a>
-                                <button type="submit" class="btn btn-primary savethenview"><i class="icon-ok icon-white"></i> <?php echo $this->translate('global_button_save_changes'); ?></button>
-                                <input type="hidden" name="entityname" value="UserAccount" />
-                                <input type="hidden" id="id" name="id" value="<?php echo encode($user->getID()); ?>" /> 
-                                <input type="hidden" id="userid" name="userid" value="<?php echo $user->getID(); ?>" /> 
-                                <input type="hidden" class="successurl" id="<?php echo URL_SUCCESS; ?>" name="<?php echo URL_SUCCESS; ?>" title="general" />
-                                <input type="hidden" class="failureurl" id="<?php echo URL_FAILURE; ?>" name="<?php echo URL_FAILURE; ?>" title="general" />
-                                <input type="hidden" id="<?php echo SUCCESS_MESSAGE; ?>" name="<?php echo SUCCESS_MESSAGE; ?>" value="Profile updated successfully" />
-                            </div> 
-                            <div class="divider10"></div>
-                            <div class="row margin0 padding0" style="width:98%;">
-                                <span style="width:49%; float:left;">
-                                    <div class="well lighter row marginleft0" id="farmleft" style="min-height:325px;"> 
-                                        <h3 class="well-legend">Manage Farm</h3>
-                                        <table class="table"> 
-                                            <tr>
-                                                <td><label class="control-label"><?php echo $this->translate("farm_name_label"); ?>:</label>
-                                                <input type="text" name="businessname" id="businessname" value="<?php echo $user->getName(); ?>" class="xhastooltip" style="width:80%;" title="<?php // echo $this->translate("farm_businessname_tooltip"); ?>" /><div id="businessname_error"></div>
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <td><label class="control-label">Practicing Farming Since:</label>
-                                                    <div class="blocked">
-                                                        <?php
-                                                            $years = getAllYears("63","0");
-                                                            $yeardp = new Zend_Form_Element_Select('bizstartyear',
-                                                                                array(
-                                                                                    'multiOptions' => array_merge_maintain_keys(array('' => 'Year'), $years),	
-                                                                                    'view' => new Zend_View(),
-                                                                                    'decorators' => array('ViewHelper'),
-                                                                                    'class' => array('birth'),
-                                                                                    'title' => 'Select Year'		
-                                                                                )
-                                                                            );
-                                                            $yeardp->setValue($user->getBizStartYear()); 
-                                                            echo $yeardp->render(); 
-                                                        ?>
-                                                        <?php
-                                                            $monthdp = new Zend_Form_Element_Select('bizstartmonth',
-                                                                                array(
-                                                                                    'multiOptions' => array_merge_maintain_keys(array('' => 'Month'), getAllMonthsAsShortNames()),	
-                                                                                    'view' => new Zend_View(),
-                    
-                                                                                    'decorators' => array('ViewHelper'),
-                                                                                    'class' => array('span2x'),
-                                                                                    'style' => "width:75px;",
-                                                                                    'title' => 'Select Month'		
-                                                                                )
-                                                                            );
-                                                            $monthdp->setValue($user->getBizStartMonth()); 
-                                                            echo $monthdp->render(); 
-                                                        ?>
-                                                        <div id="bizstartyear_error"></div><div id="bizstartmonth_error"></div>
-                                                        <input type="hidden" id="bizstartyear_old" name="bizstartyear_old" value="<?php echo $user->getbizstartyear(); ?>" />
-                                                        <input type="hidden" id="bizstartmonth_old" name="bizstartmonth_old" value="<?php echo $user->getbizstartmonth(); ?>" />
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <td><label class="control-label"><?php echo $this->translate("farm_numberofemployees_label"); ?>:</label>
-                                                <input name="numberofemployees" id="numberofemployees" type="text" class="span1 isnumber xhastooltip" value="<?php echo $user->getNumberOfEmployees(); ?>" title="<?php // echo $this->translate("farm_numberofemployees_tooltip"); ?>" /><div class="numberofemployees_error"></div>
-                                                <input type="hidden" id="numberofemployees_old" name="numberofemployees_old" value="<?php echo $user->getnumberofemployees(); ?>" />
-                                                </td>
-                                            </tr>
-                                            <?php if($user->isFarmer()){ ?>
-                                            <tr>
-                                                <td><label class="control-label">Types of Farming Practiced</label>
+        <?php if($user->isFarmer()) {?>
+            <div id="farm">
+                <h2>Manage Farm</h2>
+                <form id="profileform-farm" class="form-horizontal farm" action="<?php echo $posturl; ?>" method="post">
+                    <?php if($tab == 'farm'){ ?>
+                        <div class="divider5"></div>
+                        <div class="row margin0 padding0">
+							 <a href="javascript:doNothing();" class="btn"><i class="icon-remove"></i> <?php echo $this->translate('global_button_cancel'); ?></a>
+                            <button type="submit" class="btn btn-primary savethenview"><i class="icon-ok icon-white"></i> <?php echo $this->translate('global_button_save_changes'); ?></button>
+                            <input type="hidden" name="entityname" value="UserAccount" />
+                            <input type="hidden" id="id" name="id" value="<?php echo encode($user->getID()); ?>" /> 
+                            <input type="hidden" id="userid" name="userid" value="<?php echo $user->getID(); ?>" /> 
+                            <input type="hidden" class="successurl" id="<?php echo URL_SUCCESS; ?>" name="<?php echo URL_SUCCESS; ?>" title="general" />
+                            <input type="hidden" class="failureurl" id="<?php echo URL_FAILURE; ?>" name="<?php echo URL_FAILURE; ?>" title="general" />
+                            <input type="hidden" id="<?php echo SUCCESS_MESSAGE; ?>" name="<?php echo SUCCESS_MESSAGE; ?>" value="Profile updated successfully" />
+                        </div> 
+                        <div class="divider10"></div>
+                        <div class="row margin0 padding0" style="width:98%;">
+                            <span style="width:49%; float:left;">
+                                <div class="well lighter row marginleft0" id="farmleft" style="min-height:325px;"> 
+                                    <h3 class="well-legend">Manage Farm</h3>
+                                    <table class="table"> 
+                                        <tr>
+                                            <td><label class="control-label"><?php echo $this->translate("farm_name_label"); ?>:</label>
+                                            <input type="text" name="businessname" id="businessname" value="<?php echo $user->getName(); ?>" class="xhastooltip" style="width:80%;" title="<?php // echo $this->translate("farm_businessname_tooltip"); ?>" /><div id="businessname_error"></div>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td><label class="control-label">Practicing Farming Since:</label>
+                                                <div class="blocked">
                                                     <?php
-                                                          $listdropdown = new Zend_Form_Element_Multiselect('farmingtypeids',
-                                                                  array(
-                                                                          'multiOptions' => getFarmingTypes(),
-                                                                          'view' => new Zend_View(),
-                                                                          'decorators' => array(array('ViewHelper')),
-                                                                          'class' => array('chzn-select','multipleselect','span5','xhastooltip_custom'),
-                                                                          'title' => $this->translate("farmer_farmingtypes_tooltip")
-                                                                  )
-                                                          );
-                                                          
-                                                          $listdropdown->setValue($user->getFarmingTypeIDs());
-                                                          $listdropdown->setAttrib("data-placeholder", 'Select all in category');
-                                                          echo $listdropdown->render();
-                                                      ?><input type="hidden" id="farmingtypeids_old" name="farmingtypeids_old" value="<?php echo $user->getfarmingtypes(); ?>" />
-                                                      <span id="tooltip_farmingtypes"></span>
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <td><label class="control-label">Farming Tools Used</label>
+                                                        $years = getAllYears("63","0");
+                                                        $yeardp = new Zend_Form_Element_Select('bizstartyear',
+                                                                            array(
+                                                                                'multiOptions' => array_merge_maintain_keys(array('' => 'Year'), $years),	
+                                                                                'view' => new Zend_View(),
+                                                                                'decorators' => array('ViewHelper'),
+                                                                                'class' => array('birth'),
+                                                                                'title' => 'Select Year'		
+                                                                            )
+                                                                        );
+                                                        $yeardp->setValue($user->getBizStartYear()); 
+                                                        echo $yeardp->render(); 
+                                                    ?>
                                                     <?php
-                                                      $listdropdown = new Zend_Form_Element_Multiselect('farmingtoolsids',
+                                                        $monthdp = new Zend_Form_Element_Select('bizstartmonth',
+                                                                            array(
+                                                                                'multiOptions' => array_merge_maintain_keys(array('' => 'Month'), getAllMonthsAsShortNames()),	
+                                                                                'view' => new Zend_View(),
+                
+                                                                                'decorators' => array('ViewHelper'),
+                                                                                'class' => array('span2x'),
+                                                                                'style' => "width:75px;",
+                                                                                'title' => 'Select Month'		
+                                                                            )
+                                                                        );
+                                                        $monthdp->setValue($user->getBizStartMonth()); 
+                                                        echo $monthdp->render(); 
+                                                    ?>
+                                                    <div id="bizstartyear_error"></div><div id="bizstartmonth_error"></div>
+                                                    <input type="hidden" id="bizstartyear_old" name="bizstartyear_old" value="<?php echo $user->getbizstartyear(); ?>" />
+                                                    <input type="hidden" id="bizstartmonth_old" name="bizstartmonth_old" value="<?php echo $user->getbizstartmonth(); ?>" />
+                                                </div>
+											</td>
+                                        </tr>
+                                        <tr>
+                                            <td><label class="control-label"><?php echo $this->translate("farm_numberofemployees_label"); ?>:</label>
+                                            <input name="numberofemployees" id="numberofemployees" type="text" class="span1 isnumber xhastooltip" value="<?php echo $user->getNumberOfEmployees(); ?>" title="<?php // echo $this->translate("farm_numberofemployees_tooltip"); ?>" /><div class="numberofemployees_error"></div>
+                                            <input type="hidden" id="numberofemployees_old" name="numberofemployees_old" value="<?php echo $user->getnumberofemployees(); ?>" />
+                                            </td>
+                                        </tr>
+                                        <?php if($user->isFarmer()){ ?>
+                                        <tr>
+                                            <td><label class="control-label">Types of Farming Practiced</label>
+                                                <?php
+                                                      $listdropdown = new Zend_Form_Element_Multiselect('farmingtypeids',
                                                               array(
-                                                                  'multiOptions' => getFarmingTools(),
-                                                                  'view' => new Zend_View(),
-                                                                  'decorators' => array(array('ViewHelper')),
-                                                                  'class' => array('chzn-select','multipleselect','span4','xhastooltip_custom'),
-                                                                  'title' => $this->translate("farmer_farmingtools_tooltip")
+                                                                      'multiOptions' => getFarmingTypes(),
+                                                                      'view' => new Zend_View(),
+                                                                      'decorators' => array(array('ViewHelper')),
+                                                                      'class' => array('chzn-select','multipleselect','span5','xhastooltip_custom'),
+                                                                      'title' => $this->translate("farmer_farmingtypes_tooltip")
                                                               )
                                                       );
                                                       
-                                                      $listdropdown->setValue($user->getFarmingToolsIDs());
+                                                      $listdropdown->setValue($user->getFarmingTypeIDs());
                                                       $listdropdown->setAttrib("data-placeholder", 'Select all in category');
                                                       echo $listdropdown->render();
-                                                  ?><span id="tooltip_farmingtoolsids"></span>
-                                                  <input type="hidden" id="farmingtoolsids_old" name="farmingtoolsids_old" value="<?php echo $user->getfarmingtools(); ?>" />
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <td><label class="control-label">Other Income Generating Activities</label>
-                                                    <?php
-                                                          $listdropdown = new Zend_Form_Element_Multiselect('activitytypeids',
-                                                                  array(
-                                                                          'multiOptions' => getOtherActivityTypes(),
-                                                                          'view' => new Zend_View(),
-                                                                          'decorators' => array(array('ViewHelper')),
-                                                                          'class' => array('chzn-select','multipleselect','span5','xhastooltip_custom'),
-                                                                          'title' => $this->translate("farmer_activitytypes_tooltip")
-                                                                  )
-                                                          );
-                                                          
-                                                          $listdropdown->setValue($user->getActivityTypeIDs());
-                                                          $listdropdown->setAttrib("data-placeholder", 'Select all in category');
-                                                          echo $listdropdown->render();
-                                                      ?><input type="hidden" id="activitytypeids_old" name="activitytypeids_old" value="<?php echo $user->getactivitytypes(); ?>" />
-                                                      <span id="tooltip_activitytypes"></span>
-                                                </td>
-                                            </tr>
-                                            <?php } ?>
-                                        </table>
-                                    </div>
-                                </span>
-                                <span style="width:49%; float:right;">
-                                    <div class="well lighter row marginleft0" id="farmright" style="min-height:450px; width:100%">
-                                        <h3 class="well-legend">Land Usage</h3>                       
-                                        <table class="table higherpadding"> 
-                                            <tr>
-                                                <td width="50%" class="nowrapping"><label class="control-label"><?php echo $this->translate("farm_landsize_label"); ?>:</label></td>
-                                                <td><input name="landsize" id="landsize" type="text" class="span1 isnumber" value="<?php echo clean_num($user->getLandSize()); ?>" />&nbsp;&nbsp;
-                                                    <?php
-                                                        $landunits = getAreaUnits();
-                                                        $landunitdropdown = new Zend_Form_Element_Select('landunits',
-                                                                            array(
-                                                                                'multiOptions' => array_merge_maintain_keys(array('' => '<Select>'), $landunits),								
-                                                                                'view' => new Zend_View(),
-                                                                                'decorators' => array('ViewHelper'),
-                                                                                'class' => array('filterselect', 'xhastooltip', 'unitselect'),
-                                                                                'title' => $this->translate("farm_landunits_tooltip"),
-                                                                                'style' => 'width:80px;'
-                                                                            )
-                                                                        );
-                                                        $landunitdropdown->setValue($user->getLandUnits()); 
-                                                        echo $landunitdropdown->render(); 
-                                                   ?><div id="landsize_error"></div><div id="landunits_error"></div>
-                                                   <input type="hidden" id="landsize_old" name="landsize_old" value="<?php echo $user->getlandsize(); ?>" />
-                                                   <input type="hidden" id="landunits_old" name="landunits_old" value="<?php echo $user->getlandunits(); ?>" />
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <td class="nowrapping"><label class="control-label"><?php echo $this->translate("farm_landsizeactive_label"); ?>:</label></td>
-                                                <td><input name="landactivesize" id="landactivesize" type="text" class="span1 isnumber xhastooltip" value="<?php echo clean_num($user->getLandActiveSize()); ?>" title="<?php // echo $this->translate("farm_landsize_tooltip"); ?>" /> <span class="pagedescription" id="activeland"></span><div id="landactivesize_error"></div>
-                                                <input type="hidden" id="landactivesize_old" name="landactivesize_old" value="<?php echo $user->getlandactivesize(); ?>" />
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <td class="nowrapping"><label class="control-label"><?php echo $this->translate("farm_landacquiremethod_label"); ?>:</label></td>
-                                                <td><?php
-                                                        $landmethods = getLandAcquireMethods();
-                                                        $landmethoddropdown = new Zend_Form_Element_Select('landacquiremethod',
-                                                                            array(
-                                                                                'multiOptions' => array_merge_maintain_keys(array('' => '<Select>'), $landmethods),								
-                                                                                'view' => new Zend_View(),
-                                                                                'decorators' => array('ViewHelper'),
-                                                                                'class' => array('filterselect', 'xhastooltip', 'span2'),
-                                                                                'title' => $this->translate("farm_landacquiremethod_tooltip"),
-                                                                                'style' => 'width:80px;'
-                                                                            )
-                                                                        );
-                                                        $landmethoddropdown->setValue($user->getLandAcquireMethod()); 
-                                                        echo $landmethoddropdown->render(); 
-                                                   ?><div id="landacquiremethod_error"></div>
-                                                   <input type="hidden" id="landacquiremethod_old" name="landacquiremethod_old" value="<?php echo $user->getlandacquiremethod(); ?>" />
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <td><label class="control-label">No of Farm Lands / Fields:</label></td>
-                                                <td colspan="2">
-                                                    <?php
-                                                        $fieldcount = array("1"=>"1","2"=>"2","3"=>"3","4"=>"4");
-                                                        $fieldsdropdown = new Zend_Form_Element_Select('numberoffields',
-                                                                            array(
-                                                                                'multiOptions' => $fieldcount,								
-                                                                                'view' => new Zend_View(),
-                                                                                'decorators' => array('ViewHelper'),
-                                                                                'class' => array('filterselect', 'xhastooltip', 'unitselect'),
-                                                                                'title' => $this->translate("farm_numberoffields_tooltip"),
-                                                                                'style' => 'width:80px;'
-                                                                            )
-                                                                        );
-                                                        $fieldsdropdown->setValue($user->getNumberOfFields()); 
-                                                        echo $fieldsdropdown->render(); 
-                                                   ?><div id="numberoffields_error"></div>
-                                                    <input type="hidden" id="numberoffields_old" name="numberoffields_old" value="<?php echo $user->getnumberoffields(); ?>" />
-                                                </td>
-                                            </tr>
-                                        </table>
-                                    </div>
-                                </span>
-                            </div>
-                            <div class="row" style="margin-left:0px; position:relative;">
-                                <h2>Crops</h2>
-                                <?php require APPLICATION_PATH."/views/scripts/profile/cropscolumn.phtml"; ?>
-                            </div> 
-                        <?php } ?>
-                    </form>
-                </div>
-                <?php if($acl->checkPermission('Farmer Seasons', ACTION_LIST)){ ?> 
-                    <div id="seasons">
-                        <h2>Manage Seasons</h2>
-                        <form id="profileform-seasons" class="form-horizontal seasons"></form>
-                    </div>
-                <?php } ?>
-                <?php if($acl->checkPermission('Farmer Calendar', ACTION_VIEW)){ ?>  
-                    <div id="calendar">
-                        <h2>Season Activity Calendar</h2>
-                        <form id="profileform-calendar" class="form-horizontal calendar clearfix"></form>
-                    </div>
-                <?php } ?>
-                <?php if($acl->checkPermission('Farmer Inventory', ACTION_LIST)){ ?> 
-                    <div id="inventory">
-                        <h2>Farm Inventory</h2>
-                        <form id="profileform-inventory" class="form-horizontal inventory"></form>
-                    </div>
-                <?php } ?>  
-                <div id="finance">
-                    <h2>Reports</h2>
-                    <form id="profileform-finance" class="form-horizontal finance"></form>
-                </div>
-            <?php } ?>  
-            <?php if($acl->checkPermission('Payments', ACTION_LIST)){ ?> 
-                <div id="subscription">
-                    <h2>Payment History</h2>
-                    <form id="profileform-subscription" class="form-horizontal subscription"></form>
-                </div>
-            <?php } ?>
-            <?php if(($isme || $acl->checkPermission($resourcename, ACTION_EDIT)) && !isEmptyString($user->getID())){ ?> 
-	            <?php require APPLICATION_PATH."/views/scripts/profile/settings.phtml"; ?>
-            <?php } ?>
-        <?php } ?>
+                                                  ?><input type="hidden" id="farmingtypeids_old" name="farmingtypeids_old" value="<?php echo $user->getfarmingtypes(); ?>" />
+                                                  <span id="tooltip_farmingtypes"></span>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td><label class="control-label">Farming Tools Used</label>
+												<?php
+                                                  $listdropdown = new Zend_Form_Element_Multiselect('farmingtoolsids',
+                                                          array(
+                                                              'multiOptions' => getFarmingTools(),
+                                                              'view' => new Zend_View(),
+                                                              'decorators' => array(array('ViewHelper')),
+                                                              'class' => array('chzn-select','multipleselect','span4','xhastooltip_custom'),
+                                                              'title' => $this->translate("farmer_farmingtools_tooltip")
+                                                          )
+                                                  );
+                                                  
+                                                  $listdropdown->setValue($user->getFarmingToolsIDs());
+                                                  $listdropdown->setAttrib("data-placeholder", 'Select all in category');
+                                                  echo $listdropdown->render();
+                                              ?><span id="tooltip_farmingtoolsids"></span>
+                                              <input type="hidden" id="farmingtoolsids_old" name="farmingtoolsids_old" value="<?php echo $user->getfarmingtools(); ?>" />
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td><label class="control-label">Other Income Generating Activities</label>
+                                                <?php
+                                                      $listdropdown = new Zend_Form_Element_Multiselect('activitytypeids',
+                                                              array(
+                                                                      'multiOptions' => getOtherActivityTypes(),
+                                                                      'view' => new Zend_View(),
+                                                                      'decorators' => array(array('ViewHelper')),
+                                                                      'class' => array('chzn-select','multipleselect','span5','xhastooltip_custom'),
+                                                                      'title' => $this->translate("farmer_activitytypes_tooltip")
+                                                              )
+                                                      );
+                                                      
+                                                      $listdropdown->setValue($user->getActivityTypeIDs());
+                                                      $listdropdown->setAttrib("data-placeholder", 'Select all in category');
+                                                      echo $listdropdown->render();
+                                                  ?><input type="hidden" id="activitytypeids_old" name="activitytypeids_old" value="<?php echo $user->getactivitytypes(); ?>" />
+                                                  <span id="tooltip_activitytypes"></span>
+                                            </td>
+                                        </tr>
+                                        <?php } ?>
+                                    </table>
+                                </div>
+                            </span>
+                            <span style="width:49%; float:right;">
+                                <div class="well lighter row marginleft0" id="farmright" style="min-height:450px; width:100%">
+                                    <h3 class="well-legend">Land Usage</h3>                       
+                                    <table class="table higherpadding"> 
+                                        <tr>
+                                            <td width="50%" class="nowrapping"><label class="control-label"><?php echo $this->translate("farm_landsize_label"); ?>:</label></td>
+                                            <td><input name="landsize" id="landsize" type="text" class="span1 isnumber" value="<?php echo clean_num($user->getLandSize()); ?>" />&nbsp;&nbsp;
+												<?php
+                                                    $landunits = getAreaUnits();
+                                                    $landunitdropdown = new Zend_Form_Element_Select('landunits',
+                                                                        array(
+                                                                            'multiOptions' => array_merge_maintain_keys(array('' => '<Select>'), $landunits),								
+                                                                            'view' => new Zend_View(),
+                                                                            'decorators' => array('ViewHelper'),
+                                                                            'class' => array('filterselect', 'xhastooltip', 'unitselect'),
+                                                                            'title' => $this->translate("farm_landunits_tooltip"),
+																			'style' => 'width:80px;'
+                                                                        )
+                                                                    );
+                                                    $landunitdropdown->setValue($user->getLandUnits()); 
+                                                    echo $landunitdropdown->render(); 
+                                               ?><div id="landsize_error"></div><div id="landunits_error"></div>
+                                               <input type="hidden" id="landsize_old" name="landsize_old" value="<?php echo $user->getlandsize(); ?>" />
+                                               <input type="hidden" id="landunits_old" name="landunits_old" value="<?php echo $user->getlandunits(); ?>" />
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td class="nowrapping"><label class="control-label"><?php echo $this->translate("farm_landsizeactive_label"); ?>:</label></td>
+                                            <td><input name="landactivesize" id="landactivesize" type="text" class="span1 isnumber xhastooltip" value="<?php echo clean_num($user->getLandActiveSize()); ?>" title="<?php // echo $this->translate("farm_landsize_tooltip"); ?>" /> <span class="pagedescription" id="activeland"></span><div id="landactivesize_error"></div>
+                                            <input type="hidden" id="landactivesize_old" name="landactivesize_old" value="<?php echo $user->getlandactivesize(); ?>" />
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td class="nowrapping"><label class="control-label"><?php echo $this->translate("farm_landacquiremethod_label"); ?>:</label></td>
+                                            <td><?php
+													$landmethods = getLandAcquireMethods();
+													$landmethoddropdown = new Zend_Form_Element_Select('landacquiremethod',
+																		array(
+																			'multiOptions' => array_merge_maintain_keys(array('' => '<Select>'), $landmethods),								
+																			'view' => new Zend_View(),
+																			'decorators' => array('ViewHelper'),
+																			'class' => array('filterselect', 'xhastooltip', 'span2'),
+																			'title' => $this->translate("farm_landacquiremethod_tooltip"),
+																			'style' => 'width:80px;'
+																		)
+																	);
+													$landmethoddropdown->setValue($user->getLandAcquireMethod()); 
+													echo $landmethoddropdown->render(); 
+											   ?><div id="landacquiremethod_error"></div>
+                                               <input type="hidden" id="landacquiremethod_old" name="landacquiremethod_old" value="<?php echo $user->getlandacquiremethod(); ?>" />
+                                       		</td>
+                                        </tr>
+                                        <tr>
+                                            <td><label class="control-label">No of Farm Lands / Fields:</label></td>
+                                            <td colspan="2">
+												<?php
+                                                    $fieldcount = array("1"=>"1","2"=>"2","3"=>"3","4"=>"4");
+                                                    $fieldsdropdown = new Zend_Form_Element_Select('numberoffields',
+                                                                        array(
+                                                                            'multiOptions' => $fieldcount,								
+                                                                            'view' => new Zend_View(),
+                                                                            'decorators' => array('ViewHelper'),
+                                                                            'class' => array('filterselect', 'xhastooltip', 'unitselect'),
+                                                                            'title' => $this->translate("farm_numberoffields_tooltip"),
+																			'style' => 'width:80px;'
+                                                                        )
+                                                                    );
+                                                    $fieldsdropdown->setValue($user->getNumberOfFields()); 
+                                                    echo $fieldsdropdown->render(); 
+                                               ?><div id="numberoffields_error"></div>
+                                         		<input type="hidden" id="numberoffields_old" name="numberoffields_old" value="<?php echo $user->getnumberoffields(); ?>" />
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </span>
+                        </div>
+                        <div class="row" style="margin-left:0px; position:relative;">
+                            <h2>Crops</h2>
+                            <?php require APPLICATION_PATH."/views/scripts/profile/cropscolumn.phtml"; ?>
+                        </div> 
+                    <?php } ?>
+                </form>
+            </div>
+        <?php } ?>    
+        <div id="seasons">
+        	<h2>Manage Seasons</h2>
+            <form id="profileform-seasons" class="form-horizontal seasons"></form>
+        </div>
+        <div id="calendar">
+        	<h2>Season Activity Calendar</h2>
+            <form id="profileform-calendar" class="form-horizontal calendar clearfix"></form>
+        </div>
+        <div id="inventory">
+        	<h2>Farm Inventory</h2>
+            <form id="profileform-inventory" class="form-horizontal inventory"></form>
+        </div>
+        <div id="finance">
+        	<h2>Reports</h2>
+            <form id="profileform-finance" class="form-horizontal finance"></form>
+        </div>
+        <div id="subscription">
+        	<h2>Payment History</h2>
+            <form id="profileform-subscription" class="form-horizontal subscription"></form>
+        </div>
+        <?php require APPLICATION_PATH."/views/scripts/profile/settings.phtml"; ?>
     </div> 
 </div>
 <?php
