@@ -281,6 +281,26 @@ $(document).ready(function() {
                                     </div>
                                 </div>
                             </div>
+                            <div class="control-group">
+                                <label class="control-label">Show Individual Farmers:</label>
+                                <div class="controls">
+									<?php
+										$radio = new Zend_Form_Element_Radio('showind',
+											  array(
+													  'multiOptions' => array('1'=>'Yes','0'=>'No'), 
+													  'view' => new Zend_View(),
+													  'disableLoadDefaultDecorators' => true,
+													  'separator' => '&nbsp;',										  
+													  'decorators' => array('ViewHelper',
+																		  array('HtmlTag', array('tag' => 'div', 'class' => array('inline', 'radio', 'zendradio'))) // use a sorrounding DIV with classes which are copied to the label by JQuery
+																	  )
+											  )
+										);
+										$radio->setValue($company->getShowInd());
+										echo $radio->render(); 
+								   ?>
+                                </div>
+                            </div>
                         </fieldset>
                     </div>
               	</form>

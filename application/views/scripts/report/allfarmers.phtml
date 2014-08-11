@@ -1,6 +1,5 @@
 <?php
 	require_once APPLICATION_PATH.'/includes/header.php';
-	// require_once(APPLICATION_PATH.'/../'.PUBLICFOLDER.'/dompdf/dompdf_config.inc.php');
 		
 	$title = "Farmers Bio Data Report";
 	$this->headTitle($title); 
@@ -25,6 +24,32 @@
 		$subcounty_label = $this->translate("global_ward_label");
 	}
 	$countryreq = strtolower($request->country);
+	
+	$partner_query_dna = ""; $partner_details_dna = array();
+	if($loggedinuser->isPartner()){
+		$allowedlist = $loggedinuser->getCompany()->getAllocationDetails(true);
+		$partnertype = $loggedinuser->getCompany()->getFarmisType();
+		$indtype = $loggedinuser->getCompany()->getShowInd();
+		switch($partnertype){
+			case 2:
+			case 3:
+				$partner_query_dna = " AND l.regionid in(".$allowedlist.") ";
+				$partner_details_dna = array("type"=>$partnertype, "allowedlist"=>$allowedlist, "regionlist" => $partner_query_dna);
+				break;
+			case 4:
+			case 5:
+				$partner_query_dna = " AND f.locationid in(".$allowedlist.") ";
+				$partner_details_dna = array("type"=>$partnertype, "allowedlist"=>$allowedlist, "districtlist" => $partner_query_dna);
+				break;
+			case 6:
+			case 7:
+				$partner_query_dna = " AND f.id in(".$allowedlist.") ";
+				$partner_details_dna = array("type"=>$partnertype, "allowedlist"=>$allowedlist, "dnalist" => $partner_query_dna);
+				break;
+			default:
+				break;
+		}
+	}
 	
 ?>
 <script type="text/javascript" src="<?php echo $this->serverUrl($this->baseUrl('assets/js/custom/table2CSV.js')); ?>"></script>
@@ -104,16 +129,16 @@ $(document).ready(function() {
 					}
 				});
 				
-				 // $('#double-scroll').doubleScroll();
-				 $(".wrapper1").scroll(function(){
+				/*// $('#double-scroll').doubleScroll();
+				$(".wrapper1").scroll(function(){
 					$(".wrapper2").scrollLeft($(".wrapper1").scrollLeft());
 				});
 				$(".wrapper2").scroll(function(){
 					$(".wrapper1").scrollLeft($(".wrapper2").scrollLeft());
 				});
-				
+				*/
 				$(".wrapper2").slimScroll({
-					height: '500px',
+					height: '700px',
 					size: '15px',
 					position: 'right',
 					color: '#000',
@@ -123,6 +148,12 @@ $(document).ready(function() {
 					railColor: '#fff',
 					railOpacity: 0.8,
 					wheelStep: 10
+				});
+				$(".wrapper1").scroll(function(){
+					$(".wrapper2").scrollLeft($(".wrapper1").scrollLeft());
+				});
+				$(".wrapper2").scroll(function(){
+					$(".wrapper1").scrollLeft($(".wrapper2").scrollLeft());
 				});
 			}
 		);
@@ -258,181 +289,146 @@ input.checkbox {
 	margin-right:10px;
 	display:inline;
 }
-.wrapper1, .wrapper2 {
-	width: 100%; 
-	border: none 0px #cccccc;
-	overflow-x: scroll; 
-	overflow-y:scroll;
-}
-.wrapper1 {
-	height: 20px; 
-}
-.wrapper2 {
-	height: 600px;
-	overflow:scroll;
-}
-.div1 {
-	width:5000px; 
-	height: 20px; 
-}
-.div2 {
-	width:3200px; 
-	background:none;
-	overflow: auto;
-}
 </style>
 <form id="listform" class="form-search margin0" style="margin-top:5px;">
 <div>
-  <div id="centercolumn">
+  <div id="centercolumn" style="height:auto;">
     <div class="hideonprint" style="width:100%;">
-        <?php if((isAdmin() || isFarmGroupAdmin() || isManagement())){ ?>
-            <span class="reportfilter">
-                <table class="table table-condensed noborder margin0" style="width:auto; display:inline-block;">
-                    <tr>
-                        <td style="width:120px;"><label class="control-label inline" style="font-size:12px;">Added From:</label>
-                            <input name="startdate"  id="startdate" type="text" class="datefield startdate inline input-width-small width110" value="<?php echo $request->startdate; ?>" />
-                        </td>
-                        <td style="width:120px;"><label class="control-label inline" style="font-size:12px;">Added To:</label>
-                            <input name="enddate" id="enddate" type="text" class="datefield input-width-small width110"  value="<?php echo $request->enddate; ?>" />
-                        </td>
-                        <td style="width:125px;">
-                            <label class="control-label">Gender:</label>
-                            <?php
-                                $allgenders = array('' => 'All','1'=>'Male','2'=>'Female');
-                                $genderdropdown = new Zend_Form_Element_Select('u'.HTML_TABLE_COLUMN_SEPARATOR.'gender',
-                                                    array(
-                                                        'multiOptions' => $allgenders,
-                                                        'view' => new Zend_View(),
-                                                        'decorators' => array('ViewHelper'),
-                                                        'class' => array('gender','width125'),
-                                                        'title' => 'Filter By Gender'		
-                                                    )
-                                );  
-                                $genderdropdown->setValue($request->getParam('u'.HTML_TABLE_COLUMN_SEPARATOR.'gender')); 
-                                echo $genderdropdown->render();
-                            ?></td>
-                        <td style="width:125px;">
-                            <label class="control-label">Age Group:</label>
-                            <?php
-                                $allgenders = array('' => 'All','1'=>'0-14','2'=>'15-24','3'=>'25-29','4'=>'30-39','5'=>'40-49','6'=>'50-59','7'=>'Btn 30 and 60','8'=>'Greater than 60');
-                                $dropdown = new Zend_Form_Element_Select('range',
-                                                    array(
-                                                        'multiOptions' => $allgenders,
-                                                        'view' => new Zend_View(),
-                                                        'decorators' => array('ViewHelper'),
-                                                        'class' => array('gender','width125'),
-                                                        'title' => 'Filter By Age Group'		
-                                                    )
-                                );  
-                                $dropdown->setValue($request->getParam('range')); 
-                                echo $dropdown->render();
-                            ?>
-                        </td>
-                        <td style="width:125px;">
-                            <label class="control-label">Marital Status:</label>
-                            <?php
-                                $maritalstatuses = getAllMaritalStatuses();
-                                $maritalstatusesdropdown = new Zend_Form_Element_Select('maritalstatus',
-                                                    array(
-                                                        'multiOptions' => array_merge_maintain_keys(array('' => 'All'), $maritalstatuses),								
-                                                        'view' => new Zend_View(),
-                                                        'decorators' => array('ViewHelper'),
-                                                        'class' => array('width125'),
-                                                    )
-                                                );
-                                $maritalstatusesdropdown->setValue($request->getParam('maritalstatus')); 
-                                echo $maritalstatusesdropdown->render(); 
-                               ?>
-                        </td>
-                        <td style="width:125px;">
-                            <label class="control-label">Education:</label>
-                            <?php
-                                $educlevels = getAllEducationLevels();
-                                $educleveldropdown = new Zend_Form_Element_Select('educationlevel',
-                                                    array(
-                                                        'multiOptions' => array_merge_maintain_keys(array('' => 'All'), $educlevels),								
-                                                        'view' => new Zend_View(),
-                                                        'decorators' => array('ViewHelper'),
-                                                        'class' => array('width125'),
-                                                    )
-                                                );
-                                $educleveldropdown->setValue($request->getParam('educationlevel')); 
-                                echo $educleveldropdown->render(); 
-                            ?>
-                        </td>
-                        <td style="width:125px;">
-                            <label class="control-label">DNA:</label>
-                            <?php
-                                $groupdropdown = new Zend_Form_Element_Select('farmgroupid',
-                                                    array(
-                                                        'multiOptions' => array_merge_maintain_keys(array('' => 'All', '0'=> 'Individual Farmers'), getAllFarmGroups('', $session->getVar('country'))),								
-                                                        'view' => new Zend_View(),
-                                                        'decorators' => array('ViewHelper'),
-                                                        'class' => array('width125'),
-                                                    )
-                                                );
-                                $groupdropdown->setValue($request->getParam('farmgroupid')); 
-                                echo $groupdropdown->render(); 
+        <span class="reportfilter">
+            <table class="table table-condensed noborder margin0" style="width:auto; display:inline-block;">
+                <tr>
+                    <td style="width:120px;"><label class="control-label inline" style="font-size:12px;">Added From:</label>
+                        <input name="startdate"  id="startdate" type="text" class="datefield startdate inline input-width-small width110" value="<?php echo $request->startdate; ?>" />
+                    </td>
+                    <td style="width:120px;"><label class="control-label inline" style="font-size:12px;">Added To:</label>
+                        <input name="enddate" id="enddate" type="text" class="datefield input-width-small width110"  value="<?php echo $request->enddate; ?>" />
+                    </td>
+                    <td style="width:125px;">
+                        <label class="control-label">Gender:</label>
+                        <?php
+                            $allgenders = array('' => 'All','1'=>'Male','2'=>'Female');
+                            $genderdropdown = new Zend_Form_Element_Select('u'.HTML_TABLE_COLUMN_SEPARATOR.'gender',
+                                                array(
+                                                    'multiOptions' => $allgenders,
+                                                    'view' => new Zend_View(),
+                                                    'decorators' => array('ViewHelper'),
+                                                    'class' => array('gender','width125'),
+                                                    'title' => 'Filter By Gender'		
+                                                )
+                            );  
+                            $genderdropdown->setValue($request->getParam('u'.HTML_TABLE_COLUMN_SEPARATOR.'gender')); 
+                            echo $genderdropdown->render();
+                        ?></td>
+                    <td style="width:125px;">
+                        <label class="control-label">Age Group:</label>
+                        <?php
+                            $allgenders = array('' => 'All','1'=>'0-14','2'=>'15-24','3'=>'25-29','4'=>'30-39','5'=>'40-49','6'=>'50-59','7'=>'Btn 30 and 60','8'=>'Greater than 60');
+                            $dropdown = new Zend_Form_Element_Select('range',
+                                                array(
+                                                    'multiOptions' => $allgenders,
+                                                    'view' => new Zend_View(),
+                                                    'decorators' => array('ViewHelper'),
+                                                    'class' => array('gender','width125'),
+                                                    'title' => 'Filter By Age Group'		
+                                                )
+                            );  
+                            $dropdown->setValue($request->getParam('range')); 
+                            echo $dropdown->render();
+                        ?>
+                    </td>
+                    <td style="width:125px;">
+                        <label class="control-label">Marital Status:</label>
+                        <?php
+                            $maritalstatuses = getAllMaritalStatuses();
+                            $maritalstatusesdropdown = new Zend_Form_Element_Select('maritalstatus',
+                                                array(
+                                                    'multiOptions' => array_merge_maintain_keys(array('' => 'All'), $maritalstatuses),								
+                                                    'view' => new Zend_View(),
+                                                    'decorators' => array('ViewHelper'),
+                                                    'class' => array('width125'),
+                                                )
+                                            );
+                            $maritalstatusesdropdown->setValue($request->getParam('maritalstatus')); 
+                            echo $maritalstatusesdropdown->render(); 
                            ?>
-                        </td>
-                        <td style="width:125px;">
-                            <label class="control-label"><?php echo $location_label; ?>:</label>
-                            <?php
-                                $districts = getDistricts($session->getVar('country'));
-                                $districtdropdown = new Zend_Form_Element_Select('locationid',
-                                                    array(
-                                                        'multiOptions' => array_merge_maintain_keys(array('' => 'All'), $districts),								
-                                                        'view' => new Zend_View(),
-                                                        'decorators' => array('ViewHelper'),
-                                                        'class' => array('width125')
-                                                    )
-                                                );
-                                $districtdropdown->setValue($request->getParam('locationid')); 
-                                echo $districtdropdown->render(); 
-                              ?>
-                        </td>
-                        <td style="width:100px; vertical-align:bottom;">
-                            <a id="searchbutton" class="btn btn-primary" style="padding:6px 10px;"><i class="icon-white icon-search"></i> Generate</a>
-                            <?php if(!isAdmin()){ ?>
-                                <input type="hidden" name="farmgroupid" id="farmgroupid" value="<?php echo $request->farmgroupid; ?>" />
-                            <?php } ?>
-                            <input type="hidden" name="country" id="country" value="<?php echo $country; ?>" />
-                            <input type="hidden" name="generate" id="generate" value="<?php echo $request->generate; ?>" />
-                        </td>
-                    </tr>
-                    <tr>
-                        <?php if($loggedinuser->isUgandan() && isUganda() && (isAdmin() || isManagement())){ ?>
-                            <td colspan="2">
-                                <?php if(isEmptyString($request->country) || $countryreq == 'ug'){ ?>
-                                    <a class="btn" href="<?php echo $this->baseUrl('report/allfarmers/country/ke'); ?>" title="Browse Kenya Directory"><i class="icon-list"></i> Browse Kenya</a>
-                                <?php } ?>
-                            </td>
-                        <?php } ?>    
-                        <?php if($loggedinuser->isUgandan() && isKenya() && (isAdmin() || isManagement())){ ?>
-                            <td colspan="2">
-                                <?php if(!isEmptyString($request->country) && $countryreq == 'ke'){ ?>
-                                    <a class="btn" href="<?php echo $this->baseUrl('report/allfarmers/country/ug'); ?>" title="Browse Uganda Directory"><i class="icon-list"></i> Browse Uganda</a>
-                                <?php } ?>
-                            </td>
+                    </td>
+                    <td style="width:125px;">
+                        <label class="control-label">Education:</label>
+                        <?php
+                            $educlevels = getAllEducationLevels();
+                            $educleveldropdown = new Zend_Form_Element_Select('educationlevel',
+                                                array(
+                                                    'multiOptions' => array_merge_maintain_keys(array('' => 'All'), $educlevels),								
+                                                    'view' => new Zend_View(),
+                                                    'decorators' => array('ViewHelper'),
+                                                    'class' => array('width125'),
+                                                )
+                                            );
+                            $educleveldropdown->setValue($request->getParam('educationlevel')); 
+                            echo $educleveldropdown->render(); 
+                        ?>
+                    </td>
+                    <td style="width:125px;">
+                        <label class="control-label"><?php echo $location_label; ?>:</label>
+                        <?php
+                            $districts = getDistricts($session->getVar('country'));
+                            $districtdropdown = new Zend_Form_Element_Select('locationid',
+                                                array(
+                                                    'multiOptions' => array_merge_maintain_keys(array('' => 'All'), $districts),								
+                                                    'view' => new Zend_View(),
+                                                    'decorators' => array('ViewHelper'),
+                                                    'class' => array('width125')
+                                                )
+                                            );
+                            $districtdropdown->setValue($request->getParam('locationid')); 
+                            echo $districtdropdown->render(); 
+                          ?>
+                    </td>
+                    <?php if(!isFarmGroupAdmin()){ ?>
+                    <td style="width:125px;">
+                        <label class="control-label">DNA:</label>
+                        <?php
+                            $groupdropdown = new Zend_Form_Element_Select('farmgroupid',
+                                                array(
+                                                    'multiOptions' => array_merge_maintain_keys(array('' => 'All', '0'=> 'Individual Farmers'), getAllFarmGroups('', $session->getVar('country'), $partner_details_dna)),								
+                                                    'view' => new Zend_View(),
+                                                    'decorators' => array('ViewHelper'),
+                                                    'class' => array('width125'),
+                                                )
+                                            );
+                            $groupdropdown->setValue($request->getParam('farmgroupid')); 
+                            echo $groupdropdown->render(); 
+                       ?>
+                    </td>
+                    <?php } ?>
+                    <td style="width:100px; vertical-align:bottom;">
+                        <a id="searchbutton" class="btn btn-primary" style="padding:6px 10px;"><i class="icon-white icon-search"></i> Generate</a>
+                        <?php if(isFarmGroupAdmin()){ ?>
+                            <input type="hidden" name="farmgroupid" id="farmgroupid" value="<?php echo $loggedinuser->getFarmGroupID(); ?>" />
                         <?php } ?>
-                        
-                        <td>
-                            <label class="control-label">Mobile Access:</label>
-                            <?php
-                                $array = array('1'=>'With Phone', '0'=>'No Phone');
-                                $dropdown = new Zend_Form_Element_Select('hasphone',
-                                                    array(
-                                                        'multiOptions' => array_merge_maintain_keys(array('' => 'All'), $array),								
-                                                        'view' => new Zend_View(),
-                                                        'decorators' => array('ViewHelper'),
-                                                        'class' => array('span2'),
-                                                        'style' => 'width:125px;'
-                                                    )
-                                                );
-                                $dropdown->setValue($request->getParam('hasphone')); 
-                                echo $dropdown->render(); 
-                              ?>
-                        </td>
+                        <input type="hidden" name="country" id="country" value="<?php echo $country; ?>" />
+                        <input type="hidden" name="generate" id="generate" value="<?php echo $request->generate; ?>" />
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <label class="control-label">Mobile Access:</label>
+                        <?php
+                            $array = array('1'=>'With Phone', '0'=>'No Phone');
+                            $dropdown = new Zend_Form_Element_Select('hasphone',
+                                                array(
+                                                    'multiOptions' => array_merge_maintain_keys(array('' => 'All'), $array),								
+                                                    'view' => new Zend_View(),
+                                                    'decorators' => array('ViewHelper'),
+                                                    'class' => array('span2'),
+                                                    'style' => 'width:125px;'
+                                                )
+                                            );
+                            $dropdown->setValue($request->getParam('hasphone')); 
+                            echo $dropdown->render(); 
+                          ?>
+                    </td>
+                    <?php if($acl->checkPermission('User Account', ACTION_LIST)) { ?>	
                         <td>
                             <label class="control-label">Profiled By:</label>
                             <?php
@@ -449,63 +445,79 @@ input.checkbox {
                                 echo $dropdown->render(); 
                               ?>
                         </td>
+                    <?php } ?>
+                    <td>
+                        <label class="control-label">Crops:</label>
+                        <?php
+                            $availablecrops = getFarmisCommodities();
+                            $cropdropdown = new Zend_Form_Element_Select('cropid',
+                                                array(
+                                                    'multiOptions' => array_merge_maintain_keys(array('' => 'All'), $availablecrops),								
+                                                    'view' => new Zend_View(),
+                                                    'decorators' => array('ViewHelper'),
+                                                    'class' => array('width125')
+                                                )
+                                            );
+                            $cropdropdown->setValue($request->getParam('cropid')); 
+                            echo $cropdropdown->render();
+                       ?>
+                    </td>
+                    <td style="width:125px;">
+                        <label class="control-label">Duration in Farming:</label>
+                        <?php
+                            $allgenders = array('' => 'All','1'=>'Less than 3yrs','2'=>'3-5yrs','3'=>'6-10yrs','4'=>'11-20yrs','5'=>'21-30yrs','6'=>'More than 30yrs');
+                            $dropdown = new Zend_Form_Element_Select('farmingsince',
+                                                array(
+                                                    'multiOptions' => $allgenders,
+                                                    'view' => new Zend_View(),
+                                                    'decorators' => array('ViewHelper'),
+                                                    'class' => array('gender','width125'),
+                                                    'title' => 'Filter By Duration in Farming'		
+                                                )
+                            );  
+                            $dropdown->setValue($request->getParam('farmingsince')); 
+                            echo $dropdown->render();
+                        ?>
+                    </td>
+                    <td style="width:125px;">
+                        <label class="control-label">Average Land Size:</label>
+                        <?php
+                            $allgenders = array('' => 'All','1'=>'Less than 3Acres','2'=>'3-5Acres','3'=>'6-10Acres','4'=>'11-20Acres','5'=>'21-30Acres','6'=>'More than 30Acres');
+                            $dropdown = new Zend_Form_Element_Select('landusage',
+                                                array(
+                                                    'multiOptions' => $allgenders,
+                                                    'view' => new Zend_View(),
+                                                    'decorators' => array('ViewHelper'),
+                                                    'class' => array('gender','width125'),
+                                                    'title' => 'Filter By Land Usage'		
+                                                )
+                            );  
+                            $dropdown->setValue($request->getParam('landusage')); 
+                            echo $dropdown->render();
+                        ?>
+                    </td>
+                    <?php if($loggedinuser->isUgandan() && isUganda() && $acl->checkPermission('Is UG Admin can Administer KE', ACTION_YESNO)){ ?>
                         <td>
-                            <label class="control-label">Crops:</label>
-                            <?php
-                                $availablecrops = getFarmisCommodities();
-                                $cropdropdown = new Zend_Form_Element_Select('cropid',
-                                                    array(
-                                                        'multiOptions' => array_merge_maintain_keys(array('' => 'All'), $availablecrops),								
-                                                        'view' => new Zend_View(),
-                                                        'decorators' => array('ViewHelper'),
-                                                        'class' => array('width125')
-                                                    )
-                                                );
-                                $cropdropdown->setValue($request->getParam('cropid')); 
-                                echo $cropdropdown->render();
-                           ?>
+                        	<label class="control-label">&nbsp;</label>
+                            <?php if(isEmptyString($request->country) || $countryreq == 'ug'){ ?>
+                                <a class="btn" href="<?php echo $this->baseUrl('report/allfarmers/country/ke'); ?>" title="Browse Kenya Directory"><i class="icon-list"></i> Browse Kenya</a>
+                            <?php } ?>
                         </td>
-                        <td style="width:125px;">
-                            <label class="control-label">Duration in Farming:</label>
-                            <?php
-                                $allgenders = array('' => 'All','1'=>'Less than 3yrs','2'=>'3-5yrs','3'=>'6-10yrs','4'=>'11-20yrs','5'=>'21-30yrs','6'=>'More than 30yrs');
-                                $dropdown = new Zend_Form_Element_Select('farmingsince',
-                                                    array(
-                                                        'multiOptions' => $allgenders,
-                                                        'view' => new Zend_View(),
-                                                        'decorators' => array('ViewHelper'),
-                                                        'class' => array('gender','width125'),
-                                                        'title' => 'Filter By Duration in Farming'		
-                                                    )
-                                );  
-                                $dropdown->setValue($request->getParam('farmingsince')); 
-                                echo $dropdown->render();
-                            ?>
+                    <?php } ?>    
+                    <?php if($loggedinuser->isUgandan() && isKenya() && $acl->checkPermission('Is UG Admin can Administer KE', ACTION_YESNO)){ ?>
+                        <td>
+                        	<label class="control-label">&nbsp;</label>
+                            <?php if(!isEmptyString($request->country) && $countryreq == 'ke'){ ?>
+                                <a class="btn" href="<?php echo $this->baseUrl('report/allfarmers/country/ug'); ?>" title="Browse Uganda Directory"><i class="icon-list"></i> Browse Uganda</a>
+                            <?php } ?>
                         </td>
-                        <td style="width:125px;">
-                            <label class="control-label">Average Land Size:</label>
-                            <?php
-                                $allgenders = array('' => 'All','1'=>'Less than 3Acres','2'=>'3-5Acres','3'=>'6-10Acres','4'=>'11-20Acres','5'=>'21-30Acres','6'=>'More than 30Acres');
-                                $dropdown = new Zend_Form_Element_Select('landusage',
-                                                    array(
-                                                        'multiOptions' => $allgenders,
-                                                        'view' => new Zend_View(),
-                                                        'decorators' => array('ViewHelper'),
-                                                        'class' => array('gender','width125'),
-                                                        'title' => 'Filter By Land Usage'		
-                                                    )
-                                );  
-                                $dropdown->setValue($request->getParam('landusage')); 
-                                echo $dropdown->render();
-                            ?>
-                        </td>
-                    </tr>                    
-                </table>
-            </span>
-		<?php } ?>
+                    <?php } ?>
+                </tr>                    
+            </table>
+        </span>
     </div>
     <div class="pull-left" id="pageleft">
-        <div class="widgetsection reportcontainer" style="height:600px;">
+        <div class="widgetsection reportcontainer" style="min-height:800px;">
         	<h3 class="reportpagetitle"><?php echo $title; ?></h3>
 			<div id="reportdata"></div>
 		</div>

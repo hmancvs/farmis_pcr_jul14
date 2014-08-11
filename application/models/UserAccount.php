@@ -391,7 +391,8 @@ class UserAccount extends BaseEntity {
 		if(isEmptyString($phone)){
 			$phone = $this->getPhone();
 		}
-		$query = "SELECT id FROM useraccount WHERE phone = '".$phone."' AND phone <> '' AND phone_isactivated = 1 ".$id_check;
+		// AND phone_isactivated = 1
+		$query = "SELECT id FROM useraccount WHERE phone = '".$phone."' AND phone <> '' ".$id_check;
 		// debugMessage($ref_query);
 		$result = $conn->fetchOne($query);
 		// debugMessage($ref_result);
@@ -1019,7 +1020,7 @@ class UserAccount extends BaseEntity {
    	 	$update = false;
 		
    	 	# generate registration number for farmer
-   	 	if(isEmptyString($this->getRefNo()) && $this->isUgandan()){
+   	 	if(isEmptyString($this->getRefNo()) && $this->isUgandan() && $this->isFarmer()){
    	 		$this->setRefNo($this->generateRefNo());
    	 		$this->setRegNo($this->getCurrentRegNo());
    	 		$this->save();
@@ -1061,13 +1062,11 @@ class UserAccount extends BaseEntity {
     	$this->clearRelated(); 
     	
     	# generate registration number for farmer
-    	if(isEmptyString($this->getRefNo())){
+    	if(isEmptyString($this->getRefNo()) && $this->isFarmer()){
 			$this->setRefNo($this->generateRefNo());
 			$this->setRegNo($this->getCurrentRegNo());
 			$this->save();
-    		if($this->isFarmer()){
-				$session->setVar('custommessage', 'Farmer ID# '.$this->getRefNo().' generated.');
-			}
+			$session->setVar('custommessage', 'Farmer ID# '.$this->getRefNo().' generated.');
 		}
     	
    		# invite user to activate
@@ -1893,7 +1892,7 @@ class UserAccount extends BaseEntity {
 	}
 	# relative path to profile image
 	function hasProfileImage(){
-		$real_path = APPLICATION_PATH.DIRECTORY_SEPARATOR."..".DIRECTORY_SEPARATOR."public".DIRECTORY_SEPARATOR."uploads".DIRECTORY_SEPARATOR."user_";
+		$real_path = BASE_PATH.DIRECTORY_SEPARATOR."uploads".DIRECTORY_SEPARATOR."user_";
 		$real_path = $real_path.$this->getID().DIRECTORY_SEPARATOR."avatar".DIRECTORY_SEPARATOR."large_".$this->getProfilePhoto();
 		if(file_exists($real_path) && !isEmptyString($this->getProfilePhoto())){
 			return true;
@@ -1902,14 +1901,14 @@ class UserAccount extends BaseEntity {
 	}
 	# determine if person has profile image
 	function getRelativeProfilePicturePath(){
-		$real_path = APPLICATION_PATH.DIRECTORY_SEPARATOR."..".DIRECTORY_SEPARATOR."public".DIRECTORY_SEPARATOR."uploads".DIRECTORY_SEPARATOR."user_";
+		$real_path = BASE_PATH.DIRECTORY_SEPARATOR."uploads".DIRECTORY_SEPARATOR."user_";
 		$real_path = $real_path.$this->getID().DIRECTORY_SEPARATOR."avatar".DIRECTORY_SEPARATOR."medium_".$this->getProfilePhoto();
 		if(file_exists($real_path) && !isEmptyString($this->getProfilePhoto())){
 			return $real_path;
 		}
-		$real_path = APPLICATION_PATH.DIRECTORY_SEPARATOR."..".DIRECTORY_SEPARATOR."public".DIRECTORY_SEPARATOR."uploads".DIRECTORY_SEPARATOR."user_0".DIRECTORY_SEPARATOR."avatar".DIRECTORY_SEPARATOR."default_medium_male.jpg";
+		$real_path = BASE_PATH.DIRECTORY_SEPARATOR."uploads".DIRECTORY_SEPARATOR."user_0".DIRECTORY_SEPARATOR."avatar".DIRECTORY_SEPARATOR."default_medium_male.jpg";
 		if($this->isFemale()){
-			$real_path = APPLICATION_PATH.DIRECTORY_SEPARATOR."..".DIRECTORY_SEPARATOR."public".DIRECTORY_SEPARATOR."uploads".DIRECTORY_SEPARATOR."user_0".DIRECTORY_SEPARATOR."avatar".DIRECTORY_SEPARATOR."default_medium_female.jpg";
+			$real_path = BASE_PATH.DIRECTORY_SEPARATOR."uploads".DIRECTORY_SEPARATOR."user_0".DIRECTORY_SEPARATOR."avatar".DIRECTORY_SEPARATOR."default_medium_female.jpg";
 		}
 		return $real_path;
 	}
@@ -1933,13 +1932,13 @@ class UserAccount extends BaseEntity {
 	function getThumbnailPicturePath() {
 		$baseUrl = Zend_Controller_Front::getInstance()->getBaseUrl();
 		$path = "";
-		if($this->isMale()){
+		if($this->isMale() || isEmptyString($this->getID())){
 			$path = $baseUrl.'/uploads/user_0/avatar/default_thumbnail_male.jpg';
 		}  
 		if($this->isFemale()){
 			$path = $baseUrl.'/uploads/user_0/avatar/default_thumbnail_female.jpg'; 
 		}
-		if($this->hasProfileImage()){
+		if($this->hasProfileImage() && !isEmptyString($this->getID())){
 			$path = $baseUrl.'/uploads/user_'.$this->getID().'/avatar/thumbnail_'.$this->getProfilePhoto();
 		}
 		return $path;
@@ -1948,13 +1947,13 @@ class UserAccount extends BaseEntity {
 	function getMediumPicturePath() {
 		$baseUrl = Zend_Controller_Front::getInstance()->getBaseUrl();
 		$path = "";
-		if($this->isMale()){
+		if($this->isMale() || isEmptyString($this->getID())){
 			$path = $baseUrl.'/uploads/user_0/avatar/default_medium_male.jpg';
 		}  
 		if($this->isFemale()){
 			$path = $baseUrl.'/uploads/user_0/avatar/default_medium_female.jpg'; 
 		}
-		if($this->hasProfileImage()){
+		if($this->hasProfileImage() && !isEmptyString($this->getID())){
 			$path = $baseUrl.'/uploads/user_'.$this->getID().'/avatar/medium_'.$this->getProfilePhoto();
 		}
 		// debugMessage($path);
@@ -1964,13 +1963,13 @@ class UserAccount extends BaseEntity {
 	function getLargePicturePath() {
 		$baseUrl = Zend_Controller_Front::getInstance()->getBaseUrl();
 		$path = "";
-		if($this->isMale()){
+		if($this->isMale() || isEmptyString($this->getID())){
 			$path = $baseUrl.'/uploads/user_0/avatar/default_large_male.jpg';
 		}  
 		if($this->isFemale()){
 			$path = $baseUrl.'/uploads/user_0/avatar/default_large_female.jpg'; 
 		}
-		if($this->hasProfileImage()){
+		if($this->hasProfileImage() && !isEmptyString($this->getID())) {
 			$path = $baseUrl.'/uploads/user_'.$this->getID().'/avatar/large_'.$this->getProfilePhoto();
 		}
 		# debugMessage($path);
@@ -2412,8 +2411,10 @@ class UserAccount extends BaseEntity {
 			// save
 			$this->save();
 			// set owner and 
-			$this->setCreatedBy($this->getID());
-			if(isUganda()){
+			if(isEmptyString($this->getCreatedBy())){
+				$this->setCreatedBy($this->getID());
+			}
+			if(isUganda() && $this->isFarmer()){
 				if(isEmptyString($this->getRegNo())){
 					$this->setRegNo($this->getCurrentRegNo());
 		    	}
@@ -2457,7 +2458,7 @@ class UserAccount extends BaseEntity {
 	}
 	# determine if person has signature
 	function hasSignature(){
-		$real_path = APPLICATION_PATH.DIRECTORY_SEPARATOR."..".DIRECTORY_SEPARATOR."public".DIRECTORY_SEPARATOR."uploads".DIRECTORY_SEPARATOR."user_";
+		$real_path = BASE_PATH.DIRECTORY_SEPARATOR."uploads".DIRECTORY_SEPARATOR."user_";
 		$real_path = $real_path.$this->getID().DIRECTORY_SEPARATOR."sign".DIRECTORY_SEPARATOR."large_".$this->getSignature();
 		if(file_exists($real_path) && !isEmptyString($this->getSignature())){
 			return true;

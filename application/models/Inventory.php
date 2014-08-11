@@ -123,7 +123,7 @@ class Inventory extends BaseEntity  {
 	}
 	# determine if person has profile image
 	function hasProfileImage(){
-		$real_path = APPLICATION_PATH.DIRECTORY_SEPARATOR."..".DIRECTORY_SEPARATOR."public".DIRECTORY_SEPARATOR."uploads".DIRECTORY_SEPARATOR."user_".$this->getUserID().DIRECTORY_SEPARATOR."inventory".DIRECTORY_SEPARATOR."inventory_".$this->getID().DIRECTORY_SEPARATOR."large_".$this->getPhoto();
+		$real_path = BASE_PATH.DIRECTORY_SEPARATOR."uploads".DIRECTORY_SEPARATOR."user_".$this->getUserID().DIRECTORY_SEPARATOR."inventory".DIRECTORY_SEPARATOR."inventory_".$this->getID().DIRECTORY_SEPARATOR."large_".$this->getPhoto();
 		
 		// debugMessage($real_path);
 		if(file_exists($real_path) && !isEmptyString($this->getPhoto())){

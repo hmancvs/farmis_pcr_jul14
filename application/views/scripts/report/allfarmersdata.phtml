@@ -1,6 +1,5 @@
 <?php
 	require_once APPLICATION_PATH.'/includes/header.php';
-	// require_once(APPLICATION_PATH.'/../'.PUBLICFOLDER.'/dompdf/dompdf_config.inc.php');
 		
 	$title = "Farmers Bio Data Report";
 	$this->headTitle($title); 
@@ -75,7 +74,8 @@
 		$request->setParam('profiledby', $profiledby);
 		$currentprofiler = $loggedinuser->getName();
 	}
-	if(!isEmptyString($profiledby) || $loggedinuser->isDataClerk()){
+	if(!isEmptyString($profiledby) && $profiledby != 'undefined'){
+		// debugMessage($profiledby);
 		$where_query .= " AND (u.`createdby` = '".$profiledby."') ";
 		// $searchnames .= 'Farmers Profiled By '.$currentprofiler;
 	}
@@ -203,6 +203,42 @@
 		$order_query = " ORDER BY u.datecreated ASC ";
 	}
 	
+	$partner_query = ""; $partner_details = array(); $indtype = ''; 
+	$partner_query_dna = "";
+	if($loggedinuser->isPartner()){
+		$allowedlist = $loggedinuser->getCompany()->getAllocationDetails(true);
+		$partnertype = $loggedinuser->getCompany()->getFarmisType();
+		$indtype = $loggedinuser->getCompany()->getShowInd();
+		switch($partnertype){
+			case 2:
+			case 3:
+				$partner_query = " AND d.regionid in(".$allowedlist.") ";
+				if($indtype == 0){
+					$partner_query .= " AND u.farmgroupid <> '' ";
+				}
+				$partner_details = array("type"=>$partnertype, "allowedlist"=>$allowedlist, "regionlist" => $partner_query);
+				break;
+			case 4:
+			case 5:
+				$partner_query = " AND d.locationid in(".$allowedlist.") "; 
+				if($indtype == 0){
+					$partner_query .= " AND u.farmgroupid <> '' ";
+				}
+				$partner_details = array("type"=>$partnertype, "allowedlist"=>$allowedlist, "districtlist" => $partner_query);
+				break;
+			case 6:
+			case 7:
+				$partner_query = " AND u.farmgroupid in(".$allowedlist.") ";
+				if($indtype == 0){
+					$partner_query .= " AND u.farmgroupid <> '' ";
+				}
+				$partner_details = array("type"=>$partnertype, "allowedlist"=>$allowedlist, "dnalist" => $partner_query);
+				break;
+			default:
+				break;
+		}
+	}
+	
 	$paginate->processPost($request->getParams());
 	$all_results_query = "SELECT 
 		u.id as id,
@@ -260,7 +296,7 @@
 		LEFT JOIN location as s on (u.subcountyid = s.id AND s.locationtype = 4)
 		LEFT JOIN farmcrop fc on (fc.userid = u.id)
 		LEFT JOIN commodity as cc on (fc.cropid = cc.id)
-		".$where_query." AND 
+		".$where_query.$partner_query." AND 
 		u.type = 2 AND 
 		u.country = UPPER('".$session->getVar('country')."') 
 		".$paginate->getSearchAndFilterSQL()." 
@@ -276,7 +312,7 @@
 	left join location as c on (u.countyid = c.id AND c.locationtype = 3)
 	left join location as s on (u.subcountyid = s.id AND s.locationtype = 4)
 	left join farmcrop fc on (fc.userid = u.id)
-	".$where_query." AND 
+	".$where_query.$partner_query." AND 
 	u.type = 2 AND 
 	u.country = UPPER('".$session->getVar('country')."') 
 	".$paginate->getSearchAndFilterSQL();
@@ -383,7 +419,10 @@
                         <?php echo $column_html; ?>
                     </td>
                     <td><input type="hidden" name="csv_text" id="csv_text" value="" />
-            			<button type="button" class="btn btn-primary submitexcel"title="Export to Excel"><i class='icon-download-alt icon-white'></i> Export to Excel</button></td>
+                    <?php if($acl->checkPermission('Farmers Bio Data Report', ACTION_EXPORT)) { ?>
+            			<button type="button" class="btn btn-primary submitexcel"title="Export to Excel"><i class='icon-download-alt icon-white'></i> Export to Excel</button>
+                    <?php } ?>    
+                        </td>
                 </tr>
             </table>   
         </div>
@@ -392,10 +431,10 @@
         </div>
     </div>
     <div class="wrapper1">
-        <div class="div1"></div>
+        <div class="div1" style="width:5000px;"></div>
     </div>
     <div class="wrapper2">
-        <div class="div2">
+        <div class="div2" style="width:4800px;">
             <table id="data" class="table table-bordered" style="margin:10px 0 10px 0; width:auto;">
                 <thead>
                     <tr>

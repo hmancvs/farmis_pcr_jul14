@@ -1,6 +1,8 @@
 <span class="marginleft0 span9" style="width:99%;">
                     <div class="margin0" style="position:absolute; right:15px; top:15px;">
+                    	<?php if($isme || $acl->checkPermission($resourcename, ACTION_EDIT)){ ?>
                          <a href="<?php echo $this->baseUrl('profile/addcrop/userid/'.encode($user->getID()).'/pgc/true'); ?>" class="addpopup addfarmcrop btn btn-primary btn-mini" title="Add Crops" rel="Add Crop" id="newcrop" formtitle="indexform" successurl="<?php echo $this->baseUrl('profile/view/id/'.encode($user->getID()).'/tab/farm'); ?>" action="<?php echo $this->baseUrl("profile/processaddcrop"); ?>"><i class="icon-plus icon-white"></i> Add Crops</a>
+                        <?php } ?>
                     </div>
                     <style>
 						ul.sectionitems li {

@@ -21,7 +21,7 @@ class ReportController extends SecureController   {
 		if ($resource == "dashboard") {
 			return "Report Dashboard";
 		}
-		if ($resource == "certificate") {
+		if ($resource == "certificate" && $resource == "certificatesearch") {
 			return "Membership Certificate";
 		}
 		if ($resource == "primarybaseline") {
@@ -30,25 +30,25 @@ class ReportController extends SecureController   {
 		if ($resource == "baselinedetail") {
 			return "Farmers Baseline Detail Report";
 		}
-		if ($resource == "allfarmers") {
+		if ($resource == "allfarmers" || $resource == "allfarmersdata") {
 			return "Farmers Bio Data Report";
 		}
-		if ($resource == "dna") {
+		if ($resource == "dna" || $resource == "dnasearch") {
 			return "DNA Profiling Aggregated Report";
 		}
-		if ($resource == "location") {
+		if ($resource == "location" || $resource == "locationsearch") {
 			return "District and Location Profiling Report";
 		}
-		if ($resource == "crop") {
+		if ($resource == "crop" || $resource == "cropsearch") {
 			return "Crop Profiling Aggregated Report";
 		}
-		if ($resource == "pia") {
+		if ($resource == "pia" || $resource == "piasearch") {
 			return "PIA Profiling Performance Report";
 		}
 		if ($resource == "statement") {
 			return "Profit and Loss Statement";
 		}
-		if ($resource == "prices") {
+		if ($resource == "prices" || $resource == "pricessearch") {
 			return "Market Prices";
 		}
 		
@@ -58,47 +58,10 @@ class ReportController extends SecureController   {
 		 
 	}
 	function primarybaselineAction(){
-		$userid = decode($this->_getParam('id'));
 		
-		if($this->_getParam('download') == 1 && !isEmptyString($this->_getParam('filename'))){
-			// automatic file mime type handling
-			$filename = decode($this->_getParam('filename')); 
-			$full_path = APPLICATION_PATH.DIRECTORY_SEPARATOR."..".DIRECTORY_SEPARATOR."public".DIRECTORY_SEPARATOR."dompdf".DIRECTORY_SEPARATOR."temp".DIRECTORY_SEPARATOR.$filename;
-			
-			// debugMessage($full_path); exit();
-			// file headers to force a download
-		    header('Content-Description: File Transfer');
-		    header('Content-Type: application/octet-stream');
-		    // to handle spaces in the file names 
-		    header("Content-Disposition: attachment; filename=\"$filename\"");
-		    header('Content-Transfer-Encoding: binary');
-		    header('Expires: 0');
-		    header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
-		    header('Pragma: public');
-		    readfile($full_path);
-		} 
-	}
-	
+	}	
 	function baselinedetailAction(){
-		$userid = decode($this->_getParam('id'));
 		
-		if($this->_getParam('download') == 1 && !isEmptyString($this->_getParam('filename'))){
-			// automatic file mime type handling
-			$filename = decode($this->_getParam('filename')); 
-			$full_path = APPLICATION_PATH.DIRECTORY_SEPARATOR."..".DIRECTORY_SEPARATOR."public".DIRECTORY_SEPARATOR."dompdf".DIRECTORY_SEPARATOR."temp".DIRECTORY_SEPARATOR.$filename;
-			
-			// debugMessage($full_path); exit();
-			// file headers to force a download
-		    header('Content-Description: File Transfer');
-		    header('Content-Type: application/octet-stream');
-		    // to handle spaces in the file names 
-		    header("Content-Disposition: attachment; filename=\"$filename\"");
-		    header('Content-Transfer-Encoding: binary');
-		    header('Expires: 0');
-		    header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
-		    header('Pragma: public');
-		    readfile($full_path);
-		} 
 	}
 	
 	function allfarmersAction(){
@@ -184,4 +147,7 @@ class ReportController extends SecureController   {
     											array_remove_empty(array_merge_maintain_keys($this->_getAllParams(), $this->getRequest()->getQuery())));
 	}
 	
+	function pricesAction(){
+	
+	}
 }

@@ -233,7 +233,7 @@
 						}
 						
                         $hasprofileimage = false;
-                        $real_path = APPLICATION_PATH.DIRECTORY_SEPARATOR."..".DIRECTORY_SEPARATOR.PUBLICFOLDER.DIRECTORY_SEPARATOR."uploads".DIRECTORY_SEPARATOR."user_";
+                        $real_path = BASE_PATH.DIRECTORY_SEPARATOR."uploads".DIRECTORY_SEPARATOR."user_";
                         $real_path = $real_path.$line['userid'].DIRECTORY_SEPARATOR."avatar".DIRECTORY_SEPARATOR."large_".$line['profilephoto'];
 						
                         if(file_exists($real_path) && !isEmptyString($line['profilephoto'])){

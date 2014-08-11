@@ -451,8 +451,8 @@ pdfquicklinks {
 			$temp_file_name = ($timestamp).".pdf";
 			$temp_file_text = ($timestamp).".html";
 			
-			$path = APPLICATION_PATH.DIRECTORY_SEPARATOR."..".DIRECTORY_SEPARATOR."public".DIRECTORY_SEPARATOR."temp".DIRECTORY_SEPARATOR.$temp_file_name;
-			$path_txt = APPLICATION_PATH.DIRECTORY_SEPARATOR."..".DIRECTORY_SEPARATOR."public".DIRECTORY_SEPARATOR."temp".DIRECTORY_SEPARATOR.$temp_file_text;
+			$path = BASE_PATH.DIRECTORY_SEPARATOR."temp".DIRECTORY_SEPARATOR.$temp_file_name;
+			$path_txt = BASE_PATH.DIRECTORY_SEPARATOR."temp".DIRECTORY_SEPARATOR.$temp_file_text;
 			$relativepathtodocument = $this->serverUrl($this->baseUrl('temp/'.$temp_file_name));
 			file_put_contents($path_txt, $pdf_html);
 			

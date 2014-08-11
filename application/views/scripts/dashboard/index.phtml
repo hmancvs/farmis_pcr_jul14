@@ -1,30 +1,54 @@
 <?php
 	require_once APPLICATION_PATH.'/includes/header.php';
 		
-	$user = new UserAccount();
-	$user->populate($userid);
+	$loggedinuser = new UserAccount();
+	$loggedinuser->populate($userid);
 	$farmgroup = new FarmGroup();
 	
+	$country = 'UG';
+	$location_label = 'District';
+	$locations_label = 'Districts';
+	$countrycode = COUNTRY_CODE_UG;
+	$county_label = $this->translate("global_county_label");
+	$subcounty_label = $this->translate("global_subcounty_label");
+	
+	if(isKenya() || $loggedinuser->isKenyan()){
+		$country = 'KE';
+		$session->setVar('country', 'ke');
+		$location_label = 'County';
+		$locations_label = 'Counties';
+		$countrycode = COUNTRY_CODE_KE;
+		$county_label = $this->translate("global_subcounty_label");
+		$subcounty_label = $this->translate("global_ward_label");
+		$loggedinuser->setLocationID('43741');
+	}
+	
+	if(isEmptyString($loggedinuser->getLocationID())){
+		if(isUganda()){
+			$loggedinuser->setLocationID('35');
+		}
+	}
+	
 	if(isFarmer()){
-		$countcrops = $user->getCrops()->count();
-		$countseasons = $user->getSeasons()->count();
+		$countcrops = $loggedinuser->getCrops()->count();
+		$countseasons = $loggedinuser->getSeasons()->count();
 
 		$seasonid = '';
 		$seasonurl = 'javascript: void(0)';
 		
-		$step1_1_counter = $user->getStep1_1_Status();
-		$step1_3_counter = $user->getStep1_3_Status();
-		$step1_4_counter = $user->getStep1_4_Status();
-		$step2_1_counter = $user->getStep2_1_Status();
-		$step2_2_counter = $user->getStep2_2_Status();
-		$step2_4_counter = $user->getPreseasons()->get(0)->getPreseasonEstimatesStatus();
-		$step3_1_counter = $user->getSeasons()->count();
+		$step1_1_counter = $loggedinuser->getStep1_1_Status();
+		$step1_3_counter = $loggedinuser->getStep1_3_Status();
+		$step1_4_counter = $loggedinuser->getStep1_4_Status();
+		$step2_1_counter = $loggedinuser->getStep2_1_Status();
+		$step2_2_counter = $loggedinuser->getStep2_2_Status();
+		$step2_4_counter = $loggedinuser->getPreseasons()->get(0)->getPreseasonEstimatesStatus();
+		$step3_1_counter = $loggedinuser->getSeasons()->count();
 		$step3_2_counter = 0;
 		$step3_3_counter = 0;
 		$step3_4_counter = 0;
 		
-		$seasonurl = $this->baseUrl('season/index/userid/'.encode($user->getID()));
-		$season = $user->getSeasons()->get(0);
+		$seasonurl = $this->baseUrl('season/index/userid/'.encode($loggedinuser->getID()));
+		$season = $loggedinuser->getSeasons()->get(0);
 		$seasonid = $season->getID();
 		if(!isEmptyString($seasonid)){
 			$timeline = $season->getTimeLineDetails();
@@ -34,17 +58,58 @@
 			$step3_3_counter = $season->getTotalExpenses();
 		}
 		
-		$inventories = $user->getInventoryDetails();
+		$inventories = $loggedinuser->getInventoryDetails();
 		$step3_4_counter = $inventories->count();
 		
 		if(isFarmGroupAdmin()){
-			$farmgroup = $user->getFarmGroup();
+			$farmgroup = $loggedinuser->getFarmGroup();
 			
 		}
 	}
 	
-	if($acl->checkPermission('Dashboard Statistics', ACTION_VIEW)){
-		$farmers = countFarmers($session->getVar('country'));
+	$partner_query = ""; $partner_details = array(); $indtype = ''; 
+	$partner_query_dna = ""; $partner_details_dna = array();
+	if($loggedinuser->isPartner()){
+		$allowedlist = $loggedinuser->getCompany()->getAllocationDetails(true);
+		$partnertype = $loggedinuser->getCompany()->getFarmisType();
+		$indtype = $loggedinuser->getCompany()->getShowInd();
+		switch($partnertype){
+			case 2:
+			case 3:
+				$partner_query = $partner_query_dna = " AND l.regionid in(".$allowedlist.") ";
+				if($indtype == 0){
+					$partner_query .= " AND u.farmgroupid <> '' ";
+				}
+				$partner_details = array("type"=>$partnertype, "allowedlist"=>$allowedlist, "regionlist" => $partner_query);
+				$partner_details_dna = array("type"=>$partnertype, "allowedlist"=>$allowedlist, "regionlist" => $partner_query_dna);
+				break;
+			case 4:
+			case 5:
+				$partner_query = " AND u.locationid in(".$allowedlist.") "; 
+				$partner_query_dna = " AND f.locationid in(".$allowedlist.") ";
+				if($indtype == 0){
+					$partner_query .= " AND u.farmgroupid <> '' ";
+				}
+				$partner_details = array("type"=>$partnertype, "allowedlist"=>$allowedlist, "districtlist" => $partner_query);
+				$partner_details_dna = array("type"=>$partnertype, "allowedlist"=>$allowedlist, "districtlist" => $partner_query_dna);
+				break;
+			case 6:
+			case 7:
+				$partner_query = " AND u.farmgroupid in(".$allowedlist.") ";
+				$partner_query_dna = " AND f.id in(".$allowedlist.") ";
+				if($indtype == 0){
+					$partner_query .= " AND u.farmgroupid <> '' ";
+				}
+				$partner_details = array("type"=>$partnertype, "allowedlist"=>$allowedlist, "dnalist" => $partner_query);
+				$partner_details_dna = array("type"=>$partnertype, "allowedlist"=>$allowedlist, "dnalist" => $partner_query_dna);
+				break;
+			default:
+				break;
+		}
+	}
+	
+	if($acl->checkPermission('Dashboard Statistics', ACTION_VIEW) || $acl->checkPermission('Dashboard Coverage Map', ACTION_VIEW)){
+		$farmers = countFarmers($session->getVar('country'), $partner_details); 
 		$total_farmers = $farmers['total'];
 		$total_farmers_ingroups = $farmers['indna'];
 		$total_farmers_ind = $farmers['notindna'];
@@ -79,19 +144,18 @@
 				SUM(IF(u.paymentstatus = '1',1,0)) as paid, 
 				SUM(IF(u.paymentstatus = '0' || u.paymentstatus = '',1,0)) as notpaid
 				from location l 
-				left join useraccount u on (u.locationid = l.id AND u.type = 2)
-				left join farmgroup d on (d.districtid = l.id AND LOWER(d.country) = LOWER('".$session->getVar('country')."'))
-				where LOWER(u.country) = LOWER('".$session->getVar('country')."') ".$where_query."
-				GROUP BY u.locationid
-				HAVING count(u.id) > 100
+				left join useraccount u on (u.locationid = l.id AND u.type = 2 AND LOWER(u.country) = LOWER('".$session->getVar('country')."'))
+				where LOWER(u.country) = LOWER('".$session->getVar('country')."') ".$where_query.$partner_query."
+				GROUP BY l.id
+				HAVING count(u.id) > 10
 				order by l.name asc ";
 		
-		// debugMessage($all_results_query);
+		// debugMessage($all_results_query); exit();
 		$conn = Doctrine_Manager::connection(); 
-		$result = $conn->fetchAll($all_results_query);
-		$has_no_data = (count($result) == 0) ? true : false; 
-		// debugMessage($result); exit();
-		
+		$result_coverage = $conn->fetchAll($all_results_query);
+		$has_no_data = (count($result_coverage) == 0) ? true : false; 
+		// debugMessage($result); 
+	
 		if($acl->checkPermission('Dashboard Trends', ACTION_VIEW)){
 			if(date('m') == 1){
 				$rangestart = $this->startofmonth_6monthago;
@@ -106,7 +170,10 @@
 				SUM(IF(u.farmgroupid <> '',1,0)) as indna,
 				month(u.datecreated) as month, 
 				year(u.datecreated) as year 
-				from useraccount as u where type = 2 AND TO_DAYS(datecreated) >= TO_DAYS('".$rangestart."') AND LOWER(u.country) = LOWER('".$session->getVar('country')."') group by year(u.datecreated), month(u.datecreated)"; // debugMessage($users_sql);
+				from useraccount as u 
+				left join farmgroup f on (u.farmgroupid = f.id)
+				left join location l on (f.districtid = l.id AND l.locationtype = 2)
+				where u.type = 2 AND TO_DAYS(u.datecreated) >= TO_DAYS('".$rangestart."') ".$partner_query." AND LOWER(u.country) = LOWER('".$session->getVar('country')."') group by year(u.datecreated), month(u.datecreated)"; // debugMessage($users_sql); 
 			$users_count = $conn->fetchAll($users_sql); 
 			// debugMessage($users_count); exit;
 			$users_no_data = (count($users_count) == 0) ? true : false; 
@@ -126,16 +193,18 @@
 			$totallist = implode(", ", $totalarray);
 			$activelist = implode(", ", $activearray);
 		}
-		
 	}
 	
 	$title = $this->translate("dashboard_pagetitle");
-	$this->headTitle($title); 
+	$this->headTitle($title);
+	// exit(); 
 ?>
-<script type="text/javascript" src="<?php echo $this->baseUrl('javascript/custom/skycons.js'); ?>"></script>
 <?php if(loadMaps() && $acl->checkPermission('Dashboard Coverage Map', ACTION_VIEW)){ ?>
 	<script src="<?php echo getGoogleMapsUrl(); ?>" type="text/javascript"></script>
-	<script type="text/javascript" src="<?php echo $this->serverUrl($this->baseUrl('javascript/maps/gmaps.min.js')); ?>"></script>
+	<script type="text/javascript" src="<?php echo $this->serverUrl($this->baseUrl('assets/js/maps/gmaps.min.js')); ?>"></script>
+<?php } ?>
+<?php if($acl->checkPermission('Weather', ACTION_VIEW)){ ?>
+	<script type="text/javascript" src="<?php echo $this->serverUrl($this->baseUrl('assets/js/custom/skycons.js')); ?>"></script>
 <?php } ?>
 <script>
 $(document).ready(function(){
@@ -176,7 +245,7 @@ $(document).ready(function(){
 				}
 			);
 		});
-		// $("#weather").trigger('click');
+		$("#weather").trigger('click');
 	<?php } ?>
 	
 	<?php if($acl->checkPermission('Dashboard Statistics', ACTION_VIEW)){ ?>
@@ -205,7 +274,7 @@ $(document).ready(function(){
 		});
 	
 		// reload all on page load
-		// $(".reload").trigger('click').attr('Reload');
+		$(".reload").trigger('click').attr('Reload');
 		// reload all data on clicking all trigger
 		$("#reloadall, .reloadall").click(function(){
 			$(".reload").trigger('click');
@@ -220,6 +289,10 @@ $(document).ready(function(){
 	<?php if(loadMaps() && $acl->checkPermission('Dashboard Coverage Map', ACTION_VIEW)){ ?>
 		var gpslat = '2.24065';
 		var gpslng = '32.37514';
+		<?php if(isKenya()){ ?>
+			var gpslat = '-0.89057';
+			var gpslng = '37.68955';
+		<?php } ?>
 		var title = "Google Map";
 		var map = new GMaps({
 			div: '#mapcanvas',
@@ -235,7 +308,7 @@ $(document).ready(function(){
 		});
 		
 		<?php
-			foreach($result as $location){
+			foreach($result_coverage as $location){
 				$hasgps = false;
 				if(!isEmptyString($location['gpslat']) && !isEmptyString($location['gpslng'])){
 					$hasgps = true;
@@ -264,7 +337,7 @@ $(document).ready(function(){
 			<?php } ?>	
 		<?php } ?>
 		
-		map.setZoom(8);
+		map.setZoom(7);
 		map.setOptions({scrollwheel: false, disableDoubleClickZoom: true});
 	<?php } ?>
 	
@@ -282,6 +355,8 @@ $(document).ready(function(){
 	}());
 	
 	$(function () {
+		<?php if($acl->checkPermission('Dashboard Trends', ACTION_VIEW)){ ?>
+		
 		var v_ingroups = <?php echo $total_farmers_ingroups; ?>;
 		var v_indv = <?php echo $total_farmers_ind; ?>;
 		var v_male = <?php echo $total_farmers_male; ?>;
@@ -300,7 +375,6 @@ $(document).ready(function(){
 		var phone = <?php echo $percent_phone; ?>;
 		var nophone = <?php echo $percent_nophone; ?>;
 		
-		<?php if($acl->checkPermission('Dashboard Trends', ACTION_VIEW)){ ?>
 		$('#container_type').highcharts({
 			chart: {
 				height:240,
@@ -522,12 +596,13 @@ $(document).ready(function(){
             <div class="page-header">
                 <div class="page-title">
                     <h3>Dashboard</h3>
-                    <span><?php echo greatUser($user->getName()); ?>!</span>
+                    <span><?php echo greatUser($loggedinuser->getName()); ?>!</span>
                 </div>
                 <ul class="page-stats dashbd">
                 	<?php if($acl->checkPermission('Weather', ACTION_VIEW)){ ?>
                         <li><div class="summary"><span>My Location</span>
-                            <h3 id="location_html"><?php echo !isEmptyString($user->getLocationID()) ? $user->getLocation()->getName() : 'Kampala'; ?></h3></div>
+                        	
+                            <h3 id="location_html"><?php echo $loggedinuser->getLocation()->getName(); ?></h3></div>
                         </li>
                         <li style="padding-right:32px;"><div class="summary floatleft"><span>Current Condition</span><h3 id="summary_html" class="weatherdata"></h3></div>
                             <div class="floatright"><canvas id="icon1" width="48" height="48" class="blocked floatright"></canvas></div>
@@ -541,12 +616,12 @@ $(document).ready(function(){
             </div>
             <?php if($acl->checkPermission('Weather', ACTION_VIEW)){ ?>
             <div class="row margin0 maxwidth" style="margin-bottom:0;">
-            	<input type="hidden" name="location" id="location" value="<?php echo $user->getLocation()->getName(); ?>" />
-				<input type="hidden" name="locationid" id="locationid" value="<?php echo $user->getLocationID(); ?>" />
+            	<input type="hidden" name="location" id="location" value="<?php echo $loggedinuser->getLocation()->getName(); ?>" />
+				<input type="hidden" name="locationid" id="locationid" value="<?php echo $loggedinuser->getLocationID(); ?>" />
                 <div class="widget box makerelative">
                     <div class="widget-header">
                         <h4><i class="icon-th"></i> Weather Today</h4>
-                        <a href="<?php echo $this->baseUrl('weather/index/state/forecast/locationid/'.$user->getLocationID()); ?>" class="btn btn-primary" style="position:absolute; right:40px; top:3px;"><i class="icon-arrow-right icon-white"></i> Full Forecast</a>
+                        <a href="<?php echo $this->baseUrl('weather/index/state/forecast/locationid/'.$loggedinuser->getLocationID()); ?>" class="btn btn-primary" style="position:absolute; right:40px; top:3px;"><i class="icon-arrow-right icon-white"></i> Full Forecast</a>
                         <div class="toolbar no-padding">
                             <div class="btn-group">
                                 <a class="gonowhere weather btn noround padding10"><i class="icon-refresh"></i></a>
@@ -555,9 +630,9 @@ $(document).ready(function(){
                     </div>
                     <div class="widget-content no-padding" style="min-height:80px;">
                         <div id="todaysummary" class="margin10 clearfix" style="font-weight:normal; font-size:16px; padding-left:0; padding-right:100px;"></div>     
-                        <?php if(loadMaps()){ ?>
-                        	<iframe id="forecast_embed" type="text/html" frameborder="0" height="230" width="100%" src="http://forecast.io/embed/#lat=<?php echo $user->getLocation()->getGpsLat(); ?>&lon=<?php echo $user->getLocation()->getGpsLng(); ?>&name=<?php echo $user->getLocation()->getName(); ?> - Next 7 Days&units=uk&color=#42B521"> </iframe>
-                        <?php } ?>
+                        <?php //if(loadMaps()){ ?>
+                        	<iframe id="forecast_embed" type="text/html" frameborder="0" height="230" width="100%" src="http://forecast.io/embed/#lat=<?php echo $loggedinuser->getLocation()->getGpsLat(); ?>&lon=<?php echo $loggedinuser->getLocation()->getGpsLng(); ?>&name=<?php echo $loggedinuser->getLocation()->getName(); ?> - Next 7 Days&units=uk&color=#42B521"> </iframe>
+                        <?php //} ?>
                     </div>
                 </div>
             </div>
@@ -711,7 +786,7 @@ $(document).ready(function(){
                                     </tr>
                                     <tr id="farmerpaymentsug_row">
                                         <td class="icontd"><span class="label label-primary blocked">&nbsp;</span></td>
-                                        <td class="variabletd">Farmer Payments (UGX)</td>
+                                        <td class="variabletd">Farmer Payments</td>
                                         <td><a class="gonowhere btn btn-mini centeralign reload" id="farmerpaymentsug"><i class="icon-refresh"></i> </a></td>
                                         <td><label id="farmerpaymentsug_today"></label></td>
                                         <td><label id="farmerpaymentsug_yesterday"></label></td>
@@ -724,7 +799,7 @@ $(document).ready(function(){
                                     </tr>
                                     <tr id="dnapaymentsug_row">
                                         <td class="icontd"><span class="label label-primary blocked">&nbsp;</span></td>
-                                        <td class="variabletd">DNA Payments (UGX)</td>
+                                        <td class="variabletd">DNA Payments</td>
                                         <td><a class="gonowhere btn btn-mini centeralign reload" id="dnapaymentsug"><i class="icon-refresh"></i> </a></td>
                                         <td><label id="dnapaymentsug_today"></label></td>
                                         <td><label id="dnapaymentsug_yesterday"></label></td>
@@ -760,7 +835,7 @@ $(document).ready(function(){
                                  $counter = 1;
                                  $total = 0;
                                  $maletotal = 0; $femaletotal = 0; $phonetotal = 0; $nophonetotal = 0; $paidtotal = 0;
-                                 foreach($result as $line){
+                                 foreach($result_coverage as $line){
                                      $total += $line['totalfarmers'];
                                      $maletotal += $line['male']; 
                                      $femaletotal += $line['female'];
@@ -775,7 +850,7 @@ $(document).ready(function(){
                             ?>
                                 <div class="row hidden" id="location_<?php echo $line['id']; ?>" style="margin-left:10px;">
                                     <div class="widget-content" style="padding-left:0;">
-                                        <h4 style="font-size:14px; margin:0;"><i class="icon-th"></i> Statistics</h4>
+                                        <h4 style="font-size:14px; margin:0;"><i class="icon-th"></i><?php echo $line['district']; ?> Statistics</h4>
                                         <div class="divider10"></div>
                                         <table class="table table-hover table-bordered table-condensed noround" style="font-size:12px;">
                                             <thead>
@@ -789,7 +864,7 @@ $(document).ready(function(){
                                                 <tr>
                                                     <td>Total Farmers</td>
                                                     <td class="maptablecell"><span class="nullifempty"><?php echo formatNumber($line['totalfarmers']); ?></span></td>
-                                                    <td class="maptablecell" style="padding-right:15px;"><span class="nullifempty">100%</span></td>
+                                                    <td class="maptablecell" style="padding-right:15px;"><span class="nullifempty"><!--(of total)--> --<?php //echo round(($line['totalfarmers']/$totalfarmers)*100,1); ?>%</span></td>
                                                 </tr>
                                                 <tr>
                                                     <td>Male</td>
@@ -819,30 +894,32 @@ $(document).ready(function(){
                                             </tbody>
                                         </table>
                                         <div class="divider15"></div>
-                                        <h4 style="font-size:14px; margin:0;"><i class="icon-th"></i> DNAs <?php //echo '('.countDNAsInDistrict($line['id']).')'; ?> </h4>
-                                        <div class="divider10"></div>
-                                        <table class="table table-hover table-bordered table-condensed noround" style="font-size:12px;">
-                                            <tbody>	
-                                                <?php 
-                                                    $dnas = getDNAsInDistrict($line['id']);
-                                                ?>
-                                                <?php if(count($dnas) == 0){ ?>
-                                                    <tr>
-                                                        <td colspan="2">None</td>
-                                                    </tr>
-                                                <?php } else { ?>
+                                        <?php if(false){ ?>
+                                            <h4 style="font-size:14px; margin:0;"><i class="icon-th"></i> DNAs <?php //echo '('.countDNAsInDistrict($line['id']).')'; ?> </h4>
+                                            <div class="divider10"></div>
+                                            <table class="table table-hover table-bordered table-condensed noround" style="font-size:12px;">
+                                                <tbody>	
                                                     <?php 
-                                                        $counter = 1;
-                                                        foreach($dnas as $key => $value){ 
+                                                        $dnas = getDNAsInDistrict($line['id'], $partner_details_dna);
                                                     ?>
+                                                    <?php if(count($dnas) == 0){ ?>
                                                         <tr>
-                                                            <td class="centeralign"><?php echo $counter; ?></td>
-                                                            <td><?php echo $value; ?></td>
+                                                            <td colspan="2">None</td>
                                                         </tr>
-                                                    <?php $counter++; } ?>
-                                                <?php } ?>
-                                            </tbody>
-                                        </table>
+                                                    <?php } else { ?>
+                                                        <?php 
+                                                            $counter = 1;
+                                                            foreach($dnas as $key => $value){ 
+                                                        ?>
+                                                            <tr>
+                                                                <td class="centeralign"><?php echo $counter; ?></td>
+                                                                <td><?php echo $value; ?></td>
+                                                            </tr>
+                                                        <?php $counter++; } ?>
+                                                    <?php } ?>
+                                                </tbody>
+                                            </table>
+                                        <?php } ?>
                                     </div>
                                 </div>
                             <?php } ?>
@@ -895,8 +972,8 @@ $(document).ready(function(){
                     </div>
                     <div class="widget-content no-padding">
                     	<?php 
-							$latestusers = getLatestUsers(5, $session->getVar('country'));
-							$latestgrps = getLatestGroups(5, $session->getVar('country'));
+							$latestusers = getLatestUsers(5, $session->getVar('country'), $partner_details);
+							$latestgrps = getLatestGroups(5, $session->getVar('country'), $partner_details_dna);
 						?>
                         <div class="row-fluid margin0 maxwidth" style="margin-bottom:0;">
                             <div class="span5">
@@ -981,24 +1058,24 @@ $(document).ready(function(){
                                     <label class="calfont tasklabel">1. Primary Profiling</label>
                                     <label class="calfont taskoutput">Output</label>
                                     <ul id="nexttasks" class="nav">      
-                                        <li class="well"><a href="<?php echo $this->baseUrl('farmer/index/id/'.encode($user->getID())); ?>" title="Update Profile Summary">Update Profile Summary</a><img src="<?php echo  $step1_1_counter >= 60 ? $this->baseUrl('images/tick_done.png') : $this->baseUrl('images/tick_undone.png'); ?>" />
+                                        <li class="well"><a href="<?php echo $this->baseUrl('farmer/index/id/'.encode($loggedinuser->getID())); ?>" title="Update Profile Summary">Update Profile Summary</a><img src="<?php echo  $step1_1_counter >= 60 ? $this->baseUrl('images/tick_done.png') : $this->baseUrl('images/tick_undone.png'); ?>" />
                                             <span class="percent"><?php echo $step1_1_counter.'%'; ?></span>
                                         </li>
                                         <li><img src="<?php echo $this->baseUrl('images/nextstep.png'); ?>" /></li>
-                                        <li class="well"><a href="<?php echo $this->baseUrl('farmer/picture/id/'.encode($user->getID()).'/type/photo'); ?>" title="Upload Profile Picture">Upload Profile Picture</a><img src="<?php echo $user->hasProfileImage() ? $this->baseUrl('images/tick_done.png') : $this->baseUrl('images/tick_undone.png'); ?>" />
-                                            <span class="percent"><?php echo $user->hasProfileImage() ? '100%' : ''; ?></span>
+                                        <li class="well"><a href="<?php echo $this->baseUrl('farmer/picture/id/'.encode($loggedinuser->getID()).'/type/photo'); ?>" title="Upload Profile Picture">Upload Profile Picture</a><img src="<?php echo $loggedinuser->hasProfileImage() ? $this->baseUrl('images/tick_done.png') : $this->baseUrl('images/tick_undone.png'); ?>" />
+                                            <span class="percent"><?php echo $loggedinuser->hasProfileImage() ? '100%' : ''; ?></span>
                                         </li>
                                         <li><img src="<?php echo $this->baseUrl('images/nextstep.png'); ?>" /></li>
-                                        <li class="well"><a href="<?php echo $this->baseUrl('farmer/index/id/'.encode($user->getID()).'/tab/contacts'); ?>" title="Record and Validate Contacts">Record and Validate Contacts</a><img src="<?php echo $step1_3_counter >= 60 ? $this->baseUrl('images/tick_done.png') : $this->baseUrl('images/tick_undone.png'); ?>" />
+                                        <li class="well"><a href="<?php echo $this->baseUrl('farmer/index/id/'.encode($loggedinuser->getID()).'/tab/contacts'); ?>" title="Record and Validate Contacts">Record and Validate Contacts</a><img src="<?php echo $step1_3_counter >= 60 ? $this->baseUrl('images/tick_done.png') : $this->baseUrl('images/tick_undone.png'); ?>" />
                                             <span class="percent"><?php echo $step1_3_counter.'%'; ?></span>
                                         </li>
                                         <li><img src="<?php echo $this->baseUrl('images/nextstep.png'); ?>" /></li>
-                                        <li class="well"><a href="<?php echo $this->baseUrl('farmer/index/id/'.encode($user->getID()).'/tab/personal'); ?>" title="Personal details and Biography">Personal details and Biography</a><img src="<?php echo $step1_4_counter >= 60 ? $this->baseUrl('images/tick_done.png') : $this->baseUrl('images/tick_undone.png'); ?>" />
+                                        <li class="well"><a href="<?php echo $this->baseUrl('farmer/index/id/'.encode($loggedinuser->getID()).'/tab/personal'); ?>" title="Personal details and Biography">Personal details and Biography</a><img src="<?php echo $step1_4_counter >= 60 ? $this->baseUrl('images/tick_done.png') : $this->baseUrl('images/tick_undone.png'); ?>" />
                                             <span class="percent"><?php echo $step1_4_counter.'%'; ?></span>
                                         </li>
                                         <li><img src="<?php echo $this->baseUrl('images/nextstep_last.png'); ?>" /></li>
                                         <li class="output" style="float:right;">
-                                            <a class="reportlink" title="Farmis Baseline Summary Report" target="_blank" href="<?php echo $this->baseUrl('report/primarybaseline/id/'.$user->getID()); ?>">
+                                            <a class="reportlink" title="Farmis Baseline Summary Report" target="_blank" href="<?php echo $this->baseUrl('report/primarybaseline/id/'.$loggedinuser->getID()); ?>">
                                                 <img src="<?php echo $this->baseUrl('images/pdfreport.png'); ?>" />
                                                 <span class="reportname">Farmis Baseline Summary Report</span>
                                             </a>
@@ -1010,19 +1087,19 @@ $(document).ready(function(){
                                     <label class="calfont taskoutput">Output</label>
                                     <ul id="nexttasks" class="nav">     
                                         <li class="well">
-                                            <a href="<?php echo $this->baseUrl('farmer/index/id/'.encode($user->getID()).'/tab/farm'); ?>" title="Manage Farm Business">Manage Farm</a>
+                                            <a href="<?php echo $this->baseUrl('farmer/index/id/'.encode($loggedinuser->getID()).'/tab/farm'); ?>" title="Manage Farm Business">Manage Farm</a>
                                             <img src="<?php echo $this->baseUrl('images/tick_done.png'); ?>" />
                                             <span class="percent"><?php echo $step2_1_counter.'%'; ?></span>
                                         </li>
                                         <li><img src="<?php echo $this->baseUrl('images/nextstep.png'); ?>" /></li>
                                         <li class="well">
-                                            <a href="<?php echo $this->baseUrl('farmer/index/id/'.encode($user->getID()).'/tab/farm'); ?>" title="Land Usage Profiling">Land Usage Profiling</a>
+                                            <a href="<?php echo $this->baseUrl('farmer/index/id/'.encode($loggedinuser->getID()).'/tab/farm'); ?>" title="Land Usage Profiling">Land Usage Profiling</a>
                                             <img src="<?php echo  $step1_3_counter >= 60 ? $this->baseUrl('images/tick_done.png') : $this->baseUrl('images/tick_undone.png'); ?>" />
                                             <span class="percent"><?php echo $step1_3_counter.'%'; ?></span>
                                         </li>
                                         <li><img src="<?php echo $this->baseUrl('images/nextstep.png'); ?>" /></li>
                                         <li class="well">
-                                            <a href="<?php echo $this->baseUrl('farmer/index/id/'.encode($user->getID()).'/tab/farm'); ?>" title="Crop Profiling">Crop Profiling</a>
+                                            <a href="<?php echo $this->baseUrl('farmer/index/id/'.encode($loggedinuser->getID()).'/tab/farm'); ?>" title="Crop Profiling">Crop Profiling</a>
                                             <img src="<?php echo  $countcrops > 0 ? $this->baseUrl('images/tick_done.png') : $this->baseUrl('images/tick_undone.png'); ?>" />
                                             <?php if($countcrops > 0){ ?>
                                             <span class="percent"><?php echo $countcrops == 1 ? '1 Crop' : $countcrops.' Crops'; ?></span>
@@ -1030,13 +1107,13 @@ $(document).ready(function(){
                                         </li>
                                         <li><img src="<?php echo $this->baseUrl('images/nextstep.png'); ?>" /></li>
                                         <li class="well">
-                                            <a href="<?php echo $this->baseUrl('farmer/index/id/'.encode($user->getID()).'/tab/preseason'); ?>" title="Previous Season Profiling">Previous Season Profiling</a>
+                                            <a href="<?php echo $this->baseUrl('farmer/index/id/'.encode($loggedinuser->getID()).'/tab/preseason'); ?>" title="Previous Season Profiling">Previous Season Profiling</a>
                                             <img src="<?php echo  $step2_4_counter >= 50 ? $this->baseUrl('images/tick_done.png') : $this->baseUrl('images/tick_undone.png'); ?>" />
                                             <span class="percent"><?php echo $step2_4_counter.'%'; ?></span>
                                         </li>
                                         <li><img src="<?php echo $this->baseUrl('images/nextstep_last.png'); ?>" /></li>
                                         <li class="output">
-                                            <a class="reportlink" title="Farmis Baseline Detailed Report" href="<?php echo $this->baseUrl('report/baselinedetail/id/'.$user->getID()); ?>">
+                                            <a class="reportlink" title="Farmis Baseline Detailed Report" href="<?php echo $this->baseUrl('report/baselinedetail/id/'.$loggedinuser->getID()); ?>">
                                                 <img src="<?php echo $this->baseUrl('images/pdfreport.png'); ?>" />
                                                 <span class="reportname">Farmis Baseline Detailed Report</span>
                                             </a>
@@ -1062,10 +1139,10 @@ $(document).ready(function(){
                                         <li><img src="<?php echo $this->baseUrl('images/nextstep.png'); ?>" /></li>
                                         <li class="well"><a href="<?php echo $seasonurl; ?>" title="Record Expenses">Record Expenses</a><img src="<?php echo $step3_3_counter == 0 ? $this->baseUrl('images/tick_undone.png') : $this->baseUrl('images/tick_done.png'); ?>" /></li>
                                         <li><img src="<?php echo $this->baseUrl('images/nextstep.png'); ?>" /></li>
-                                        <li class="well"><a href="<?php echo $this->baseUrl('farmer/index/id/'.encode($user->getID()).'/tab/inventory'); ?>" title="Season Inventory">Season Inventory</a><img src="<?php echo $step3_4_counter == 0 ? $this->baseUrl('images/tick_undone.png') : $this->baseUrl('images/tick_done.png'); ?>" /></li>
+                                        <li class="well"><a href="<?php echo $this->baseUrl('farmer/index/id/'.encode($loggedinuser->getID()).'/tab/inventory'); ?>" title="Season Inventory">Season Inventory</a><img src="<?php echo $step3_4_counter == 0 ? $this->baseUrl('images/tick_undone.png') : $this->baseUrl('images/tick_done.png'); ?>" /></li>
                                         <li><img src="<?php echo $this->baseUrl('images/nextstep_last.png'); ?>" /></li>
                                         <li class="output">
-                                            <a class="reportlink" title="Profit and Loss Statement" href="<?php echo $this->baseUrl("finance/statement/userid/".$user->getID()); ?>">
+                                            <a class="reportlink" title="Profit and Loss Statement" href="<?php echo $this->baseUrl("finance/statement/userid/".$loggedinuser->getID()); ?>">
                                                 <img src="<?php echo $this->baseUrl('images/pdfreport.png'); ?>" />
                                                 <span class="reportname">Profit and Loss Statement</span>
                                             </a>

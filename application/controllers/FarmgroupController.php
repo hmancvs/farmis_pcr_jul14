@@ -70,7 +70,7 @@ class FarmgroupController extends SecureController   {
 	 	$upload->addValidator('Size', false, $config->profilephoto->maximumfilesize);
 		
 	 	$profilefolder = $farmgroup->getID();
- 		$destination_path = APPLICATION_PATH.DIRECTORY_SEPARATOR."..".DIRECTORY_SEPARATOR."public".DIRECTORY_SEPARATOR."uploads".DIRECTORY_SEPARATOR."farmgroups".DIRECTORY_SEPARATOR."group_".$profilefolder;
+ 		$destination_path = BASE_PATH.DIRECTORY_SEPARATOR."uploads".DIRECTORY_SEPARATOR."farmgroups".DIRECTORY_SEPARATOR."group_".$profilefolder;
  		
 		// create destination folder if doesnot exist 
 		if(!is_dir($destination_path)){
@@ -197,7 +197,7 @@ class FarmgroupController extends SecureController   {
 		//debugMessage($farmgroup->toArray());
 		
 		$oldfile = "large_".$farmgroup->getLogo();
-		$base = APPLICATION_PATH.DIRECTORY_SEPARATOR."..".DIRECTORY_SEPARATOR.PUBLICFOLDER.DIRECTORY_SEPARATOR."uploads".DIRECTORY_SEPARATOR."farmgroups".DIRECTORY_SEPARATOR."group_".$profilefolder.DIRECTORY_SEPARATOR;
+		$base = BASE_PATH."uploads".DIRECTORY_SEPARATOR."farmgroups".DIRECTORY_SEPARATOR."group_".$profilefolder.DIRECTORY_SEPARATOR;
 		
 		$src = $base.$oldfile;
 		// debugMessage($src); exit();

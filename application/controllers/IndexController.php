@@ -83,9 +83,9 @@ class IndexController extends Zend_Controller_Action  {
      */
     public function indexAction()  {
     	$session = SessionWrapper::getInstance(); 
-    	/* if($this->getRequest()->getControllerName() == 'index' && !isEmptyString($session->getVar('userid'))){
+    	if($this->getRequest()->getControllerName() == 'index' && !isEmptyString($session->getVar('userid'))){
     		$this->_helper->redirector->gotoUrl($this->view->baseUrl("dashboard"));
-    	} */
+    	}
     }
     
 	/**

@@ -62,26 +62,38 @@ $(document).ready(function() {
 <div class="span3 marginleft0" id="left">    
     <div class="well" id="profiletop">
         <div id="profileinfo"> 
-			<?php if($isme || $acl->checkPermission($resourcename, ACTION_EDIT)){ ?>
+			<?php if(($isme || $acl->checkPermission($resourcename, ACTION_EDIT)) && !isEmptyString($user->getID())){ ?>
                 <a href="<?php echo $this->baseUrl($controller.'/picture/id/'.encode($user->getID()).'/type/photo'); ?>" class="editpic" title="Update Profile Photo"><img id="profileimage" src="<?php echo $user->getMediumPicturePath(); ?>" /><pre id="uploadlink" class="hide absoluteupload"><i class="icon-pencil"></i> Upload Photo</pre></a>
             <?php } else { ?>
                 <img id="profileimage" src="<?php echo $user->getMediumPicturePath(); ?>" alt="Update Profile Photo" />
             <?php } ?>
-            <?php if($isme || $acl->checkPermission($resourcename, ACTION_EDIT)){ ?>
+            <?php if(($isme || $acl->checkPermission($resourcename, ACTION_EDIT)) && !isEmptyString($user->getID())){ ?>
                 <a style="display:block; width:155px; text-align:center;" href="<?php echo $this->baseUrl($controller.'/picture/id/'.encode($user->getID()).'/type/photo'); ?>" class="btn btn-mini noround">Upload Photo</a>
             <?php } ?>
         </div>
     </div>
     <ul id="leftnav" style="width:97%;">
         <li id="tab_basics"><a href="#basics" class="basics">Profile</a></li>
-        <?php if($user->isFarmer()){ ?>
-        <li id="tab_farm"><a href="#farm" class="farm">Manage Farm</a></li>
-        <li id="tab_seasons"><a href="#seasons" tab="seasons" class="seasons">Manage Seasons</a></li>
-        <li id="tab_calendar"><a href="#calendar" tab="calendar" class="calendar">Activity Calendar</a></li>
-        <li id="tab_inventory"><a href="#inventory" tab="inventory" class="inventory">Inventory</a></li>
-        <li id="tab_finance"><a href="#finance" tab="finance" class="finance">Finance and Reports</a></li>
+        <?php if(!isEmptyString($user->getID())){ ?>
+			<?php if($user->isFarmer()){ ?>
+                <li id="tab_farm"><a href="#farm" class="farm">Farm</a></li>
+                <?php if($acl->checkPermission('Farmer Seasons', ACTION_LIST)){ ?>
+                <li id="tab_seasons"><a href="#seasons" tab="seasons" class="seasons">Seasons</a></li>
+                <?php } ?>
+                <?php if($acl->checkPermission('Farmer Calendar', ACTION_VIEW)){ ?>  
+	                <li id="tab_calendar"><a href="#calendar" tab="calendar" class="calendar">Activity Calendar</a></li>
+                <?php } ?>
+                <?php if($acl->checkPermission('Farmer Inventory', ACTION_LIST)){ ?>    
+	                <li id="tab_inventory"><a href="#inventory" tab="inventory" class="inventory">Inventory</a></li>
+                <?php } ?>    
+                <li id="tab_finance"><a href="#finance" tab="finance" class="finance">Finance and Reports</a></li>
+            <?php } ?>
+            <?php if($acl->checkPermission('Payments', ACTION_LIST)){ ?> 
+            	<li id="tab_subscription"><a href="#subscription" class="subscription">Subscription History</a></li>
+           	<?php } ?>
+            <?php if(($isme || $acl->checkPermission($resourcename, ACTION_EDIT))){ ?>    
+            	<li id="tab_account"><a href="#account" class="account">Account Settings</a></li>   
+            <?php } ?>
         <?php } ?>
-        <li id="tab_subscription"><a href="#subscription" class="subscription">Subscription History</a></li>
-        <li id="tab_account"><a href="#account" class="account">Account Settings</a></li>   
     </ul>
 </div>

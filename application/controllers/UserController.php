@@ -147,6 +147,8 @@ class UserController extends IndexController  {
 		$session->setVar("type", $useraccount->getType());
 		$session->setVar("farmergroupid", $useraccount->getFarmGroupID());
 		$session->setVar('country', $useraccount->getCountry());
+		$session->setVar('allowedfarmers', $useraccount->getCompany()->getAllocationDetails(true));
+		$session->setVar("partnertype", $useraccount->getCompany()->getFarmisType());
 
 		// clear user specific cache, before it is used again
     	$this->clearUserCache();

@@ -39,6 +39,7 @@
 		$isme = true;
 	}
 	
+	$resourcename = "Farmer";
 	$request->setParam('tab', 'subscription');
 	$successurl = $this->viewurl;
 	
@@ -70,7 +71,7 @@
                 <?php if($sessionhaserror) { ?>
                     <div class="alert alert-error"><?php echo $session->getVar(ERROR_MESSAGE); ?></div>
                 <?php } ?>
-                <span class="span6 marginleft0" style="width:97%;">
+                <span class="span6 marginleft0" style="width:100%;">
                     <div class="well row marginleft0" style="min-height:60px; padding-left:10px; position:relative;">
                         <?php if(isAdmin()){ ?>
                             <div class="margin0" style="position:absolute; right:10px; top:5px;">
@@ -141,13 +142,14 @@
                 </span>
                 
                 <h2>Subscription History</h2>
-                <span class="span6 marginleft0" style="width:97%;">
+                <?php if(isAdmin()){ ?>
+                    <div class="margin0">
+                        <a href="<?php echo $this->baseUrl('payment/subscription/userid/'.encode($user->getID()).'/pgc/true/country/'.$country); ?>" class="addpopup btn btn-primary" title="New Subscription Period" rel="New Subscription Period" id="newsubscription" formtitle="indexform" successurl="<?php echo $successurl; ?>" action="<?php echo $this->baseUrl("payment/processsubscription"); ?>"><i class="icon-plus icon-white"></i> New</a>
+                    </div>
+                <?php } ?>
+                <div class="divider10"></div>
+                <span class="span6 marginleft0" style="width:100%;">
                     <div class="well row marginleft0" style="min-height:60px; padding-left:10px; position:relative;">
-                        <?php if(isAdmin()){ ?>
-                            <div class="margin0" style="position:absolute; right:10px; top:5px;">
-                                <a href="<?php echo $this->baseUrl('payment/subscription/userid/'.encode($user->getID()).'/pgc/true/country/'.$country); ?>" class="addpopup btn btn-primary btn-mini" title="New Subscription Period" rel="New Subscription Period" id="newsubscription" formtitle="indexform" successurl="<?php echo $successurl; ?>" action="<?php echo $this->baseUrl("payment/processsubscription"); ?>"><i class="icon-plus icon-white"></i> New</a>
-                            </div>
-                        <?php } ?>
                         <?php
                             $subscriptions = $user->getAllSubscription();
                             $scount = $subscriptions->count();

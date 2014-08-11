@@ -1,6 +1,5 @@
 <?php
 	require_once APPLICATION_PATH.'/includes/header.php';
-	// require_once(APPLICATION_PATH.'/../'.PUBLICFOLDER.'/dompdf/dompdf_config.inc.php');
 		
 	$loggedinuser = new UserAccount();
 	$loggedinuser->populate($userid);
@@ -144,6 +143,42 @@
 		}
 	}
 	
+	$partner_query = ""; $partner_details = array(); $indtype = ''; 
+	if($loggedinuser->isPartner()){
+		$allowedlist = $loggedinuser->getCompany()->getAllocationDetails(true);
+		$partnertype = $loggedinuser->getCompany()->getFarmisType();
+		$indtype = $loggedinuser->getCompany()->getShowInd();
+		switch($partnertype){
+			case 2:
+			case 3:
+				$partner_query = " AND l.regionid in(".$allowedlist.") ";
+				if($indtype == 0){
+					$partner_query .= " AND u.farmgroupid <> '' ";
+				}
+				$partner_details = array("type"=>$partnertype, "allowedlist"=>$allowedlist, "regionlist" => $partner_query);
+				break;
+			case 4:
+			case 5:
+				$partner_query = " AND u.locationid in(".$allowedlist.") "; 
+				if($indtype == 0){
+					$partner_query .= " AND u.farmgroupid <> '' ";
+				}
+				$partner_details = array("type"=>$partnertype, "allowedlist"=>$allowedlist, "districtlist" => $partner_query);
+				break;
+			case 6:
+			case 7:
+				$partner_query = " AND u.farmgroupid in(".$allowedlist.") ";
+				$partner_query_dna = " AND f.id in(".$allowedlist.") ";
+				if($indtype == 0){
+					$partner_query .= " AND u.farmgroupid <> '' ";
+				}
+				$partner_details = array("type"=>$partnertype, "allowedlist"=>$allowedlist, "dnalist" => $partner_query);
+				break;
+			default:
+				break;
+		}
+	}
+	
 	$paginate->processPost($request->getParams());
 	$all_results_query = "
 			SELECT c.id as id,
@@ -156,7 +191,8 @@
 			from farmcrop f 
 			inner join commodity c on(f.cropid = c.id AND c.allowfarmer = 1) 
 			inner join useraccount u on(f.userid = u.id AND u.type = 2) 
-			where LOWER(u.country) = LOWER('".$session->getVar('country')."') AND c.allowfarmer = 1 ".$where_query."
+			left join location l on (u.locationid = l.id and l.locationtype = 2)
+			where LOWER(u.country) = LOWER('".$session->getVar('country')."') AND c.allowfarmer = 1 ".$where_query.$partner_query."
 			GROUP BY f.cropid 
 			HAVING count(u.id) > 0 
 			order by totalfarmers desc";
@@ -358,14 +394,16 @@ pdfquicklinks {
     <?php if($request->print == 1){ ?>
     	<table class="table border0 table-condensed nohover nobg margin0">
         	<tr>
-                <td style="width:118px;"><a title="Export to Excel" class="btn export gonowhere " ><i class="icon-download-alt"></i> Export Data </a>&nbsp;</td>
+                <td style="width:118px;">
+					<?php if($acl->checkPermission('Crop Profiling Aggregated Report', ACTION_EXPORT)) { ?>	
+                        <a title="Export to Excel" class="btn export gonowhere " ><i class="icon-download-alt"></i> Export Data </a>&nbsp;
+                    <?php } ?>
+               	</td>
                 <td></td>
            	</tr>
 		</table>            
     <?php } ?>
     <div class="hideonprint" style="width:100%;">
-        <?php if((isAdmin() || isFarmGroupAdmin() || isManagement())){ ?>
-    	
         <span class="reportfilter">
         	<table class="table table-condensed noborder margin0" style="width:auto; display:inline-block;">
             	<tr>
@@ -378,9 +416,13 @@ pdfquicklinks {
                     <td style="width:120px;">
                     	<label class="control-label">DNA:</label>
                         <?php
+							$preparray = array('' => 'All DNAs');
+							if($indtype != '0'){
+								$preparray['0'] = 'All Individual Farmers';
+							}
 							$groupdropdown = new Zend_Form_Element_Select('farmgroupid',
 												array(
-													'multiOptions' => array_merge_maintain_keys(array('' => 'All'), getAllFarmGroups('', $session->getVar('country'))),								
+													'multiOptions' => array_merge_maintain_keys($preparray, getAllFarmGroups('', $session->getVar('country'), $partner_details)),								
 													'view' => new Zend_View(),
 													'decorators' => array('ViewHelper'),
 													'class' => array('width125'),
@@ -465,20 +507,22 @@ pdfquicklinks {
                     <td>
                     	<label class="control-label">&nbsp;</label>
                     	<input type="hidden" name="csv_text" id="csv_text" value="" />
+                        <?php if($acl->checkPermission('Crop Profiling Aggregated Report', ACTION_EXPORT)) { ?>
                         <button type="button" class="btn btn-primary submitexcel" title="Export to Excel" style="padding:6px 10px;"><i class='icon-download-alt icon-white'></i> Export to Excel</button>
+                        <?php } ?>
                     </td>
                     <?php } ?>
                     <td><label class="control-label">&nbsp;</label><a href="<?php echo $this->baseUrl('report/crop');; ?>" id="reset" class="btn" title="Reset Report">Reset</a></td>
                 </tr>
                 <tr>
-                    <?php if($loggedinuser->isUgandan() && isUganda() && (isAdmin() || isManagement())){ ?>
+                    <?php if($loggedinuser->isUgandan() && isUganda() && $acl->checkPermission('Is UG Admin can Administer KE', ACTION_YESNO)){ ?>
 						<td colspan="2">
 							<?php if(isEmptyString($request->country) || $countryreq == 'ug'){ ?>
                                 <a class="btn" href="<?php echo $this->baseUrl('report/crop/country/ke'); ?>" title="Browse Kenya"><i class="icon-list"></i> Browse Kenya</a>
                             <?php } ?>
                         </td>
                     <?php } ?>    
-                    <?php if($loggedinuser->isUgandan() && isKenya() && (isAdmin() || isManagement())){ ?>
+                    <?php if($loggedinuser->isUgandan() && isKenya() && $acl->checkPermission('Is UG Admin can Administer KE', ACTION_YESNO)){ ?>
                     	<td colspan="2">
 							<?php if(!isEmptyString($request->country) && $countryreq == 'ke'){ ?>
                                 <a class="btn" href="<?php echo $this->baseUrl('report/crop/country/ug'); ?>" title="Browse Uganda"><i class="icon-list"></i> Browse Uganda</a>
@@ -488,7 +532,6 @@ pdfquicklinks {
 				</tr>                    
             </table>
     	</span>
-		<?php } ?>
     </div>
     <div class="pull-left" id="pageleft">
         <div class="widgetsection reportcontainer">

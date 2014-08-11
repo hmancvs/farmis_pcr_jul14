@@ -89,7 +89,43 @@ class DashboardController extends SecureController  {
 		$this->_helper->layout->disableLayout();
 		$this->_helper->viewRenderer->setNoRender(TRUE);
 		$conn = Doctrine_Manager::connection();
-	
+		$session = SessionWrapper::getInstance();
+		
+		$partner_query = "";
+		if(isPartner()){
+			$partner = new UserAccount();
+			$partner->populate($session->getVar('userid'));
+			$allowedlist = $partner->getCompany()->getAllocationDetails(true);
+			$partnertype = $partner->getCompany()->getFarmisType();
+			$indtype = $partner->getCompany()->getShowInd();
+			
+			switch($partnertype){
+				case 2:
+				case 3:
+					$partner_query = " AND l.regionid in(".$allowedlist.") ";
+					if($indtype == 0){
+						$partner_query .= " AND c.farmgroupid <> '' ";
+					}
+					break;
+				case 4:
+				case 5:
+					$partner_query = " AND c.locationid in(".$allowedlist.") ";
+					if($indtype == 0){
+						$partner_query .= " AND c.farmgroupid <> '' ";
+					}
+					break;
+				case 6:
+				case 7:
+					$partner_query = " AND c.farmgroupid in(".$allowedlist.") ";
+					if($indtype == 0){
+						$partner_query .= " AND c.farmgroupid <> '' ";
+					}
+					break;
+				default:
+					break;
+			}
+		}
+		
 		$farmer_query = "SELECT
 		SUM(IF(UNIX_TIMESTAMP(c.datecreated) >= ".$this->view->onehourago_timestamp.", 1, 0)) as onehourago,
 		SUM(IF(UNIX_TIMESTAMP(c.datecreated) >= ".$this->view->sixhourago_timestamp.", 1, 0)) as sixhourago,
@@ -102,7 +138,10 @@ class DashboardController extends SecureController  {
 		SUM(IF(TO_DAYS(c.datecreated) >= TO_DAYS('".$this->view->firstdayoflastmonth_iso."') AND TO_DAYS(c.datecreated) <= TO_DAYS('".$this->view->lastdayoflastmonth_iso."'), 1, 0)) as lastmonth,
 		SUM(IF(TO_DAYS(c.datecreated) >= TO_DAYS('".$this->view->firstdayofyear_iso."') AND TO_DAYS(c.datecreated) <= TO_DAYS('".$this->view->lastdayofyear_iso."'), 1, 0)) as thisyear,
 		SUM(IF(TO_DAYS(c.datecreated) >= TO_DAYS('".$this->view->firstsystemday_iso."') AND TO_DAYS(c.datecreated) <= TO_DAYS('".$this->view->today_iso."'), 1, 0)) as allentries
-		FROM useraccount AS c where c.id <> '' AND c.type = 2 AND UPPER(c.country) = 'UG' ";
+		FROM useraccount AS c 
+		left join farmgroup f on (c.farmgroupid = f.id)
+		left join location l on (c.locationid = l.id AND l.locationtype = 2)
+		where c.id <> '' AND c.type = 2 AND LOWER(c.country) = LOWER('".$session->getVar('country')."') ".$partner_query." ";
 		// debugMessage($farmer_query);
 		$farmer_result = $conn->fetchRow($farmer_query);
 		// debugMessage($farmer_result);
@@ -113,7 +152,43 @@ class DashboardController extends SecureController  {
 		$this->_helper->layout->disableLayout();
 		$this->_helper->viewRenderer->setNoRender(TRUE);
 		$conn = Doctrine_Manager::connection();
-	
+		$session = SessionWrapper::getInstance();
+		
+		$partner_query = "";
+		if(isPartner()){
+			$partner = new UserAccount();
+			$partner->populate($session->getVar('userid'));
+			$allowedlist = $partner->getCompany()->getAllocationDetails(true);
+			$partnertype = $partner->getCompany()->getFarmisType();
+			$indtype = $partner->getCompany()->getShowInd();
+				
+			switch($partnertype){
+				case 2:
+				case 3:
+					$partner_query = " AND l.regionid in(".$allowedlist.") ";
+					if($indtype == 0){
+						$partner_query .= " AND c.farmgroupid <> '' ";
+					}
+					break;
+				case 4:
+				case 5:
+					$partner_query = " AND c.locationid in(".$allowedlist.") ";
+					if($indtype == 0){
+						$partner_query .= " AND c.farmgroupid <> '' ";
+					}
+					break;
+				case 6:
+				case 7:
+					$partner_query = " AND c.farmgroupid in(".$allowedlist.") ";
+					if($indtype == 0){
+						$partner_query .= " AND c.farmgroupid <> '' ";
+					}
+					break;
+				default:
+					break;
+			}
+		}
+		
 		$farmer_query = "SELECT
 		SUM(IF(UNIX_TIMESTAMP(c.datecreated) >= ".$this->view->onehourago_timestamp.", 1, 0)) as onehourago,
 		SUM(IF(UNIX_TIMESTAMP(c.datecreated) >= ".$this->view->sixhourago_timestamp.", 1, 0)) as sixhourago,
@@ -126,7 +201,10 @@ class DashboardController extends SecureController  {
 		SUM(IF(TO_DAYS(c.datecreated) >= TO_DAYS('".$this->view->firstdayoflastmonth_iso."') AND TO_DAYS(c.datecreated) <= TO_DAYS('".$this->view->lastdayoflastmonth_iso."'), 1, 0)) as lastmonth,
 		SUM(IF(TO_DAYS(c.datecreated) >= TO_DAYS('".$this->view->firstdayofyear_iso."') AND TO_DAYS(c.datecreated) <= TO_DAYS('".$this->view->lastdayofyear_iso."'), 1, 0)) as thisyear,
 		SUM(IF(TO_DAYS(c.datecreated) >= TO_DAYS('".$this->view->firstsystemday_iso."') AND TO_DAYS(c.datecreated) <= TO_DAYS('".$this->view->today_iso."'), 1, 0)) as allentries
-		FROM useraccount AS c where c.id <> '' AND c.type = 2 AND c.gender = 1 AND UPPER(c.country) = 'UG' ";
+		FROM useraccount AS c 
+		left join farmgroup f on (c.farmgroupid = f.id)
+		left join location l on (c.locationid = l.id AND l.locationtype = 2)
+		where c.id <> '' AND c.type = 2 AND c.gender = 1 AND LOWER(c.country) = LOWER('".$session->getVar('country')."') ".$partner_query." ";
 		// debugMessage($farmer_query);
 		$farmer_result = $conn->fetchRow($farmer_query);
 		// debugMessage($farmer_result);
@@ -137,7 +215,43 @@ class DashboardController extends SecureController  {
 		$this->_helper->layout->disableLayout();
 		$this->_helper->viewRenderer->setNoRender(TRUE);
 		$conn = Doctrine_Manager::connection();
-	
+		$session = SessionWrapper::getInstance();
+		
+		$partner_query = "";
+		if(isPartner()){
+			$partner = new UserAccount();
+			$partner->populate($session->getVar('userid'));
+			$allowedlist = $partner->getCompany()->getAllocationDetails(true);
+			$partnertype = $partner->getCompany()->getFarmisType();
+			$indtype = $partner->getCompany()->getShowInd();
+				
+			switch($partnertype){
+				case 2:
+				case 3:
+					$partner_query = " AND l.regionid in(".$allowedlist.") ";
+					if($indtype == 0){
+						$partner_query .= " AND c.farmgroupid <> '' ";
+					}
+					break;
+				case 4:
+				case 5:
+					$partner_query = " AND c.locationid in(".$allowedlist.") ";
+					if($indtype == 0){
+						$partner_query .= " AND c.farmgroupid <> '' ";
+					}
+					break;
+				case 6:
+				case 7:
+					$partner_query = " AND c.farmgroupid in(".$allowedlist.") ";
+					if($indtype == 0){
+						$partner_query .= " AND c.farmgroupid <> '' ";
+					}
+					break;
+				default:
+					break;
+			}
+		}
+		
 		$farmer_query = "SELECT
 		SUM(IF(UNIX_TIMESTAMP(c.datecreated) >= ".$this->view->onehourago_timestamp.", 1, 0)) as onehourago,
 		SUM(IF(UNIX_TIMESTAMP(c.datecreated) >= ".$this->view->sixhourago_timestamp.", 1, 0)) as sixhourago,
@@ -150,7 +264,10 @@ class DashboardController extends SecureController  {
 		SUM(IF(TO_DAYS(c.datecreated) >= TO_DAYS('".$this->view->firstdayoflastmonth_iso."') AND TO_DAYS(c.datecreated) <= TO_DAYS('".$this->view->lastdayoflastmonth_iso."'), 1, 0)) as lastmonth,
 		SUM(IF(TO_DAYS(c.datecreated) >= TO_DAYS('".$this->view->firstdayofyear_iso."') AND TO_DAYS(c.datecreated) <= TO_DAYS('".$this->view->lastdayofyear_iso."'), 1, 0)) as thisyear,
 		SUM(IF(TO_DAYS(c.datecreated) >= TO_DAYS('".$this->view->firstsystemday_iso."') AND TO_DAYS(c.datecreated) <= TO_DAYS('".$this->view->today_iso."'), 1, 0)) as allentries
-		FROM useraccount AS c where c.id <> '' AND c.type = 2 AND c.gender = 2 AND UPPER(c.country) = 'UG' ";
+		FROM useraccount AS c 
+		left join farmgroup f on (c.farmgroupid = f.id)
+		left join location l on (c.locationid = l.id AND l.locationtype = 2)
+		where c.id <> '' AND c.type = 2 AND c.gender = 2 AND LOWER(c.country) = LOWER('".$session->getVar('country')."') ".$partner_query." ";
 		// debugMessage($farmer_query);
 		$farmer_result = $conn->fetchRow($farmer_query);
 		// debugMessage($farmer_result);
@@ -161,7 +278,43 @@ class DashboardController extends SecureController  {
 		$this->_helper->layout->disableLayout();
 		$this->_helper->viewRenderer->setNoRender(TRUE);
 		$conn = Doctrine_Manager::connection();
-	
+		$session = SessionWrapper::getInstance();
+		
+		$partner_query = "";
+		if(isPartner()){
+			$partner = new UserAccount();
+			$partner->populate($session->getVar('userid'));
+			$allowedlist = $partner->getCompany()->getAllocationDetails(true);
+			$partnertype = $partner->getCompany()->getFarmisType();
+			$indtype = $partner->getCompany()->getShowInd();
+				
+			switch($partnertype){
+				case 2:
+				case 3:
+					$partner_query = " AND l.regionid in(".$allowedlist.") ";
+					if($indtype == 0){
+						$partner_query .= " AND c.farmgroupid <> '' ";
+					}
+					break;
+				case 4:
+				case 5:
+					$partner_query = " AND c.locationid in(".$allowedlist.") ";
+					if($indtype == 0){
+						$partner_query .= " AND c.farmgroupid <> '' ";
+					}
+					break;
+				case 6:
+				case 7:
+					$partner_query = " AND c.farmgroupid in(".$allowedlist.") ";
+					if($indtype == 0){
+						$partner_query .= " AND c.farmgroupid <> '' ";
+					}
+					break;
+				default:
+					break;
+			}
+		}
+		
 		$farmer_query = "SELECT
 		SUM(IF(UNIX_TIMESTAMP(c.datecreated) >= ".$this->view->onehourago_timestamp.", 1, 0)) as onehourago,
 		SUM(IF(UNIX_TIMESTAMP(c.datecreated) >= ".$this->view->sixhourago_timestamp.", 1, 0)) as sixhourago,
@@ -174,7 +327,10 @@ class DashboardController extends SecureController  {
 		SUM(IF(TO_DAYS(c.datecreated) >= TO_DAYS('".$this->view->firstdayoflastmonth_iso."') AND TO_DAYS(c.datecreated) <= TO_DAYS('".$this->view->lastdayoflastmonth_iso."'), 1, 0)) as lastmonth,
 		SUM(IF(TO_DAYS(c.datecreated) >= TO_DAYS('".$this->view->firstdayofyear_iso."') AND TO_DAYS(c.datecreated) <= TO_DAYS('".$this->view->lastdayofyear_iso."'), 1, 0)) as thisyear,
 		SUM(IF(TO_DAYS(c.datecreated) >= TO_DAYS('".$this->view->firstsystemday_iso."') AND TO_DAYS(c.datecreated) <= TO_DAYS('".$this->view->today_iso."'), 1, 0)) as allentries
-		FROM useraccount AS c where c.id <> '' AND c.type = 2 AND c.farmgroupid <> '' AND UPPER(c.country) = 'UG' ";
+		FROM useraccount AS c 
+		left join farmgroup f on (c.farmgroupid = f.id)
+		left join location l on (c.locationid = l.id AND l.locationtype = 2)
+		where c.id <> '' AND c.type = 2 AND c.farmgroupid <> '' AND LOWER(c.country) = LOWER('".$session->getVar('country')."') ".$partner_query." ";
 		// debugMessage($farmer_query);
 		$farmer_result = $conn->fetchRow($farmer_query);
 		// debugMessage($farmer_result);
@@ -185,7 +341,43 @@ class DashboardController extends SecureController  {
 		$this->_helper->layout->disableLayout();
 		$this->_helper->viewRenderer->setNoRender(TRUE);
 		$conn = Doctrine_Manager::connection();
-	
+		$session = SessionWrapper::getInstance();
+		
+		$partner_query = "";
+		if(isPartner()){
+			$partner = new UserAccount();
+			$partner->populate($session->getVar('userid'));
+			$allowedlist = $partner->getCompany()->getAllocationDetails(true);
+			$partnertype = $partner->getCompany()->getFarmisType();
+			$indtype = $partner->getCompany()->getShowInd();
+				
+			switch($partnertype){
+				case 2:
+				case 3:
+					$partner_query = " AND l.regionid in(".$allowedlist.") ";
+					if($indtype == 0){
+						$partner_query .= " AND c.farmgroupid <> '' ";
+					}
+					break;
+				case 4:
+				case 5:
+					$partner_query = " AND c.locationid in(".$allowedlist.") ";
+					if($indtype == 0){
+						$partner_query .= " AND c.farmgroupid <> '' ";
+					}
+					break;
+				case 6:
+				case 7:
+					$partner_query = " AND c.farmgroupid in(".$allowedlist.") ";
+					if($indtype == 0){
+						$partner_query .= " AND c.farmgroupid <> '' ";
+					}
+					break;
+				default:
+					break;
+			}
+		}
+		
 		$farmer_query = "SELECT
 		SUM(IF(UNIX_TIMESTAMP(c.datecreated) >= ".$this->view->onehourago_timestamp.", 1, 0)) as onehourago,
 		SUM(IF(UNIX_TIMESTAMP(c.datecreated) >= ".$this->view->sixhourago_timestamp.", 1, 0)) as sixhourago,
@@ -198,7 +390,10 @@ class DashboardController extends SecureController  {
 		SUM(IF(TO_DAYS(c.datecreated) >= TO_DAYS('".$this->view->firstdayoflastmonth_iso."') AND TO_DAYS(c.datecreated) <= TO_DAYS('".$this->view->lastdayoflastmonth_iso."'), 1, 0)) as lastmonth,
 		SUM(IF(TO_DAYS(c.datecreated) >= TO_DAYS('".$this->view->firstdayofyear_iso."') AND TO_DAYS(c.datecreated) <= TO_DAYS('".$this->view->lastdayofyear_iso."'), 1, 0)) as thisyear,
 		SUM(IF(TO_DAYS(c.datecreated) >= TO_DAYS('".$this->view->firstsystemday_iso."') AND TO_DAYS(c.datecreated) <= TO_DAYS('".$this->view->today_iso."'), 1, 0)) as allentries
-		FROM useraccount AS c where c.id <> '' AND c.type = 2 AND (c.farmgroupid = '' || c.farmgroupid is null) AND UPPER(c.country) = 'UG' ";
+		FROM useraccount AS c 
+		left join farmgroup f on (c.farmgroupid = f.id)
+		left join location l on (f.districtid = l.id AND l.locationtype = 2)
+		where c.id <> '' AND c.type = 2 AND (c.farmgroupid = '' || c.farmgroupid is null) AND LOWER(c.country) = LOWER('".$session->getVar('country')."') ".$partner_query." ";
 		// debugMessage($farmer_query);
 		$farmer_result = $conn->fetchRow($farmer_query);
 		// debugMessage($farmer_result);
@@ -209,7 +404,43 @@ class DashboardController extends SecureController  {
 		$this->_helper->layout->disableLayout();
 		$this->_helper->viewRenderer->setNoRender(TRUE);
 		$conn = Doctrine_Manager::connection();
-	
+		$session = SessionWrapper::getInstance();
+		
+		$partner_query = "";
+		if(isPartner()){
+			$partner = new UserAccount();
+			$partner->populate($session->getVar('userid'));
+			$allowedlist = $partner->getCompany()->getAllocationDetails(true);
+			$partnertype = $partner->getCompany()->getFarmisType();
+			$indtype = $partner->getCompany()->getShowInd();
+				
+			switch($partnertype){
+				case 2:
+				case 3:
+					$partner_query = " AND l.regionid in(".$allowedlist.") ";
+					if($indtype == 0){
+						$partner_query .= " AND c.farmgroupid <> '' ";
+					}
+					break;
+				case 4:
+				case 5:
+					$partner_query = " AND c.locationid in(".$allowedlist.") ";
+					if($indtype == 0){
+						$partner_query .= " AND c.farmgroupid <> '' ";
+					}
+					break;
+				case 6:
+				case 7:
+					$partner_query = " AND c.farmgroupid in(".$allowedlist.") ";
+					if($indtype == 0){
+						$partner_query .= " AND c.farmgroupid <> '' ";
+					}
+					break;
+				default:
+					break;
+			}
+		}
+		
 		$farmer_query = "SELECT
 		SUM(IF(UNIX_TIMESTAMP(c.datecreated) >= ".$this->view->onehourago_timestamp.", 1, 0)) as onehourago,
 		SUM(IF(UNIX_TIMESTAMP(c.datecreated) >= ".$this->view->sixhourago_timestamp.", 1, 0)) as sixhourago,
@@ -222,7 +453,10 @@ class DashboardController extends SecureController  {
 		SUM(IF(TO_DAYS(c.datecreated) >= TO_DAYS('".$this->view->firstdayoflastmonth_iso."') AND TO_DAYS(c.datecreated) <= TO_DAYS('".$this->view->lastdayoflastmonth_iso."'), 1, 0)) as lastmonth,
 		SUM(IF(TO_DAYS(c.datecreated) >= TO_DAYS('".$this->view->firstdayofyear_iso."') AND TO_DAYS(c.datecreated) <= TO_DAYS('".$this->view->lastdayofyear_iso."'), 1, 0)) as thisyear,
 		SUM(IF(TO_DAYS(c.datecreated) >= TO_DAYS('".$this->view->firstsystemday_iso."') AND TO_DAYS(c.datecreated) <= TO_DAYS('".$this->view->today_iso."'), 1, 0)) as allentries
-		FROM useraccount AS c where c.id <> '' AND c.type = 2 AND c.phone <> '' AND UPPER(c.country) = 'UG' ";
+		FROM useraccount AS c 
+		left join farmgroup f on (c.farmgroupid = f.id)
+		left join location l on (c.locationid = l.id AND l.locationtype = 2)
+		where c.id <> '' AND c.type = 2 AND c.phone <> '' AND LOWER(c.country) = LOWER('".$session->getVar('country')."') ".$partner_query." ";
 		// debugMessage($farmer_query);
 		$farmer_result = $conn->fetchRow($farmer_query);
 		// debugMessage($farmer_result);
@@ -233,7 +467,43 @@ class DashboardController extends SecureController  {
 		$this->_helper->layout->disableLayout();
 		$this->_helper->viewRenderer->setNoRender(TRUE);
 		$conn = Doctrine_Manager::connection();
-	
+		$session = SessionWrapper::getInstance();
+		
+		$partner_query = "";
+		if(isPartner()){
+			$partner = new UserAccount();
+			$partner->populate($session->getVar('userid'));
+			$allowedlist = $partner->getCompany()->getAllocationDetails(true);
+			$partnertype = $partner->getCompany()->getFarmisType();
+			$indtype = $partner->getCompany()->getShowInd();
+				
+			switch($partnertype){
+				case 2:
+				case 3:
+					$partner_query = " AND l.regionid in(".$allowedlist.") ";
+					if($indtype == 0){
+						$partner_query .= " AND c.farmgroupid <> '' ";
+					}
+					break;
+				case 4:
+				case 5:
+					$partner_query = " AND c.locationid in(".$allowedlist.") ";
+					if($indtype == 0){
+						$partner_query .= " AND c.farmgroupid <> '' ";
+					}
+					break;
+				case 6:
+				case 7:
+					$partner_query = " AND c.farmgroupid in(".$allowedlist.") ";
+					if($indtype == 0){
+						$partner_query .= " AND c.farmgroupid <> '' ";
+					}
+					break;
+				default:
+					break;
+			}
+		}
+		
 		$farmer_query = "SELECT
 		SUM(IF(UNIX_TIMESTAMP(c.datecreated) >= ".$this->view->onehourago_timestamp.", 1, 0)) as onehourago,
 		SUM(IF(UNIX_TIMESTAMP(c.datecreated) >= ".$this->view->sixhourago_timestamp.", 1, 0)) as sixhourago,
@@ -246,7 +516,10 @@ class DashboardController extends SecureController  {
 		SUM(IF(TO_DAYS(c.datecreated) >= TO_DAYS('".$this->view->firstdayoflastmonth_iso."') AND TO_DAYS(c.datecreated) <= TO_DAYS('".$this->view->lastdayoflastmonth_iso."'), 1, 0)) as lastmonth,
 		SUM(IF(TO_DAYS(c.datecreated) >= TO_DAYS('".$this->view->firstdayofyear_iso."') AND TO_DAYS(c.datecreated) <= TO_DAYS('".$this->view->lastdayofyear_iso."'), 1, 0)) as thisyear,
 		SUM(IF(TO_DAYS(c.datecreated) >= TO_DAYS('".$this->view->firstsystemday_iso."') AND TO_DAYS(c.datecreated) <= TO_DAYS('".$this->view->today_iso."'), 1, 0)) as allentries
-		FROM useraccount AS c where c.id <> '' AND c.type = 2 AND c.paymentstatus = '1' AND UPPER(c.country) = 'UG' ";
+		FROM useraccount AS c 
+		left join farmgroup f on (c.farmgroupid = f.id)
+		left join location l on (c.locationid = l.id AND l.locationtype = 2)
+		where c.id <> '' AND c.type = 2 AND c.paymentstatus = '1' AND LOWER(c.country) = LOWER('".$session->getVar('country')."') ".$partner_query." ";
 		// debugMessage($farmer_query);
 		$farmer_result = $conn->fetchRow($farmer_query);
 		// debugMessage($farmer_result);
@@ -257,7 +530,43 @@ class DashboardController extends SecureController  {
 		$this->_helper->layout->disableLayout();
 		$this->_helper->viewRenderer->setNoRender(TRUE);
 		$conn = Doctrine_Manager::connection();
-	
+		$session = SessionWrapper::getInstance();
+		
+		$partner_query = "";
+		if(isPartner()){
+			$partner = new UserAccount();
+			$partner->populate($session->getVar('userid'));
+			$allowedlist = $partner->getCompany()->getAllocationDetails(true);
+			$partnertype = $partner->getCompany()->getFarmisType();
+			$indtype = $partner->getCompany()->getShowInd();
+				
+			switch($partnertype){
+				case 2:
+				case 3:
+					$partner_query = " AND l.regionid in(".$allowedlist.") ";
+					if($indtype == 0){
+						$partner_query .= " AND u.farmgroupid <> '' ";
+					}
+					break;
+				case 4:
+				case 5:
+					$partner_query = " AND u.locationid in(".$allowedlist.") ";
+					if($indtype == 0){
+						$partner_query .= " AND u.farmgroupid <> '' ";
+					}
+					break;
+				case 6:
+				case 7:
+					$partner_query = " AND u.farmgroupid in(".$allowedlist.") ";
+					if($indtype == 0){
+						$partner_query .= " AND u.farmgroupid <> '' ";
+					}
+					break;
+				default:
+					break;
+			}
+		}
+		
 		$query = "SELECT
 		SUM(IF(UNIX_TIMESTAMP(c.trxdate) >= ".$this->view->onehourago_timestamp.", c.amount, 0)) as onehourago,
 		SUM(IF(UNIX_TIMESTAMP(c.trxdate) >= ".$this->view->sixhourago_timestamp.", c.amount, 0)) as sixhourago,
@@ -270,7 +579,11 @@ class DashboardController extends SecureController  {
 		SUM(IF(TO_DAYS(c.trxdate) >= TO_DAYS('".$this->view->firstdayoflastmonth_iso."') AND TO_DAYS(c.datecreated) <= TO_DAYS('".$this->view->lastdayoflastmonth_iso."'), c.amount, 0)) as lastmonth,
 		SUM(IF(TO_DAYS(c.trxdate) >= TO_DAYS('".$this->view->firstdayofyear_iso."') AND TO_DAYS(c.datecreated) <= TO_DAYS('".$this->view->lastdayofyear_iso."'), c.amount, 0)) as thisyear,
 		SUM(IF(TO_DAYS(c.trxdate) >= TO_DAYS('".$this->view->firstsystemday_iso."') AND TO_DAYS(c.datecreated) <= TO_DAYS('".$this->view->today_iso."'), c.amount, 0)) as allentries
-		FROM payment AS c where c.id <> '' AND c.userid <> '' AND UPPER(c.country) = 'UG' ";
+		FROM payment AS c 
+		left join useraccount u on(c.userid = u.id)
+		left join farmgroup f on (u.farmgroupid = f.id)
+		left join location l on (u.locationid = l.id AND l.locationtype = 2)
+		where c.id <> '' AND c.userid <> '' AND LOWER(u.country) = LOWER('".$session->getVar('country')."') ".$partner_query." ";
 		$result = $conn->fetchRow($query);
 		echo json_encode($result);
 	}
@@ -278,7 +591,43 @@ class DashboardController extends SecureController  {
 		$this->_helper->layout->disableLayout();
 		$this->_helper->viewRenderer->setNoRender(TRUE);
 		$conn = Doctrine_Manager::connection();
-	
+		$session = SessionWrapper::getInstance();
+		
+		$partner_query = "";
+		if(isPartner()){
+			$partner = new UserAccount();
+			$partner->populate($session->getVar('userid'));
+			$allowedlist = $partner->getCompany()->getAllocationDetails(true);
+			$partnertype = $partner->getCompany()->getFarmisType();
+			$indtype = $partner->getCompany()->getShowInd();
+				
+			switch($partnertype){
+				case 2:
+				case 3:
+					$partner_query = " AND l.regionid in(".$allowedlist.") ";
+					if($indtype == 0){
+						$partner_query .= " AND c.farmgroupid <> '' ";
+					}
+					break;
+				case 4:
+				case 5:
+					$partner_query = " AND f.districtid in(".$allowedlist.") ";
+					if($indtype == 0){
+						$partner_query .= " AND c.farmgroupid <> '' ";
+					}
+					break;
+				case 6:
+				case 7:
+					$partner_query = " AND c.farmgroupid in(".$allowedlist.") ";
+					if($indtype == 0){
+						$partner_query .= " AND c.farmgroupid <> '' ";
+					}
+					break;
+				default:
+					break;
+			}
+		}
+		
 		$query = "SELECT
 		SUM(IF(UNIX_TIMESTAMP(c.trxdate) >= ".$this->view->onehourago_timestamp.", c.amount, 0)) as onehourago,
 		SUM(IF(UNIX_TIMESTAMP(c.trxdate) >= ".$this->view->sixhourago_timestamp.", c.amount, 0)) as sixhourago,
@@ -291,7 +640,10 @@ class DashboardController extends SecureController  {
 		SUM(IF(TO_DAYS(c.trxdate) >= TO_DAYS('".$this->view->firstdayoflastmonth_iso."') AND TO_DAYS(c.datecreated) <= TO_DAYS('".$this->view->lastdayoflastmonth_iso."'), c.amount, 0)) as lastmonth,
 		SUM(IF(TO_DAYS(c.trxdate) >= TO_DAYS('".$this->view->firstdayofyear_iso."') AND TO_DAYS(c.datecreated) <= TO_DAYS('".$this->view->lastdayofyear_iso."'), c.amount, 0)) as thisyear,
 		SUM(IF(TO_DAYS(c.trxdate) >= TO_DAYS('".$this->view->firstsystemday_iso."') AND TO_DAYS(c.datecreated) <= TO_DAYS('".$this->view->today_iso."'), c.amount, 0)) as allentries
-		FROM payment AS c where c.id <> '' AND c.farmgroupid <> '' AND UPPER(c.country) = 'UG' ";
+		FROM payment AS c 
+		left join farmgroup f on (c.farmgroupid = f.id)
+		left join location l on (f.districtid = l.id AND l.locationtype = 2)
+		where c.id <> '' AND c.farmgroupid <> '' AND LOWER(f.country) = LOWER('".$session->getVar('country')."') ".$partner_query." ";
 		$result = $conn->fetchRow($query);
 		echo json_encode($result);
 	}
@@ -300,7 +652,34 @@ class DashboardController extends SecureController  {
 		$this->_helper->layout->disableLayout();
 		$this->_helper->viewRenderer->setNoRender(TRUE);
 		$conn = Doctrine_Manager::connection();
-	
+		$session = SessionWrapper::getInstance();
+		
+		$partner_query = "";
+		if(isPartner()){
+			$partner = new UserAccount();
+			$partner->populate($session->getVar('userid'));
+			$allowedlist = $partner->getCompany()->getAllocationDetails(true);
+			$partnertype = $partner->getCompany()->getFarmisType();
+			$indtype = $partner->getCompany()->getShowInd();
+		
+			switch($partnertype){
+				case 2:
+				case 3:
+					$partner_query = " AND l.regionid in(".$allowedlist.") ";
+					break;
+				case 4:
+				case 5:
+					$partner_query = " AND c.districtid in(".$allowedlist.") ";
+					break;
+				case 6:
+				case 7:
+					$partner_query = " AND c.id in(".$allowedlist.") ";
+					break;
+				default:
+					break;
+			}
+		}
+		
 		$farmer_query = "SELECT
 		SUM(IF(UNIX_TIMESTAMP(c.datecreated) >= ".$this->view->onehourago_timestamp.", 1, 0)) as onehourago,
 		SUM(IF(UNIX_TIMESTAMP(c.datecreated) >= ".$this->view->sixhourago_timestamp.", 1, 0)) as sixhourago,
@@ -313,7 +692,9 @@ class DashboardController extends SecureController  {
 		SUM(IF(TO_DAYS(c.datecreated) >= TO_DAYS('".$this->view->firstdayoflastmonth_iso."') AND TO_DAYS(c.datecreated) <= TO_DAYS('".$this->view->lastdayoflastmonth_iso."'), 1, 0)) as lastmonth,
 		SUM(IF(TO_DAYS(c.datecreated) >= TO_DAYS('".$this->view->firstdayofyear_iso."') AND TO_DAYS(c.datecreated) <= TO_DAYS('".$this->view->lastdayofyear_iso."'), 1, 0)) as thisyear,
 		SUM(IF(TO_DAYS(c.datecreated) >= TO_DAYS('".$this->view->firstsystemday_iso."') AND TO_DAYS(c.datecreated) <= TO_DAYS('".$this->view->today_iso."'), 1, 0)) as allentries
-		FROM farmgroup AS c where c.id <> '' AND c.parentid IS NULL AND UPPER(c.country) = 'UG' ";
+		FROM farmgroup AS c 
+		left join location l on (c.districtid = l.id AND l.locationtype = 2)
+		where c.id <> '' AND c.parentid IS NULL AND LOWER(c.country) = LOWER('".$session->getVar('country')."') ".$partner_query." ";
 		// debugMessage($farmer_query);
 		$farmer_result = $conn->fetchRow($farmer_query);
 		// debugMessage($farmer_result);
@@ -324,54 +705,43 @@ class DashboardController extends SecureController  {
 		$this->_helper->layout->disableLayout();
 		$this->_helper->viewRenderer->setNoRender(TRUE);
 		$conn = Doctrine_Manager::connection();
-	
-		$farmer_query = "SELECT
-		SUM(IF(UNIX_TIMESTAMP(c.datecreated) >= ".$this->view->onehourago_timestamp.", 1, 0)) as onehourago,
-		SUM(IF(UNIX_TIMESTAMP(c.datecreated) >= ".$this->view->sixhourago_timestamp.", 1, 0)) as sixhourago,
-		SUM(IF(UNIX_TIMESTAMP(c.datecreated) >= ".$this->view->twelvehourago_timestamp.", 1, 0)) as twelvehourago,
-		SUM(IF(TO_DAYS(c.datecreated) = TO_DAYS('".$this->view->today_iso."'), 1, 0)) as today,
-		SUM(IF(TO_DAYS(c.datecreated) = TO_DAYS('".$this->view->yestday_iso."'), 1, 0)) as yesterday,
-		SUM(IF(TO_DAYS(c.datecreated) >= TO_DAYS('".$this->view->mondaythisweek_iso."') AND TO_DAYS(c.datecreated) <= TO_DAYS('".$this->view->sundaythisweek_iso."'), 1, 0)) as thisweek,
-		SUM(IF(TO_DAYS(c.datecreated) >= TO_DAYS('".$this->view->mondaylastweek_iso."') AND TO_DAYS(c.datecreated) <= TO_DAYS('".$this->view->sundaylastweek_iso."'), 1, 0)) as lastweek ,
-		SUM(IF(TO_DAYS(c.datecreated) >= TO_DAYS('".$this->view->firstdayofthismonth_iso."') AND TO_DAYS(c.datecreated) <= TO_DAYS('".$this->view->lastdayofthismonth_iso."'), 1, 0)) as thismonth,
-		SUM(IF(TO_DAYS(c.datecreated) >= TO_DAYS('".$this->view->firstdayoflastmonth_iso."') AND TO_DAYS(c.datecreated) <= TO_DAYS('".$this->view->lastdayoflastmonth_iso."'), 1, 0)) as lastmonth,
-		SUM(IF(TO_DAYS(c.datecreated) >= TO_DAYS('".$this->view->firstdayofyear_iso."') AND TO_DAYS(c.datecreated) <= TO_DAYS('".$this->view->today_iso."'), 1, 0)) as thisyear
-		FROM useraccount AS c where c.id <> '' AND c.type = 2 AND UPPER(c.country) = 'KE' ";
-		// debugMessage($farmer_query);
-		$farmer_result = $conn->fetchRow($farmer_query);
-		// debugMessage($farmer_result);
-		echo json_encode($farmer_result);
-	}
-	
-	function dnakestatsAction(){
-		$this->_helper->layout->disableLayout();
-		$this->_helper->viewRenderer->setNoRender(TRUE);
-		$conn = Doctrine_Manager::connection();
-	
-		$farmer_query = "SELECT
-		SUM(IF(UNIX_TIMESTAMP(c.datecreated) >= ".$this->view->onehourago_timestamp.", 1, 0)) as onehourago,
-		SUM(IF(UNIX_TIMESTAMP(c.datecreated) >= ".$this->view->sixhourago_timestamp.", 1, 0)) as sixhourago,
-		SUM(IF(UNIX_TIMESTAMP(c.datecreated) >= ".$this->view->twelvehourago_timestamp.", 1, 0)) as twelvehourago,
-		SUM(IF(TO_DAYS(c.datecreated) = TO_DAYS('".$this->view->today_iso."'), 1, 0)) as today,
-		SUM(IF(TO_DAYS(c.datecreated) = TO_DAYS('".$this->view->yestday_iso."'), 1, 0)) as yesterday,
-		SUM(IF(TO_DAYS(c.datecreated) >= TO_DAYS('".$this->view->mondaythisweek_iso."') AND TO_DAYS(c.datecreated) <= TO_DAYS('".$this->view->sundaythisweek_iso."'), 1, 0)) as thisweek,
-		SUM(IF(TO_DAYS(c.datecreated) >= TO_DAYS('".$this->view->mondaylastweek_iso."') AND TO_DAYS(c.datecreated) <= TO_DAYS('".$this->view->sundaylastweek_iso."'), 1, 0)) as lastweek ,
-		SUM(IF(TO_DAYS(c.datecreated) >= TO_DAYS('".$this->view->firstdayofthismonth_iso."') AND TO_DAYS(c.datecreated) <= TO_DAYS('".$this->view->lastdayofthismonth_iso."'), 1, 0)) as thismonth,
-		SUM(IF(TO_DAYS(c.datecreated) >= TO_DAYS('".$this->view->firstdayoflastmonth_iso."') AND TO_DAYS(c.datecreated) <= TO_DAYS('".$this->view->lastdayoflastmonth_iso."'), 1, 0)) as lastmonth,
-		SUM(IF(TO_DAYS(c.datecreated) >= TO_DAYS('".$this->view->firstdayofyear_iso."') AND TO_DAYS(c.datecreated) <= TO_DAYS('".$this->view->lastdayofyear_iso."'), 1, 0)) as thisyear,
-		SUM(IF(TO_DAYS(c.datecreated) >= TO_DAYS('".$this->view->firstdayofyear_iso."') AND TO_DAYS(c.datecreated) <= TO_DAYS('".$this->view->today_iso."'), 1, 0)) as thisyear
-		FROM farmgroup AS c where c.id <> '' AND c.parentid IS NULL AND UPPER(c.country) = 'KE' ";
-		// debugMessage($farmer_query);
-		$farmer_result = $conn->fetchRow($farmer_query);
-		// debugMessage($farmer_result);
-		echo json_encode($farmer_result);
-	}
-	
-	function dnaugpaidstatsAction(){
-		$this->_helper->layout->disableLayout();
-		$this->_helper->viewRenderer->setNoRender(TRUE);
-		$conn = Doctrine_Manager::connection();
-	
+		$session = SessionWrapper::getInstance();
+		
+		$partner_query = "";
+		if(isPartner()){
+			$partner = new UserAccount();
+			$partner->populate($session->getVar('userid'));
+			$allowedlist = $partner->getCompany()->getAllocationDetails(true);
+			$partnertype = $partner->getCompany()->getFarmisType();
+			$indtype = $partner->getCompany()->getShowInd();
+			
+			switch($partnertype){
+				case 2:
+				case 3:
+					$partner_query = " AND l.regionid in(".$allowedlist.") ";
+					if($indtype == 0){
+						$partner_query .= " AND c.farmgroupid <> '' ";
+					}
+					break;
+				case 4:
+				case 5:
+					$partner_query = " AND c.locationid in(".$allowedlist.") ";
+					if($indtype == 0){
+						$partner_query .= " AND c.farmgroupid <> '' ";
+					}
+					break;
+				case 6:
+				case 7:
+					$partner_query = " AND c.farmgroupid in(".$allowedlist.") ";
+					if($indtype == 0){
+						$partner_query .= " AND c.farmgroupid <> '' ";
+					}
+					break;
+				default:
+					break;
+			}
+		}
+		
 		$farmer_query = "SELECT
 		SUM(IF(UNIX_TIMESTAMP(c.datecreated) >= ".$this->view->onehourago_timestamp.", 1, 0)) as onehourago,
 		SUM(IF(UNIX_TIMESTAMP(c.datecreated) >= ".$this->view->sixhourago_timestamp.", 1, 0)) as sixhourago,
@@ -384,7 +754,116 @@ class DashboardController extends SecureController  {
 		SUM(IF(TO_DAYS(c.datecreated) >= TO_DAYS('".$this->view->firstdayoflastmonth_iso."') AND TO_DAYS(c.datecreated) <= TO_DAYS('".$this->view->lastdayoflastmonth_iso."'), 1, 0)) as lastmonth,
 		SUM(IF(TO_DAYS(c.datecreated) >= TO_DAYS('".$this->view->firstdayofyear_iso."') AND TO_DAYS(c.datecreated) <= TO_DAYS('".$this->view->lastdayofyear_iso."'), 1, 0)) as thisyear,
 		SUM(IF(TO_DAYS(c.datecreated) >= TO_DAYS('".$this->view->firstsystemday_iso."') AND TO_DAYS(c.datecreated) <= TO_DAYS('".$this->view->today_iso."'), 1, 0)) as allentries
-		FROM farmgroup AS c where c.id <> '' AND c.parentid IS NULL AND c.paymentstatus = 1 AND UPPER(c.country) = 'UG' ";
+		FROM useraccount AS c 
+		left join farmgroup f on (c.farmgroupid = f.id)
+		left join location l on (f.districtid = l.id AND l.locationtype = 2)
+		where c.id <> '' AND c.type = 2 AND LOWER(c.country) = LOWER('KE') ".$partner_query." ";
+		// debugMessage($farmer_query);
+		$farmer_result = $conn->fetchRow($farmer_query);
+		// debugMessage($farmer_result);
+		echo json_encode($farmer_result);
+	}
+	
+	function dnakestatsAction(){
+		$this->_helper->layout->disableLayout();
+		$this->_helper->viewRenderer->setNoRender(TRUE);
+		$conn = Doctrine_Manager::connection();
+		$session = SessionWrapper::getInstance();
+		
+		$partner_query = "";
+		if(isPartner()){
+			$partner = new UserAccount();
+			$partner->populate($session->getVar('userid'));
+			$allowedlist = $partner->getCompany()->getAllocationDetails(true);
+			$partnertype = $partner->getCompany()->getFarmisType();
+			$indtype = $partner->getCompany()->getShowInd();
+		
+			switch($partnertype){
+				case 2:
+				case 3:
+					$partner_query = " AND l.regionid in(".$allowedlist.") ";
+					break;
+				case 4:
+				case 5:
+					$partner_query = " AND c.districtid in(".$allowedlist.") ";
+					break;
+				case 6:
+				case 7:
+					$partner_query = " AND c.id in(".$allowedlist.") ";
+					break;
+				default:
+					break;
+			}
+		}
+		
+		$farmer_query = "SELECT
+		SUM(IF(UNIX_TIMESTAMP(c.datecreated) >= ".$this->view->onehourago_timestamp.", 1, 0)) as onehourago,
+		SUM(IF(UNIX_TIMESTAMP(c.datecreated) >= ".$this->view->sixhourago_timestamp.", 1, 0)) as sixhourago,
+		SUM(IF(UNIX_TIMESTAMP(c.datecreated) >= ".$this->view->twelvehourago_timestamp.", 1, 0)) as twelvehourago,
+		SUM(IF(TO_DAYS(c.datecreated) = TO_DAYS('".$this->view->today_iso."'), 1, 0)) as today,
+		SUM(IF(TO_DAYS(c.datecreated) = TO_DAYS('".$this->view->yestday_iso."'), 1, 0)) as yesterday,
+		SUM(IF(TO_DAYS(c.datecreated) >= TO_DAYS('".$this->view->mondaythisweek_iso."') AND TO_DAYS(c.datecreated) <= TO_DAYS('".$this->view->sundaythisweek_iso."'), 1, 0)) as thisweek,
+		SUM(IF(TO_DAYS(c.datecreated) >= TO_DAYS('".$this->view->mondaylastweek_iso."') AND TO_DAYS(c.datecreated) <= TO_DAYS('".$this->view->sundaylastweek_iso."'), 1, 0)) as lastweek ,
+		SUM(IF(TO_DAYS(c.datecreated) >= TO_DAYS('".$this->view->firstdayofthismonth_iso."') AND TO_DAYS(c.datecreated) <= TO_DAYS('".$this->view->lastdayofthismonth_iso."'), 1, 0)) as thismonth,
+		SUM(IF(TO_DAYS(c.datecreated) >= TO_DAYS('".$this->view->firstdayoflastmonth_iso."') AND TO_DAYS(c.datecreated) <= TO_DAYS('".$this->view->lastdayoflastmonth_iso."'), 1, 0)) as lastmonth,
+		SUM(IF(TO_DAYS(c.datecreated) >= TO_DAYS('".$this->view->firstdayofyear_iso."') AND TO_DAYS(c.datecreated) <= TO_DAYS('".$this->view->lastdayofyear_iso."'), 1, 0)) as thisyear,
+		SUM(IF(TO_DAYS(c.datecreated) >= TO_DAYS('".$this->view->firstsystemday_iso."') AND TO_DAYS(c.datecreated) <= TO_DAYS('".$this->view->today_iso."'), 1, 0)) as allentries
+		FROM farmgroup AS c 
+		left join location l on (c.districtid = l.id AND l.locationtype = 2)
+		where c.id <> '' AND c.parentid IS NULL AND LOWER(c.country) = LOWER('KE') ".$partner_query." ";
+		// debugMessage($farmer_query);
+		$farmer_result = $conn->fetchRow($farmer_query);
+		// debugMessage($farmer_result);
+		echo json_encode($farmer_result);
+	}
+	
+	function dnaugpaidstatsAction(){
+		$this->_helper->layout->disableLayout();
+		$this->_helper->viewRenderer->setNoRender(TRUE);
+		$conn = Doctrine_Manager::connection();
+		$session = SessionWrapper::getInstance();
+		
+		$partner_query = "";
+		if(isPartner()){
+			$partner = new UserAccount();
+			$partner->populate($session->getVar('userid'));
+			$allowedlist = $partner->getCompany()->getAllocationDetails(true);
+			$partnertype = $partner->getCompany()->getFarmisType();
+			$indtype = $partner->getCompany()->getShowInd();
+		
+			switch($partnertype){
+				case 2:
+				case 3:
+					$partner_query = " AND l.regionid in(".$allowedlist.") ";
+					break;
+				case 4:
+				case 5:
+					$partner_query = " AND c.districtid in(".$allowedlist.") ";
+					break;
+				case 6:
+				case 7:
+					$partner_query = " AND c.id in(".$allowedlist.") ";
+					break;
+				default:
+					break;
+			}
+		}
+		
+		$farmer_query = "SELECT
+		SUM(IF(UNIX_TIMESTAMP(c.datecreated) >= ".$this->view->onehourago_timestamp.", 1, 0)) as onehourago,
+		SUM(IF(UNIX_TIMESTAMP(c.datecreated) >= ".$this->view->sixhourago_timestamp.", 1, 0)) as sixhourago,
+		SUM(IF(UNIX_TIMESTAMP(c.datecreated) >= ".$this->view->twelvehourago_timestamp.", 1, 0)) as twelvehourago,
+		SUM(IF(TO_DAYS(c.datecreated) = TO_DAYS('".$this->view->today_iso."'), 1, 0)) as today,
+		SUM(IF(TO_DAYS(c.datecreated) = TO_DAYS('".$this->view->yestday_iso."'), 1, 0)) as yesterday,
+		SUM(IF(TO_DAYS(c.datecreated) >= TO_DAYS('".$this->view->mondaythisweek_iso."') AND TO_DAYS(c.datecreated) <= TO_DAYS('".$this->view->sundaythisweek_iso."'), 1, 0)) as thisweek,
+		SUM(IF(TO_DAYS(c.datecreated) >= TO_DAYS('".$this->view->mondaylastweek_iso."') AND TO_DAYS(c.datecreated) <= TO_DAYS('".$this->view->sundaylastweek_iso."'), 1, 0)) as lastweek ,
+		SUM(IF(TO_DAYS(c.datecreated) >= TO_DAYS('".$this->view->firstdayofthismonth_iso."') AND TO_DAYS(c.datecreated) <= TO_DAYS('".$this->view->lastdayofthismonth_iso."'), 1, 0)) as thismonth,
+		SUM(IF(TO_DAYS(c.datecreated) >= TO_DAYS('".$this->view->firstdayoflastmonth_iso."') AND TO_DAYS(c.datecreated) <= TO_DAYS('".$this->view->lastdayoflastmonth_iso."'), 1, 0)) as lastmonth,
+		SUM(IF(TO_DAYS(c.datecreated) >= TO_DAYS('".$this->view->firstdayofyear_iso."') AND TO_DAYS(c.datecreated) <= TO_DAYS('".$this->view->lastdayofyear_iso."'), 1, 0)) as thisyear,
+		SUM(IF(TO_DAYS(c.datecreated) >= TO_DAYS('".$this->view->firstsystemday_iso."') AND TO_DAYS(c.datecreated) <= TO_DAYS('".$this->view->today_iso."'), 1, 0)) as allentries
+		FROM farmgroup AS c
+		left join location l on (c.districtid = l.id AND l.locationtype = 2)
+		where c.id <> '' AND c.parentid IS NULL AND c.paymentstatus = 1 AND LOWER(c.country) = LOWER('".$session->getVar('country')."') ".$partner_query." ";
 		// debugMessage($farmer_query);
 		$farmer_result = $conn->fetchRow($farmer_query);
 		// debugMessage($farmer_result);

@@ -22,13 +22,14 @@ class Company extends BaseEntity  {
 		$this->hasColumn('locationid', 'integer', null);
 		$this->hasColumn('status', 'integer', null, array('default' => '1'));
 		$this->hasColumn('farmistype', 'integer', null, array('default' => '1'));
-		// 1=>All Farmers, 2=>One region, 3=>Multiple regions, 4=>One District, 5=>Multiple districts, 6=>One dna, 7=> Multiple dnas
+		// 0=>'None', 1=>'All Farmers', 2=>'One Region', 3=>'Multiple Regions', 4=>'One District', 5=>'Multiple Districts', 6=>'One DNA', 7=>'Multiple DNAs'
 		$this->hasColumn('regionid', 'integer', null);
 		$this->hasColumn('regionids', 'string', 50);
 		$this->hasColumn('districtid', 'integer', null);
 		$this->hasColumn('districtids', 'string', 50);
 		$this->hasColumn('dnaid', 'integer', null);
 		$this->hasColumn('dnaids', 'string', 50);
+		$this->hasColumn('showind', 'integer', null, array('default' => '1')); // 1=Enabled, 0=Disabled
 	}
 	
 	/**
@@ -102,6 +103,9 @@ class Company extends BaseEntity  {
 		if (isArrayKeyAnEmptyString('status', $formvalues)) {
 			unset($formvalues['status']);
 		}
+		if (isArrayKeyAnEmptyString('showind', $formvalues)) {
+			unset($formvalues['showind']);
+		}
 		
 		if(!isArrayKeyAnEmptyString('theregionids', $formvalues)) {
 			$ids = $formvalues['theregionids'];
@@ -153,7 +157,7 @@ class Company extends BaseEntity  {
 				unset($formvalues['dnaids']);
 			}
 		}
-		// debugMessage($formvalues); exit;
+		debugMessage($formvalues); // exit;
 		parent::processPost($formvalues);
 	}
 	# determine the allocation type
@@ -168,24 +172,24 @@ class Company extends BaseEntity  {
 		return $types[$this->getFarmisType()];
 	}
 	# determine the allocation details from allocation type
-	function getAllocationDetails(){
+	function getAllocationDetails($returnids = false){
 		if(isEmptyString($this->getAllocationTypeLabel())){
 			return '';
 		}
-		$text = '';
+		$text = ''; $ids = '';
 		$select_array = array();
 		switch ($this->getFarmisType()){
 			case 0:
-				$text = '';
+				$text = ''; $ids = '';
 			case 1:
-				$text = '';
+				$text = '';  $ids = '';
 				break;
 			case 2:
-				$text = $this->getRegion()->getName();
+				$text = $this->getRegion()->getName();  $ids = $this->getRegionID();
 				break;
 			case 3:
 				if(isEmptyString($this->getRegionIDs())){
-					$text = '';
+					$text = '';  $ids = '';
 				} else {
 					$select_array = explode(",", trim($this->getRegionIDs())); // debugMessage($select_array);
 					$locationname = array();
@@ -194,14 +198,15 @@ class Company extends BaseEntity  {
 						$locationname[$value] = $locations[$value];
 					}
 					$text = createHTMLCommaListFromArray($locationname,  ', ');
+					$ids = trim($this->getRegionIDs());
 				}
 				break;
 			case 4:
-				$text = $this->getDistrict()->getName();
+				$text = $this->getDistrict()->getName(); $ids = $this->getDistrictID();
 				break;
 			case 5:
 				if(isEmptyString($this->getDistrictIDs())){
-					$text = '';
+					$text = ''; $ids = '';
 				} else { 
 					$select_array = explode(",", trim($this->getDistrictIDs())); // debugMessage($select_array);
 					$locationname = array();
@@ -210,14 +215,15 @@ class Company extends BaseEntity  {
 						$locationname[$value] = $locations[$value];
 					}
 					$text = createHTMLCommaListFromArray($locationname,  ', ');
+					$ids = trim($this->getDistrictIDs());
 				}
 				break;
 			case 6:
-				$text = $this->getDNA()->getName();
+				$text = $this->getDNA()->getName(); $ids = trim($this->getDNAIDs());
 				break;
 			case 7:
 				if(isEmptyString($this->getDNAIDs())){
-					$text = '';
+					$text = ''; $ids = '';
 				} else {
 					$select_array = explode(",", trim($this->getDNAIDs())); // debugMessage($select_array);
 					$groupname = array();
@@ -226,10 +232,15 @@ class Company extends BaseEntity  {
 						$groupname[$value] = $groups[$value];
 					}
 					$text = createHTMLCommaListFromArray($groupname,  ', ');
+					$ids = trim($this->getDNAIDs());
 				}
 				break;
 			default:
+				$text = ''; $ids = '';
 				break;
+		}
+		if($returnids){
+			return $ids;
 		}
 		return $text;
 	}
@@ -242,6 +253,9 @@ class Company extends BaseEntity  {
 	}
 	function getTheDNAIDs(){
 		return isEmptyString($this->getDNAIDs()) ? array() : explode(",", trim($this->getDNAIDs()));
+	}
+	function getAllowedFarmers(){
+		
 	}
 }
 
