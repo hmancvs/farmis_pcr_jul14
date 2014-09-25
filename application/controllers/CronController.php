@@ -26,15 +26,15 @@ class CronController extends IndexController   {
 		}
 		
 		# get the database connection parameters 
-		$db_params = Zend_Controller_Front::getInstance()->getParam("bootstrap")->getPluginResource('db')->getParams(); // debugMessage($db_params);
+		$db_params = Zend_Controller_Front::getInstance()->getParam("bootstrap")->getPluginResource('db')->getParams(); debugMessage($db_params);
 		
 		#  configure your database variables below:
 		$host_array = explode(":", $db_params['host']);
 		$dbhost = $host_array[0]; #  Server address of your MySQL Server
-		$dbuser = $db_params['username']; #  Username to access MySQL database
-		$dbpass = $db_params['password']; #  Password to access MySQL database
-		$dbname = $db_params['dbname']; #  Database Name
-		$dbport = isArrayKeyAnEmptyString(1, $host_array) ? "3306" : "3356"; 
+		$dbuser = 'admin'; #  Username to access MySQL database
+		$dbpass = '1nf0trade'; #  Password to access MySQL database
+		$dbname = 'farmis'; #  Database Name
+		$dbport = '3306'; 
 		// exit();
 		
 		# Optional Options You May Optionally Configure
@@ -44,7 +44,7 @@ class CronController extends IndexController   {
 		
 		# Configure the path that this script resides on your server.
 		// $savepath = APPLICATION_PATH.$config->backup->scriptfolder; #  Full path to this directory. Do not use trailing slash!
-		$savepath = APPLICATION_PATH.DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.PUBLICFOLDER.DIRECTORY_SEPARATOR.'backup'; // debugMessage($savepath); 
+		$savepath = BASE_PATH.DIRECTORY_SEPARATOR.'backup'; // debugMessage($savepath); 
 		$send_email = $config->backup->sendemail;  #  Do you want this database backup sent to your email? Fill out the next 2 lines
 		# email address
 		$backupemail = $config->backup->backupemail;
@@ -95,7 +95,7 @@ class CronController extends IndexController   {
 		}
 		
 		$backupcommand = "mysqldump -R --add-drop-table --complete-insert --add-locks --quote-names --lock-tables -h ".$dbhost." -P ".$dbport." -u ".$dbuser." -p".$dbpass." ".$dbname.' -q > "'.$sqlscriptpath.'"'; debugMessage($backupcommand); // exit();
-		passthru($backupcommand);
+		exec($backupcommand);
 		
 		if($showverbose){
 			debugMessage("FARMIS Database backup completed to ".$sqlscriptpath);	

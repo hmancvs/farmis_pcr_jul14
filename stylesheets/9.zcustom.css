@@ -1,0 +1,28 @@
+@media (min-width: 768px) and (max-width: 979px) {
+	.header .headmenu > li > a {
+		padding: 25px 10px 20px 10px;
+		min-width:50px;
+	}
+	.header .headmenu > li > a .head-icon {
+		height:30px;
+		width:30px;
+		margin: auto auto 15px;
+	}
+	.header .headmenu > li > a .headmenu-label {
+		font-size:14px;
+	}
+}
+@media (min-width: 980px) and (max-width: 1140px) {
+	.header .headmenu > li > a {
+		padding: 25px 15px 20px 15px;
+		min-width:50px;
+	}
+	.header .headmenu > li > a .head-icon {
+		height:40px;
+		width:40px;
+		margin: auto auto 10px;
+	}
+	.header .headmenu > li > a .headmenu-label {
+		font-size:14px;
+	}
+}

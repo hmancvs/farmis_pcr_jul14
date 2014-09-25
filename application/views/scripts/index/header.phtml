@@ -50,7 +50,7 @@
                         </a>
                     </li>
                 <?php } ?>    
-               	<?php if($acl->checkPermission('Season Activities', ACTION_VIEW) && isFarmer()){ ?>
+               	<?php if($acl->checkPermission('Farmer Seasons', ACTION_VIEW) && isFarmer()){ ?>
                     <li class="<?php echo ($controllername == 'season') ? 'active' : ''; ?>">
                         <a href="<?php echo $this->baseUrl('farmer/view/id/'.encode($userid).'/tab/seasons'); ?>">
                             <span class="head-icon head-icon6"></span>

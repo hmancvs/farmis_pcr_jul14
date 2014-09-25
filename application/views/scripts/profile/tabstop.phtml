@@ -5,14 +5,14 @@
 	
 ?>
 <?php if($controller == 'season'){ ?>
-	<?php echo $basics.$personal.$contacts.$farm; ?>
+	<?php echo $basics.$farm; ?>
 <?php } ?>
 <?php if($controller == 'inventory'){ ?>
-	<?php echo $basics.$personal.$contacts.$farm.$calendar; ?>
+	<?php echo $basics.$farm.$seasons.$calendar; ?>
 <?php } ?>
 <?php if($controller == 'finance'){ ?>
-	<?php echo $basics.$personal.$contacts.$farm.$calendar.$inventory; ?>
+	<?php echo $basics.$farm.$seasons.$calendar.$inventory; ?>
 <?php } ?>
 <?php if($controller == 'payment'){ ?>
-	<?php echo $basics.$personal.$contacts.$farm.$calendar.$inventory.$finance; ?>
+	<?php echo $basics.$farm.$seasons.$calendar.$inventory.$finance; ?>
 <?php } ?>

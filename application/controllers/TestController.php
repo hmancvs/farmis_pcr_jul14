@@ -11,10 +11,8 @@ class TestController extends IndexController  {
 	    $formvalues = $this->_getAllParams();
 	    // debugMessage($formvalues);
 	    $phone = $this->_getParam('phone');
-	    if(!isEmptyString($this->_getParam('msisdn'))){
-	    	$phone = $this->_getParam('msisdn');
-	    }
 	    $message = $this->_getParam('msg');
+	  	$source =  $this->_getParam('source');
 	    if(isEmptyString($message)){
 	    	$message = "Dear User, This is an automated test message from FARMIS system. confirm route - ".mktime();
 	    }
@@ -24,7 +22,14 @@ class TestController extends IndexController  {
 	    		$phone = SMS_TEST_NUMBER_KENYA;
 	    	}
 	    }
-	    sendSMSMessage($phone, $message, $this->_getParam('source'));
+	    /* $result = 'SUBMIT_SUCCESS | 74f2b84c-8018-5fbf-c74c-49f7e7d10401';
+	    $result_array = explode('|', $result);
+	    $result_code = $result_array[0];
+	    $conn = Doctrine_Manager::connection();
+	    $query = "INSERT INTO outbox (phone, msg, source, result, datecreated, createdby, country) values ('".$phone."', '".$message."', '".$source."', '".$result_code."', '".getCurrentMysqlTimestamp()."', '".$session->getVar('userid')."', '".strtoupper($session->getVar('country'))."') ";
+	    $conn->execute($query); */
+	    // debugMessage($result);
+	    sendSMSMessage($phone, $message, $source);
     }
     
 	function sendsmsAction(){
@@ -72,18 +77,12 @@ class TestController extends IndexController  {
 	    sendTestMessage('test farmis email','this is a test message for farmis please ignore - '.APPLICATION_ENV);
     }
     
-    function duplicatesAction() {
-		$this->_helper->layout->disableLayout();
-	    $this->_helper->viewRenderer->setNoRender(TRUE);
-    	$user = new UserAccount();
-    	$user->populate($this->_getParam('id'));
-    	debugMessage($user->toArray());
-    	$duplicates = $user->getDuplicates();
-    	debugMessage($duplicates->toArray());
-    	$countdup = $duplicates->count();
-		if($countdup > 0){
-			$duplicates->delete();
-		}
+    function filesAction(){
+    	$this->_helper->layout->disableLayout();
+    	$this->_helper->viewRenderer->setNoRender(TRUE);
+    	 
+    	$path = APPLICATION_PATH.DIRECTORY_SEPARATOR.'views'.DIRECTORY_SEPARATOR.'scripts';
+    	$files = get_dirs($path); debugMessage($files);
     }
 }
 

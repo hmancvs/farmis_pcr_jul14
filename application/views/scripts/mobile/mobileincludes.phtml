@@ -50,9 +50,10 @@ var dialogOpts = {
 		
 		// make the datefields readonly
 		$(".datefield").attr('readOnly', 'true');
-		$(".readonly").each(function(){
-			$(this).attr('readonly','readonly');
+	$(".readonly, .readonlyfield").each(function(){
+		$(this).attr('readonly', true);
 		});
+	
 		$(".disabledfield").each(function(){
 			$(this).attr('disabled', true);
 		});
@@ -232,7 +233,6 @@ var dialogOpts = {
 		$.validator.addClassRules("greaterthanzero", {
 			greaterthanzero: true				
 		});
-		
 		$.validator.addMethod("greaterthanzero", function(value, element) {				
 			if(!isEmptyString(value) && parseFloat(value) <=0){
 				return false;
@@ -412,40 +412,40 @@ var dialogOpts = {
 		// invite one person
 		$("a.invitetrigger").click(function(){
 			var id = $(this).attr('id');
-			var farmerid = $("label."+id).html();
+		var userid = $("label."+id).html();
 			var email = $("input."+id).val();
 			var invitedby = $("label."+id).attr('title');
 			if(isEmptyString(email)) {
-				$("div#invite_"+farmerid+"_error").html('<div class="alert alert-error">Please enter email to invite</div>');
+			$("div#invite_"+userid+"_error").html('<div class="alert alert-error">Please enter email to invite</div>');
 				$("div.alert-error").css({'background': 'url("<?php echo $this->baseUrl('images/cross.png'); ?>") no-repeat #EDDBE3 5px 8px'});
 			}
 			if(!isEmptyString(email) && !validateEmail(email)) {
-				$("div#invite_"+farmerid+"_error").html('<div class="alert alert-error">Please enter a valid email</div>');
+			$("div#invite_"+userid+"_error").html('<div class="alert alert-error">Please enter a valid email</div>');
 				$("div.alert-error").css({'background': 'url("<?php echo $this->baseUrl('images/cross.png'); ?>") no-repeat #EDDBE3 5px 8px'});
 			}
 			
 			// check that email is provided
 			if(!isEmptyString(email) && validateEmail(email)) {
-				$("div#invite_"+farmerid+"_error").html('');
-				$("span#inv_before_"+farmerid).hide(); 
-				$("span#inv_after_"+farmerid).html($('#loading_'+farmerid).html()); 
+			$("div#invite_"+userid+"_error").html('');
+			$("span#inv_before_"+userid).hide(); 
+			$("span#inv_after_"+userid).html($('#loading_'+userid).html()); 
 				// post 
 				$.post(  
-					"<?php echo $this->baseUrl("farmer/inviteone"); ?>", {id: farmerid, email: email},  
+				"<?php echo $this->baseUrl("profile/inviteone"); ?>", {id: userid, email: email},  
 					function(data){
 						// alert(data); exit();
 						if(data.search("Success") != -1){								
 							// reload parent on close				
-							$("span#inv_after_"+farmerid).html(data);	
-							$("span#inv_hide_"+farmerid).hide(); 			
+						$("span#inv_after_"+userid).html(data);	
+						$("span#inv_hide_"+userid).hide(); 			
 						} else {
 							var err = 'An error occured while inviting user. Try again later';
-							$("span#inv_after_"+farmerid).html(data);
-							$("#inv_before_"+farmerid).show();
+						$("span#inv_after_"+userid).html(data);
+						$("#inv_before_"+userid).show();
 							
 						}
 						// location.reload(true);
-						$("span#inv_after_"+farmerid+" a").hide(); 
+					$("span#inv_after_"+userid+" a").hide(); 
 						$("div.alert-success").css({'background': 'url("<?php echo $this->baseUrl('images/tick.png'); ?>") no-repeat #FEF0B6 5px 8px'});
 					}  
 				); // close the $.post
@@ -455,24 +455,24 @@ var dialogOpts = {
 		// validate phone number on file
 		$("a.validatetrigger").click(function(){
 			var id = $(this).attr('id');
-			var userphoneid = $("label."+id).html();
+		var userid = $("label."+id).html();
 			var code = $("input."+id).val();
 			var successurl = $(this).attr('successurl');
 			
 			var validcode = true;
 			var clength = code.length;
 			if(isEmptyString(code) || (!isEmptyString(code) && clength < 6)) {
-				$("div#validate_"+userphoneid+"_error").html('<div class="alert alert-error">Please enter 6 digit code</div>');
+			$("div#validate_"+userid+"_error").html('<div class="alert alert-error">Please enter 6 digit code</div>');
 				$("div.alert-error").css({'background': 'url("<?php echo $this->baseUrl('images/cross.png'); ?>") no-repeat #EDDBE3 5px 8px'});
 				validcode = false;
 			}
 			
 			// check that email is provided
 			if(validcode) {
-				$("div#validate_"+userphoneid+"_error").html('');
-				$("span#phone_before_"+userphoneid).hide(); 
-				$("span#phone_after_"+userphoneid+" a").show(); 
-				var url = '<?php echo $this->baseUrl("farmer/verifyphone"); ?>/userphoneid/'+userphoneid+'/code/'+code+'/successurl/'+successurl;
+			$("div#validate_"+userid+"_error").html('');
+			$("span#phone_before_"+userid).hide(); 
+			$("span#phone_after_"+userid+" a").show(); 
+			var url = '<?php echo $this->baseUrl("profile/verifyphone"); ?>/userid/'+userid+'/code/'+code+'/successurl/'+successurl;
 				// alert(confirmurl);
 				window.location.href = url;
 			}
@@ -624,7 +624,7 @@ var dialogOpts = {
 		var screenwidth = window.screen.availWidth;
 		var screenheight = window.screen.availHeight;
 		
-		$('div.controls').each(function() {
+		$('div.controls, .nullifempty').each(function() {
 			var html = $(this).html();
 			if(isEmptyString(html)){
 				$(this).html('--');

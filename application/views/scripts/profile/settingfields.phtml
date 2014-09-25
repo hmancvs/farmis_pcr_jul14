@@ -1,0 +1,122 @@
+	<div class="control-group">
+      <label class="control-label" style="width:100%;"><?php echo $isme ? 'Do you have a Mobile Money Account? ' : 'Does Farmer have a Mobile Money Account?'; ?></label>
+      <div class="controls" style="margin-left:0;">
+         <div class="inline" style="margin-right:20px;">
+         	<input type="radio" name="hasmobilemoney" id="hasmobilemoney_1" class="<?php echo $user->gethasmobilemoney() == 1 ? 1 : 0; ?>" value="1" /> &nbsp;<label class="lineblocked">Yes</label>
+         </div>
+         <div class="inline">
+         	<input type="radio" name="hasmobilemoney" id="hasmobilemoney_0" class="<?php echo $user->gethasmobilemoney() == 0 ? 1 : 0; ?>" value="0" /> &nbsp;<label class="lineblocked">No</label>
+         </div>
+      </div>
+    </div>
+    <div class="control-group">
+      <label class="control-label" style="width:100%;"><?php echo $isme ? 'Do you have a Bank Account? ' : 'Does Farmer have a Bank Account?'; ?></label>
+      <div class="controls" style="margin-left:0;">
+         <div class="inline" style="margin-right:20px;">
+         	<input type="radio" name="hasbankaccount" id="hasbankaccount_1" class="<?php echo $user->gethasbankaccount() == 1 ? 1 : 0; ?>" value="1" /> &nbsp;<label class="lineblocked">Yes</label>
+         </div>
+         <div class="inline">
+         	<input type="radio" name="hasbankaccount" id="hasbankaccount_0" class="<?php echo $user->gethasbankaccount() == 0 ? 1 : 0; ?>" value="0" /> &nbsp;<label class="lineblocked">No</label>
+         </div>
+      </div>
+    </div>
+    <div class="control-group">
+        <label class="control-label" style="width:100%;">Services Profiled:</label>
+        <div class="controls" style="margin-left:0;">
+            <?php
+                $contenttypes = getAllContentTypes();
+				$contentarray = isEmptyString($user->getServices()) ? array() : array_remove_empty(explode(',', $user->getServices())); 
+				$contentarray = isEmptyString($user->getServices()) ? array() : array_combine($contentarray, $contentarray);
+				// debugMessage($contenttypes); debugMessage($contentarray);
+           ?>
+           <?php foreach($contenttypes as $key => $servicename){
+			   
+			    $classname = 0;
+				if(count($contentarray) > 0){
+					if(array_key_exists($key, $contentarray)){
+						 $classname = 1;
+					}
+				}
+		   		if(isEmptyString($user->getID())){
+					$classname = 1;
+				}
+		   ?>
+           		<div class="blocked" style="margin-top:5px;">
+                	<input type="checkbox" name="serviceids[]" id="serviceid_<?php echo $key; ?>" class="<?php echo $classname; ?>" value="<?php echo $key; ?>" /> &nbsp;
+         			<label class="lineblocked"><?php echo $servicename; ?></label>
+                </div>
+           <?php } ?>
+           <input type="hidden" name="serviceids_old" id="serviceids_old" value="<?php echo $user->getServices(); ?>" />
+           <div id="serviceids_error"></div>
+        </div>
+    </div>
+    <div class="control-group">
+        <label class="control-label" style="width:100%;">Preferred Language:</label>
+        <div class="controls" style="margin-left:0;">
+            <?php
+                $languagetypes = getAllLanguageTypes();
+				$languagearray = array_remove_empty(explode(',', $user->getLanguages()));
+				// debugMessage($contentarray);
+           ?>
+           <?php foreach($languagetypes as $key => $languagename){
+			   		if(isEmptyString($user->getID()) || isEmptyString($user->getLanguages())){
+						$user->setLanguages('1');
+					}
+		   ?>
+           		<div class="blocked" style="margin-top:5px;">
+                	<input type="radio" name="languageids" id="languageid_<?php echo $key; ?>" class="<?php echo $key == $user->getLanguages() ? 1 : 0; ?>" value="<?php echo $key; ?>" /> &nbsp;
+         			<label class="lineblocked"><?php echo $languagename; ?></label>
+                </div>
+           <?php } ?>
+           <div id="languageids_error"></div>
+        </div>
+    </div>
+    <div class="control-group">
+      <label class="control-label" style="width:100%;">Market Information Alert Settings:</label>
+      <div class="controls" style="margin-left:0;">
+         <div class="blocked" style="margin-top:5px;">
+         	<input type="hidden" name="receivephonealerts_old" id="receivephonealerts_old" value="<?php echo $user->getreceivephonealerts(); ?>" />
+         	<input type="checkbox" name="receivephonealerts" id="receivephonealerts" class="<?php echo $user->getreceivephonealerts(); ?>" value="1" /> &nbsp;
+         	<label class="lineblocked">Send updates and alerts to Phone</label>
+         </div>
+         <div class="blocked" style="margin-top:5px;">
+         	<input type="hidden" name="receiveemailalerts_old" id="receiveemailalerts_old" value="<?php echo $user->getreceiveemailalerts(); ?>" />
+         	<input type="checkbox" name="receiveemailalerts" id="receiveemailalerts" class="<?php echo $user->getreceiveemailalerts(); ?>" value="1" /> &nbsp;
+         	<label class="lineblocked">Send updates and alerts to Email</label>
+         </div>
+      </div>
+    </div>
+    <div class="control-group">
+        <label class="control-label" style="width:100%;">Frequency of Updates:</label>
+        <div class="controls" style="margin-left:0;">
+            <?php
+                $values = array("1"=>"Weekly","2"=>"Bi-weekly","3"=>"Fortnightly","4"=>"Monthly");
+                $dropdown = new Zend_Form_Element_Select('updatesfrequency',
+                                    array(
+                                        'multiOptions' => $values,								
+                                        'view' => new Zend_View(),
+                                        'decorators' => array('ViewHelper'),
+                                        'class' => array('span2 minwidth100')
+                                    )
+                                );
+                $dropdown->setValue($user->getUpdatesFrequency()); 
+                echo $dropdown->render(); 
+           ?><div id="updatesfrequency_error"></div>
+        </div>
+    </div>
+    <!--<div class="control-group"><label class="control-label">System Notification Settings:</label></div>-->
+ 	<div class="control-group">
+      <label class="control-label" style="width:100%;">System Notification Settings:</label>
+      <div class="controls" style="margin-left:0;">
+         <div class="blocked" style="margin-top:5px;">
+         	<input type="hidden" name="emailmeonmessage_old" id="emailmeonmessage_old" value="<?php echo $user->getEmailMeOnMessage(); ?>" />
+         	<input type="checkbox" name="emailmeonmessage" id="emailmeonmessage" class="<?php echo $user->getEmailMeOnMessage(); ?>" value="1" /> &nbsp;
+         	<label class="lineblocked"><?php echo $isme ? 'Email me when i receive a notification in my FARMIS Inbox' : 'Email the Farmer when they receive a notification in their FARMIS Inbox'; ?></label>
+         </div>
+         <div class="blocked" style="margin-top:5px;">
+         	<input type="hidden" name="emailmeoncomment_old" id="emailmeoncomment_old" value="<?php echo $user->getEmailMeOnComment(); ?>" />
+         	<input type="checkbox" name="emailmeoncomment" id="emailmeoncomment" class="<?php echo $user->getEmailMeOnComment(); ?>" value="1" /> &nbsp;
+         	<label class="lineblocked"><?php echo $isme ? 'Email me when a Community Forum am involved in is commented on' : 'Email the Farmer when a Community Forum discussion they are involved in is commented on'; ?></label>
+         </div>
+      </div>
+    </div>

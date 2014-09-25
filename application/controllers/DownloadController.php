@@ -12,7 +12,7 @@ class DownloadController extends Zend_Controller_Action {
 	public function indexAction() {
 		// automatic file mime type handling
 		$filename = decode($this->_getParam('filename')); 
-		$full_path = APPLICATION_PATH.DIRECTORY_SEPARATOR."..".DIRECTORY_SEPARATOR.PUBLICFOLDER.DIRECTORY_SEPARATOR."temp".DIRECTORY_SEPARATOR.$filename;
+		$full_path = BASE_PATH.DIRECTORY_SEPARATOR."temp".DIRECTORY_SEPARATOR.$filename;
 		
 		// file headers to force a download
 	    header('Content-Description: File Transfer');
@@ -49,7 +49,7 @@ class DownloadController extends Zend_Controller_Action {
 		$currenttime = mktime();
 		$filename = $currenttime.'.csv';
 		
-		/*$full_path = APPLICATION_PATH.DIRECTORY_SEPARATOR."..".DIRECTORY_SEPARATOR."public".DIRECTORY_SEPARATOR."temp".DIRECTORY_SEPARATOR.$filename;
+		/*$full_path = BASE_PATH.DIRECTORY_SEPARATOR."temp".DIRECTORY_SEPARATOR.$filename;
 		file_put_contents($full_path, $cvsdata);*/
 		$data=stripcslashes($cvsdata); // debugMessage($data);
 		// exit();

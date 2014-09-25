@@ -1,6 +1,5 @@
  <?php
 	require_once APPLICATION_PATH.'/includes/header.php';
-	require_once APPLICATION_PATH.'/../'.PUBLICFOLDER.'/mpdf/mpdf.php';
 		
 	$title = "Farmis Baseline Detailed Report";
 	// meta data
@@ -45,10 +44,6 @@
 ?>
 <script>
 $(document).ready(function() {
-	<?php if($request->print == 1){ ?>
-		$("#headercontainer, #leftcolumn, .footer, #blankrow").remove().hide();
-		$(".printpage").html($("#printer_page_action_buttons").html());
-	<?php } ?>
 	equalHeight($("#landusage, #crops"));
 	
 	// trigger path to farmer report to be generated
@@ -60,6 +55,11 @@ $(document).ready(function() {
 
 });
 </script>
+<style>
+#centercolumn {
+	border-left:none;
+}
+</style>
 <div>
   <div id="centercolumn" class="reportpage">
   	<div class="printpage"></div>

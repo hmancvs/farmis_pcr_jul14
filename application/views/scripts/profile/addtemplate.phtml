@@ -21,6 +21,11 @@
             <div class="controls">
                 <?php
                     $allvalues = getUserType('', '2');
+					if($acl->checkPermission('Is KE Admin', ACTION_YESNO)){
+						unset($allvalues['1']);
+						unset($allvalues['8']);
+						unset($allvalues['6']);
+					}
                     $dropdown = new Zend_Form_Element_Select('type',
                                         array(
                                             'multiOptions' => array_merge_maintain_keys(array('' => '<Select One>'), $allvalues),
@@ -34,7 +39,7 @@
                 ?>
                 <div id="type_error"></div>
             </div>
-            <input type="hidden" id="isfarmer" name="isfarmer" value="0" />
+            <input type="hidden" id="isfarmer" name="isfarmer" value="<?php echo $user->isFarmer() ? 0 : 1; ?>" />
         </div>
         <div class="control-group" id="partnerrow">
         	<label class="control-label" for="type">Partner: <?php echo $this->translate("global_required_field_marker"); ?></label>
@@ -83,7 +88,6 @@
         <input type="hidden" id="theaction" name="theaction" value="<?php echo $controlleraction; ?>" />
         <input type="hidden" id="addedbyid" name="addedbyid" value="<?php echo $userid; ?>" />
         <input type="hidden" name="regdate" id="regdate" value="<?php echo changeMySQLDateToPageFormat($user->getRegDate()); ?>" />
-        <input type="hidden" name="<?php echo URL_SUCCESS; ?>" value="<?php echo encode($this->baseUrl('mobile/view')); ?>" />
         <input type="hidden" name="<?php echo URL_FAILURE; ?>" value="<?php echo encode($this->baseUrl('mobile/farmer')); ?>" />
         <input type="hidden" id="username" name="username" value="<?php echo $user->getusername(); ?>" />
         <input type="hidden" name="<?php echo SUCCESS_MESSAGE; ?>" value="farmer_add_success" />
@@ -203,7 +207,7 @@
         <div class="control-group">
           <label class="control-label" for="farmgroupid"><?php echo $this->translate("farmgroup_dna_label"); ?>: <?php echo isUganda() ? $this->translate("global_required_field_marker") : ''; ?></label>
           <div class="controls">
-                <?php if(isAdmin() || isManagement() || isDataClerk()){ ?>
+                <?php if(!isFarmer()){ ?>
                     <?php
                         $groupdropdown = new Zend_Form_Element_Select('farmgroupid',
                                             array(
@@ -226,7 +230,7 @@
         <div class="control-group">
           <label class="control-label" for="subgroupid"><?php echo $this->translate("farmgroup_farmgroup_label"); ?>:</label>
           <div class="controls">
-                <?php if(isAdmin() || isManagement() || isDataClerk() || isFarmGroupAdmin()){ ?>
+                <?php if(!isFarmer()){ ?>
                     <div class="subgroup_text inline">
                         <input type="text" name="subgroupname" id="subgroupname" class="span3" value="<?php //echo $user->getVillageName(); ?>"  />
                     </div>
@@ -252,7 +256,6 @@
           </div>
         </div>
     </div>
-    
     <div class="control-group">
         <label class="control-label" for="phone"><label class="control-label"><?php echo $this->translate("farmer_phone_label"); ?>: </label>
         <div class="controls">
@@ -261,10 +264,10 @@
                 <input type="text" name="phone" id="phone" maxlength="10" value="<?php echo getShortPhone($user->getPhone()); ?>" class="span2 minwidth100" style="margin-top:0;" />
             </div>
             <?php if(false){ ?>
-            <?php if($user->isUserInActive() || isEmptyString($user->getID())){ ?>
-                 <div class="blocked" style="margin-top:5px; width:250px; display:block;"><input type="checkbox" name="isphoneinvited" id="isphoneinvited" value="1" style="margin-top:0;" /> &nbsp;
-                 <label class="lineblocked">Invite to activate via Phone</label></div>
-            <?php } ?>
+				<?php if($user->isUserInActive() || isEmptyString($user->getID())){ ?>
+                     <div class="blocked" style="margin-top:5px; width:250px; display:block;"><input type="checkbox" name="isphoneinvited" id="isphoneinvited" value="1" style="margin-top:0;" /> &nbsp;
+                     <label class="lineblocked">Invite to activate via Phone</label></div>
+                <?php } ?>
             <?php } ?>
             <div id="phone_error"></div>
         </div>
@@ -613,32 +616,72 @@
         </div>
     </div>
     <div class="control-group">
-        <label class="control-label" for="crops">Enterprise Crops:</label>
-        <div class="controls">
-            <?php
-                $preselectarray = $user->getCropIDs();
+        <label class="control-label" for="crops">Crops:</label>
+        <div class="controls blocked">
+        	<?php 
+				$commodities = getFarmisCommodities();
+				$preselectarray = $user->getCropIDs();
                 if(!isEmptyString($session->getVar(ERROR_MESSAGE))){
                     $preselectarray = $formvalues['cropids'];
                 }
-                // debugMessage($preselectarray);
-                $commodities = getFarmisCommodities();
-            ?>
-            <ul class="nav croplist">
-                <?php foreach($commodities as $key => $value){
-                        $isselected = false;
-                        if(in_array($key, $preselectarray)){
-                            // debugMessage('is selected');
-                            $isselected = true;
-                        }
-                ?>
-                    <li><label for="cropids-<?php echo $key; ?>"><input type="checkbox" class="checkbox <?php echo $isselected == true ? 1 : 0; ?>" id="cropids-<?php echo $key; ?>" name="cropids[]" value="<?php echo $key; ?>" />&nbsp; <?php echo $value; ?></label></li>
-                <?php } ?>
-            </ul>
+			?>
+        	1. <?php
+				$crop1 = ''; $crop2 = ''; $crop3 = '';
+				if(!isArrayKeyAnEmptyString(0, $preselectarray)){
+					$crop1 = $preselectarray[0];
+				}
+				if(!isArrayKeyAnEmptyString(1, $preselectarray)){
+					$crop2 = $preselectarray[1];
+				}
+				if(!isArrayKeyAnEmptyString(2, $preselectarray)){
+					$crop3 = $preselectarray[2];
+				}
+                
+                $dropdown1 = new Zend_Form_Element_Select('crop_1',
+                                    array(
+                                        'multiOptions' => array_merge_maintain_keys(array('' => '<Select>'), $commodities),								
+                                        'view' => new Zend_View(),
+                                        'decorators' => array('ViewHelper'),
+                                        'class' => array('span2')
+                                    )
+                                );
+                $dropdown1->setValue($crop1); 
+                echo $dropdown1->render(); 
+           ?>
+        </div>
+        <div class="controls blocked" style="margin-top:5px;">
+        	2. <?php
+                $dropdown2 = new Zend_Form_Element_Select('crop_2',
+                                    array(
+                                        'multiOptions' => array_merge_maintain_keys(array('' => '<Select>'), $commodities),								
+                                        'view' => new Zend_View(),
+                                        'decorators' => array('ViewHelper'),
+                                        'class' => array('span2')
+                                    )
+                                );
+                $dropdown2->setValue($crop2); 
+                echo $dropdown2->render(); 
+           ?>
+        </div>
+        <div class="controls" style="margin-top:10px;">
+        	3. <?php
+                $dropdown3 = new Zend_Form_Element_Select('crop_3',
+                                    array(
+                                        'multiOptions' => array_merge_maintain_keys(array('' => '<Select>'), $commodities),								
+                                        'view' => new Zend_View(),
+                                        'decorators' => array('ViewHelper'),
+                                        'class' => array('span2')
+                                    )
+                                );
+                $dropdown3->setValue($crop3); 
+                echo $dropdown3->render(); 
+           ?>
         </div>
     </div>
     <div class="control-group">
         <label class="control-label" for="enterpriseids">Other Enterprises:</label>
         <div class="controls">
+        
             <?php
                 $preselectarray = $user->getEnterpriseIDs();
                 if(!isEmptyString($session->getVar(ERROR_MESSAGE))){
@@ -662,39 +705,15 @@
     </div>
 </fieldset>
 <fieldset class="fieldsetcontainer well xhideonsuper">
-    <legend>Profile Settings</legend>            
-    <div class="control-group">
-      <label class="control-label" style="width:100%;">Recieve Market Information alerts?</label>
-      <div class="controls" style="margin-left:0;">
-         <div class="blocked" style="margin-top:5px;"><input type="checkbox" name="receivephonealerts" id="receivephonealerts" class="<?php echo $user->getreceivephonealerts(); ?>" value="1" /> &nbsp;
-         <label class="lineblocked">Send updates and alerts to Phone</label></div>
-         <div class="blocked" style="margin-top:5px;"><input type="checkbox" name="receiveemailalerts" id="receiveemailalerts" class="<?php echo $user->getreceiveemailalerts(); ?>" value="1" /> &nbsp;
-         <label class="lineblocked">Send updates and alerts to Email</label></div>
-      </div>
-    </div>
-    <div class="control-group">
-        <label class="control-label" for="updatesfrequency">Frequency of Updates<?php //echo $this->translate("farmer_updatesfrequency_label"); ?>:</label>
-        <div class="controls">
-            <?php
-                $values = array("1"=>"Weekly","2"=>"Bi-weekly","3"=>"Fortnightly","4"=>"Monthly");
-                $dropdown = new Zend_Form_Element_Select('updatesfrequency',
-                                    array(
-                                        'multiOptions' => $values,								
-                                        'view' => new Zend_View(),
-                                        'decorators' => array('ViewHelper'),
-                                        'class' => array('span2 minwidth100')
-                                    )
-                                );
-                $dropdown->setValue($user->getUpdatesFrequency()); 
-                echo $dropdown->render(); 
-           ?><div id="updatesfrequency_error"></div>
-        </div>
-    </div>
+    <legend>Profile Assessment</legend>  
+    <?php if(($user->isFarmer() && !isEmptyString($user->getID())) || (isEmptyString($user->getID()) && in_array($request->getControllerName(), array('farmer','mobile')))){ ?>          
+    	<?php require APPLICATION_PATH."/views/scripts/profile/settingfields.phtml"; ?>
+    <?php } ?>
     <?php if(!$isme){ ?>
         <div class="control-group">
-          <label class="control-label" for="username">Profiled By: <?php echo $this->translate("global_required_field_marker"); ?></label>
-          <div class="controls">
-            <?php if(isAdmin()){ ?>
+          <label class="control-label" style="width:100%;">Profiled By: <?php echo $this->translate("global_required_field_marker"); ?></label>
+          <div class="controls" style="margin-left:0;">
+            <?php if($acl->checkPermission('User Account', ACTION_CREATE)){ ?>
                 <?php
                     $users = getProfilingUsers($session->getVar('country'));
                     $dropdown = new Zend_Form_Element_Select('profiledby',

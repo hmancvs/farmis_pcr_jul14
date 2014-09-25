@@ -48,6 +48,41 @@
 	
 	# define the letter to be clicked to ease navigation 
 	$where_query = " WHERE u.id <> '' ";
+	$partner_query = ""; $partner_details = array(); $indtype = '';
+	if($loggedinuser->isPartner()){
+		$allowedlist = $loggedinuser->getCompany()->getAllocationDetails(true);
+		$partnertype = $loggedinuser->getCompany()->getFarmisType();
+		$indtype = $loggedinuser->getCompany()->getShowInd();
+		switch($partnertype){
+			case 2:
+			case 3:
+				$partner_query = " AND l.regionid in(".$allowedlist.") ";
+				if($indtype == 0){
+					$partner_query .= " AND u.farmgroupid <> '' ";
+				}
+				$partner_details = array("type"=>$partnertype, "allowedlist"=>$allowedlist, "regionlist" => " AND l.regionid in(".$allowedlist.") ");
+				break;
+			case 4:
+			case 5:
+				$partner_query = " AND u.locationid in(".$allowedlist.") ";
+				if($indtype == 0){
+					$partner_query .= " AND u.farmgroupid <> '' ";
+				}
+				$partner_details = array("type"=>$partnertype, "allowedlist"=>$allowedlist, "districtlist" => " AND f.districtid in(".$allowedlist.") ");
+				break;
+			case 6:
+			case 7:
+				$partner_query = " AND u.farmgroupid in(".$allowedlist.") ";
+				if($indtype == 0){
+					$partner_query .= " AND u.farmgroupid <> '' ";
+				}
+				$partner_details = array("type"=>$partnertype, "allowedlist"=>$allowedlist, "dnalist" => " AND f.id in(".$allowedlist.") ");
+				break;
+			default:
+				break;
+		}
+	}
+	// debugMessage($partner_query);
 	
 	if(!isEmptyString($request->letter)){
 		$where_query .= " AND (u.`firstname` LIKE '".$request->letter."%' OR u.`lastname` LIKE '".$request->letter."%') ";
@@ -94,6 +129,11 @@
 	$subgroup = $request->subgroupid;
 	if(!isEmptyString($subgroup)){
 		$where_query .= " AND (u.`subgroupid` = '".$subgroup."') ";
+	}
+	
+	$status = $request->status;
+	if(!isEmptyString($status)){
+		$where_query .= " AND (u.`paymentstatus` = '".$status."') ";
 	}
 	
 	$profiledby = $request->profiledby;
@@ -148,15 +188,26 @@
 	}
 	
 	$paginate->processPost($request->getParams());
-	$all_results_query = "SELECT u.id as id, u.id as userid, u.farmgroupid as fmgroupid, u.firstname, u.lastname, u.othernames, u.subgroupid, u.gender, u.isactive, u.locationid as districtid, u.email as email, u.email as femail, u.refno, u.regno as regno, u.phone as phone, u.regdate as fregdate, u.profilephoto as profilephoto, fg.orgname as orgname, fgs.orgname as sorgname, l.name as district, u.isphoneinvited, u.hasacceptedinvite, u.isinvited, u.selfregistered, concat(ua.firstname, ' ', ua.lastname) as addedby, u.datecreated as dateadded, u.paymentstatus FROM useraccount u LEFT JOIN farmgroup as fg on (u.farmgroupid = fg.id) LEFT JOIN location l on (u.locationid = l.id AND l.locationtype = 2) INNER JOIN useraccount ua on (u.createdby = ua.id) LEFT JOIN farmgroup as fgs on (u.subgroupid = fgs.id) ".$where_query." AND u.type = 2 AND u.country = UPPER('".$session->getVar('country')."') ".$paginate->getSearchAndFilterSQL($customwhere)." GROUP BY u.id ".$order_query;
-	
+	$all_results_query = "SELECT u.id as id, u.id as userid, u.farmgroupid as fmgroupid, u.firstname, u.lastname, u.othernames, u.subgroupid, u.gender, u.isactive, u.locationid as districtid, u.email as email, u.email as femail, u.refno, u.regno as regno, u.phone as phone, u.regdate as fregdate, u.profilephoto as profilephoto, fg.orgname as orgname, fgs.orgname as sorgname, l.name as district, u.isphoneinvited, u.hasacceptedinvite, u.isinvited, u.selfregistered, concat(ua.firstname, ' ', ua.lastname) as addedby, u.datecreated as dateadded, u.username, u.type as usertype, u.paymentstatus, u.paymentid, u.startdate, u.enddate, u.services, u.languages 
+	FROM useraccount u 
+	LEFT JOIN farmgroup as fg on (u.farmgroupid = fg.id) 
+	LEFT JOIN location l on (u.locationid = l.id AND l.locationtype = 2) 
+	INNER JOIN useraccount ua on (u.createdby = ua.id) 
+	LEFT JOIN farmgroup as fgs on (u.subgroupid = fgs.id) 
+	".$where_query.$partner_query." AND u.type = 2 AND u.country = UPPER('".$session->getVar('country')."') ".$paginate->getSearchAndFilterSQL($customwhere)." GROUP BY u.id ".$order_query;
 	// debugMessage($all_results_query); // exit();
 	
 	// determine total number of records found
 	$conn = Doctrine_Manager::connection(); 
-	$count_query = "SELECT count(u.id) as total FROM useraccount u LEFT JOIN farmgroup as fg on (u.farmgroupid = fg.id) LEFT JOIN location l on (u.locationid = l.id AND l.locationtype = 2) INNER JOIN useraccount ua on (u.createdby = ua.id) LEFT JOIN farmgroup as fgs on (u.subgroupid = fgs.id) ".$where_query." AND u.type = 2 AND u.country = UPPER('".$session->getVar('country')."') ".$paginate->getSearchAndFilterSQL($customwhere);
+	$count_query = "SELECT SUM(IF(u.id <> '', 1, 0)) as total 
+	FROM useraccount u
+	LEFT JOIN farmgroup as fg on (u.farmgroupid = fg.id) 
+	LEFT JOIN location l on (u.locationid = l.id AND l.locationtype = 2 ".$partner_query.") 
+	LEFT JOIN useraccount ua on (u.createdby = ua.id) 
+	LEFT JOIN farmgroup as fgs on (u.subgroupid = fgs.id) 
+	 ".$where_query.$partner_query." AND u.type = 2 AND u.country = UPPER('".$session->getVar('country')."') ".$paginate->getSearchAndFilterSQL($customwhere)." ";
 	$total = $conn->fetchOne($count_query);
-	$paginate->setItemCount($total); // debugMessage('>> '.$total);	
+	$paginate->setItemCount($total); // debugMessage($count_query);	
 	$current_results_query = $all_results_query." ".$paginate->getSQLLimit();
 	
 	$conn = Doctrine_Manager::connection(); 
@@ -277,9 +328,13 @@ img.ui-datepicker-trigger {
                                 <?php if(!isFarmGroupAdmin()){ ?>
                                     <li style="width:210px;">
                                         <?php
+											$preparray = array('' => 'All DNAs'.$locationstring);
+											if($indtype != '0'){
+												$preparray['0'] = 'All Individual Farmers';
+											}
                                             $groupdropdown = new Zend_Form_Element_Select('farmgroupid',
                                                                 array(
-                                                                    'multiOptions' => array_merge_maintain_keys(array('' => 'All DNAs'.$locationstring, '0'=> 'All Individual Farmers'), getAllFarmGroups($request->getParam('locationid'), $session->getVar('country'))),								
+                                                                    'multiOptions' => array_merge_maintain_keys($preparray, getAllFarmGroups($request->getParam('locationid'), $session->getVar('country'), $partner_details)),								
                                                                     'view' => new Zend_View(),
                                                                     'decorators' => array('ViewHelper'),
                                                                     'class' => array('autofilter'),
@@ -327,23 +382,39 @@ img.ui-datepicker-trigger {
                                         $genderdropdown->setValue($request->getParam('u'.HTML_TABLE_COLUMN_SEPARATOR.'gender')); 
                                         echo $genderdropdown->render();
                                     ?>
+                                    <?php if($acl->checkPermission('User Account', ACTION_LIST)) { ?>	
+										<?php
+                                            $users = getProfilingUsers($session->getVar('country'));
+                                            $dropdown = new Zend_Form_Element_Select('profiledby',
+                                                                array(
+                                                                    'multiOptions' => array_merge_maintain_keys(array('' => 'All Profiling Users'), $users),								
+                                                                    'view' => new Zend_View(),
+                                                                    'decorators' => array('ViewHelper'),
+                                                                    'class' => array('span2','autofilter'),
+                                                                    'style' => 'margin-top:10px;'
+                                                                )
+                                                            );
+                                            $dropdown->setValue($request->getParam('profiledby')); 
+                                            echo $dropdown->render(); 
+                                          ?>
+                                     <?php } ?>
+                                </li>
+                                <li style="width:140px;">
                                     <?php
-                                        $users = getProfilingUsers($session->getVar('country'));
-                                        $dropdown = new Zend_Form_Element_Select('profiledby',
+                                        $statuses = getServiceStatus();
+                                        $dropdown = new Zend_Form_Element_Select('status',
                                                             array(
-                                                                'multiOptions' => array_merge_maintain_keys(array('' => 'All Profiling Users'), $users),								
+                                                                'multiOptions' => array_merge_maintain_keys(array('' => 'All Statuses'), $statuses),								
                                                                 'view' => new Zend_View(),
                                                                 'decorators' => array('ViewHelper'),
-                                                                'class' => array('span2','autofilter'),
-                                                                'style' => 'margin-top:10px;'
+                                                                'class' => array('span2','autofilter')
                                                             )
                                                         );
-                                        $dropdown->setValue($request->getParam('profiledby')); 
+                                        $dropdown->setValue($request->getParam('status')); 
                                         echo $dropdown->render(); 
                                       ?>
-                                </li>
-                                <li>
-                                    <?php
+                                      <div class="divider10"></div>
+									<?php
                                         $allorders = array('1' => 'Latest First', '2'=>'Alphabetical (Firstname)','3'=>'Alphabetical (Lastname)', '4'=>'Earliest First');
                                         $ordersdropdown = new Zend_Form_Element_Select('order',
                                                             array(

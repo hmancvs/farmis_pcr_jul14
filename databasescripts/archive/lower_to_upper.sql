@@ -23,11 +23,13 @@ BEGIN
 	RETURN input;
 END;
 
-UPDATE farmer SET firstname = CAP_FIRST(firstname);
-UPDATE farmer SET lastname = CAP_FIRST(lastname);
+UPDATE useraccount set firstname = TRIM(firstname);
+UPDATE useraccount set lastname = TRIM(lastname);
 
 UPDATE useraccount SET firstname = CAP_FIRST(firstname);
 UPDATE useraccount SET lastname = CAP_FIRST(lastname);
 
-UPDATE farmer SET firstname = CONCAT(UCASE(LEFT(firstname, 1)),  LCASE(SUBSTRING(firstname, 2))), lastname = CONCAT(UCASE(LEFT(lastname, 1)),  LCASE(SUBSTRING(lastname, 2)));
 UPDATE useraccount SET firstname = CONCAT(UCASE(LEFT(firstname, 1)),  LCASE(SUBSTRING(firstname, 2))), lastname = CONCAT(UCASE(LEFT(lastname, 1)),  LCASE(SUBSTRING(lastname, 2)));
+
+
+UPDATE location set `name` = CAP_FIRST(`name`);

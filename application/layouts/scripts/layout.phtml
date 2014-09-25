@@ -21,7 +21,8 @@
 	$acl = getACLInstance(); 
   }
 	   
-  $jsfiles = glob("javascript/*.js");
+  // $jsfiles = glob("javascript/*.js");
+  $jsfiles = getJsIncludes();
   $cssfiles = glob("stylesheets/*.css");
   
   foreach ($cssfiles as $css) {
@@ -31,6 +32,7 @@
   echo $this->minifyHeadLink(); 
   
   foreach ($jsfiles as $js) {
+	 //  debugMessage($js);
 	// use baseURL() to output the full URL of the cached file and use it as normal with headLink(). also use setFile so that each file is added
 	$this->minifyHeadScript()->appendFile($js);
   }  
@@ -51,7 +53,6 @@
 	  $groupid = $session->getVar("farmergroupid");
 	} 
 ?>
-
 <!-- Le HTML5 shim, for IE6-8 support of HTML elements -->
 <!--[if lt IE 9]>
 <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
@@ -84,7 +85,7 @@ $(document).ready(function() {
 	
 	// make the datefields readonly
 	$(".datefield").attr('readOnly', 'true');
-	$(".readonly").each(function(){
+	$(".readonly, .readonlyfield").each(function(){
 		$(this).attr('readonly', true);
 	});
 	
@@ -137,11 +138,6 @@ $(document).ready(function() {
         })
         .next().addClass("ui-accordion-content ui-helper-reset ui-widget-content ui-corner-bottom").hide();
 		
-	// temporaly hide menus
-	$("ul.nav li#tree a, ul.nav li#research a, ul.nav li#billing a").attr('href', 'javascript: doNothing();');
-	// dynamically add dropdown icon on the family menu 
-	$('#mainmenu li#family a.dropdown-toggle').html('Lists <b class="caret"></b>').attr('href', '#');
-	
 	// copy the classes to html radio labels from the containing div elements
 	// this is a work around since Zend_Form_Element_Radio generation does not support adding labels to the labels around the containing elements 
 	$('div.radio > label').each(function(){
@@ -971,10 +967,14 @@ $(document).ready(function() {
 		); // close the $.post
 		$("#"+field+"_wait").removeClass('hidden');								
 	});
-}); 
-function numberWithCommas(x) {
-    return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-}
+	
+	// default search text on chosen dropdown
+	$(".chosen-container .chosen-search input").attr('placeholder', 'Type to search');
+	
+	function numberWithCommas(x) {
+		return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+	}
+});
 //Use window.load and not document.ready for effective equal heights
 $(window).load(function() {
 	//Make columns equal
@@ -982,6 +982,12 @@ $(window).load(function() {
 	// $("#contentcolumn, #centercolumn").css({'height':'auto'});
 	
 	$('.ui-datepicker-div').css({'z-index':'1500'});
+	
+	<?php if($request->print == 1){ ?>
+		$("#headercontainer, #leftcolumn, .footer, #blankrow, .crumbs").remove().hide();
+		$(".printpage").html($("#printer_page_action_buttons").html());
+		$("#centercolumn").css({'border-left':'none'});
+	<?php } ?>
 }); 
 </script>
 </head>
@@ -1032,7 +1038,7 @@ $(window).load(function() {
 	<?php require_once APPLICATION_PATH.'/views/scripts/index/navigation.phtml'; ?>	
 	<div class="row-fluid" id="contentwrapper">
 		<div id="contentcolumn">
-        	<?php if($isloggedin){ ?>
+        	<?php if($isloggedin && $isInnerPage){ ?>
         		<?php require_once APPLICATION_PATH.'/views/scripts/index/breadcrumb.phtml'; ?>	
             <?php } ?>
 			<?php echo $this->layout()->content; ?>

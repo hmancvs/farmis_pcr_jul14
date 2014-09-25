@@ -36,9 +36,14 @@
             <div>
                 <span class="marginleft0">
                     <ul class="sectionitems">
-                    	<?php if($acl->checkPermission('Membership Certificate', ACTION_VIEW)){ ?>
+                    	<?php if($acl->checkPermission('Farmer Membership Certificate', ACTION_VIEW)){ ?>
                             <li>
-                                <a class="list" href="<?php echo $this->baseUrl('report/certificate'); ?>"><img src="<?php echo $this->baseUrl('images/benefit_report.png'); ?>" /><br /><h2>Membership <br /><?php echo isFarmer() ? 'Certificate' : 'Certificates'; ?></h2></a>
+                                <a class="list" href="<?php echo $this->baseUrl('report/certificate'); ?>"><img src="<?php echo $this->baseUrl('images/benefit_report.png'); ?>" /><br /><h2>Farmer Membership <br /><?php echo isFarmer() ? 'Certificate' : 'Certificates'; ?></h2></a>
+                            </li>
+                        <?php } ?>
+                        <?php if($acl->checkPermission('DNA Membership Certificate', ACTION_VIEW) || isFarmGroupAdmin()){ ?>
+                            <li>
+                                <a class="list" href="<?php echo $this->baseUrl('report/dnacertificate'); ?>"><img src="<?php echo $this->baseUrl('images/benefit_report.png'); ?>" /><br /><h2>DNA Membership <br /><?php echo isFarmGroupAdmin() ? 'Certificate' : 'Certificates'; ?></h2></a>
                             </li>
                         <?php } ?>
 						<?php if($acl->checkPermission('Farmers Baseline Summary Report', ACTION_VIEW) && !isFarmer()){ ?>

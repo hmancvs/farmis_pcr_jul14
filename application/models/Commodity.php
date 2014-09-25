@@ -158,7 +158,7 @@ class Commodity extends BaseEntity  {
 	# determine if image already exists with 
 	function hasIDImage(){
 		// $real_path = APPLICATION_PATH."/../public/uploads/commodity";
-		$real_path = APPLICATION_PATH.DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.PUBLICFOLDER.DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR.'commodity';
+		$real_path = BASE_PATH.DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR.'commodity';
 		$real_path = $real_path.DIRECTORY_SEPARATOR.$this->getID().".jpg";
 		if(file_exists($real_path)){
 			return true;

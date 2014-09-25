@@ -22,16 +22,16 @@
    <h4><?php echo $title; ?></h4>
   </div>
         <div class="control-group well actions" id="topactions">
-        	<?php if(isAdmin() || isManagement() || isDataClerk()){ ?>
+        	<?php if($acl->checkPermission('Payments', ACTION_CREATE)){ ?>
 	            <a href="<?php echo $addurl; ?>" class="btn btn-primary"><i class="icon-plus icon-white"></i> Add Payment</a>
             <?php } ?>
-            <?php if(isAdmin() || isManagement() || isDataClerk()){ ?>
+            <?php if($acl->checkPermission('Payments', ACTION_UPDATE)){ ?>
                 <a class="btn btn-primary" href="<?php echo $this->baseUrl('mobile/addpayment/id/'.encode($payment->getID())); ?>"><i class="icon-pencil icon-white"></i> Update</a>
             <?php } ?>
-            <?php if((isAdmin() || isManagement())){ ?>
-                <a class="btn deleteline gonowhere" action="<?php echo $this->baseUrl('mobile/delete/id/'.$payment->getID()."/entityname/Payment/successurl/".encode($this->baseUrl('mobile/list'))); ?>"><i class="icon-trash"></i> Delete</a>
+            <?php if($acl->checkPermission('Payments', ACTION_DELETE)){ ?>
+                <a class="btn deleteline gonowhere" action="<?php echo $this->baseUrl('mobile/delete/id/'.$payment->getID()."/entityname/Payment/successurl/".encode($this->baseUrl('mobile/payments'))); ?>"><i class="icon-trash"></i> Delete</a>
             <?php } ?>    
-            <?php if(isAdmin() || isManagement() || isDataClerk()){ ?>
+            <?php if($acl->checkPermission('Payments', ACTION_LIST)){ ?>
        			<a class="btn" href="<?php echo $this->baseUrl('mobile/payments'); ?>"><i class="icon-list"></i> Payments</a>
             <?php } ?>
             <a class="btn" href="<?php echo $this->baseUrl('mobile/home'); ?>"><i class="icon-home"></i> Home</a>
@@ -61,13 +61,25 @@
       	<fieldset class="fieldsetcontainer well">
             <legend>Profile</legend>
             <div class="control-group">
-              <label class="control-label" for="farmer">Farmer:</label>
-              <div class="controls"><a href="<?php echo $this->baseUrl('mobile/view/id/'.encode($payment->getUserID())); ?>"><?php echo $payment->getUser()->getName(); ?></a></div>
+              <label class="control-label">Farmer:</label>
+              <div class="controls">
+              		<a href="<?php echo $this->baseUrl('mobile/view/id/'.encode($payment->getUserID())); ?>"><?php echo 'Name('.$payment->getUser()->getName().')'; ?> </a>
+                    <?php if(!isEmptyString($payment->getUser()->getFarmGroupID())){ ?>
+                    	<?php echo ', DNA('.$payment->getUser()->getFarmGroup()->getName().') '; ?>
+                    <?php } ?>
+                    <?php echo ', FIN('.$payment->getUser()->getRefNo().')'; ?> 
+              </div>
             </div>
             <div class="control-group">
-                <label class="control-label" for="phone"><?php echo $this->translate("farmer_phone_label"); ?>: </label>
+                <label class="control-label"><?php echo $this->translate("farmer_phone_label"); ?>: </label>
                 <div class="controls phone"><?php echo getShortPhone($payment->getPhone()); ?></div>
             </div>
+            <?php if(!isEmptyString($payment->getUser()->getEmail())){ ?>
+                <div class="control-group">
+                    <label class="control-label"><?php echo $this->translate("farmer_email_label"); ?>: </label>
+                    <div class="controls phone"><?php echo $payment->getUser()->getEmail(); ?></div>
+                </div>
+            <?php } ?>
 		</fieldset>
         <div class="divider15"></div>
         <fieldset class="fieldsetcontainer well">
@@ -85,39 +97,40 @@
                 <div class="controls"><?php echo $payment->getPaymentStatus(); ?></div>
             </div>
             <div class="control-group">
-                <label class="control-label">Total Amount:</label>
-                <div class="controls"><?php echo $payment->getAmount(); ?></div>
+                <label class="control-label">Amount:</label>
+                <div class="controls"><?php echo formatMoneyOnly($payment->getAmount()); ?></div>
             </div>
             <div class="control-group">
-                <label class="control-label">Trx Ref / Receipt#: </label>
+                <label class="control-label">Trx Ref#: </label>
                 <div class="controls"><?php echo $payment->getTrxCode(); ?></div>
             </div>
             <div class="control-group">
-                <label class="control-label">Verified By:</label>
-                <div class="controls"><?php echo $payment->getverifiedby()->getName(); ?></div>
+                <label class="control-label">Trx Date:</label>
+                <div class="controls"><?php echo formatDateAndTime($payment->getTrxDate(), false); ?></div>
+            </div>
+            <div class="control-group">
+                <label class="control-label">Service Start Date:</label>
+                <div class="controls"><?php echo formatDateAndTime($payment->getSubscription()->getStartDate(), false); ?></div>
+            </div>
+            <div class="control-group">
+                <label class="control-label">Service End Date:</label>
+                <div class="controls"><?php echo formatDateAndTime($payment->getSubscription()->getEndDate(), false); ?></div>
             </div>
             <div class="control-group">
                 <label class="control-label">Notes: </label>
-                <div class="controls"><?php echo $payment->getdescription(); ?></div>
-            </div>
-        </fieldset>
-        <fieldset class="fieldsetcontainer well">
-            <legend>Subscription Details</legend>
-            <div class="control-group">
-                <label class="control-label">Service Provision Start Date:</label>
-                <div class="controls"><?php echo changeMySQLDateToPageFormat($payment->getSubscription()->getStartDate()); ?></div>
-            </div>
-            <div class="control-group">
-                <label class="control-label">Service Provision End Date:</label>
-                <div class="controls"><?php echo changeMySQLDateToPageFormat($payment->getSubscription()->getEndDate()); ?></div>
+                <div class="controls"><?php echo $payment->getDescription(); ?></div>
             </div>
             <div class="control-group">
                 <label class="control-label">Verified By:</label>
+                <div class="controls"><?php echo $payment->getverifier(); ?></div>
+            </div>
+            <div class="control-group">
+                <label class="control-label">Logged By:</label>
                 <div class="controls"><?php echo $payment->getverifiedby()->getName(); ?></div>
             </div>
             <div class="control-group">
-                <label class="control-label">Notes: </label>
-                <div class="controls"><?php echo $payment->getdescription(); ?></div>
+                <label class="control-label">Log Date:</label>
+                <div class="controls"><?php echo formatDateAndTime($payment->getDatecreated(), false); ?></div>
             </div>
         </fieldset>
         <div class="control-group well actions" id="bottomactions"></div>       

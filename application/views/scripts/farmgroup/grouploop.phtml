@@ -40,11 +40,10 @@
                 <?php if($farmgroup->isSubGroup()){ ?>
                   <li><span>DNA:</span> <?php echo $farmgroup->getParent()->getName(); ?></li>
                 <?php } ?>
-                  <li><span>Group Type:</span> <?php echo $farmgroup->getTypeLabel(); ?></li>
+                  <li><span>Type:</span> <?php echo $farmgroup->getTypeLabel(); ?></li>
                   <li><span><?php echo $location_label?>:</span> <?php echo isEmptyString($farmgroup->getDistrictID()) ? '--' : $farmgroup->getDistrict()->getName(); ?></li>
                   <li><span>Phone:</span> <?php echo isEmptyString($farmgroup->getPhone()) ? '--' : $farmgroup->getPhone(); ?></li>
                   <li><span>Email:</span> <?php echo isEmptyString($farmgroup->getEmail()) ? '--' : $farmgroup->getEmail(); ?></li>
-                  <li><span>Total Farmers:</span> <?php echo $line['totalfarmers']; ?></li>
                   <li><span>Date Registered:</span> <?php echo $farmgroup->getRegDateFormatted(); ?></li>
                 </ul>
               </div>

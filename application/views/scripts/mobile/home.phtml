@@ -54,7 +54,7 @@ $(document).ready(function() {
             	<label id="intro"><b>FARMIS</b> is the easy way to manage your agricultural business online allowing you to quickly manage your farm processes and to evaluate your income and expenses.</label>
             </div>
         </div>
-		<?php if(isAdmin() || isManagement() || isDataClerk() || isFarmGroupAdmin()){ ?>
+		<?php if($acl->checkPermission('Farmer', ACTION_LIST)){ ?>
         <h3 id="head_list"><a href="<?php echo $this->baseUrl('mobile/list'); ?>"><span class="caret"></span>Farmer Directory</a></h3>
         <div id="div_list">
             <div class="accordion">
@@ -64,7 +64,7 @@ $(document).ready(function() {
             </div>
         </div>
         <?php } ?>
-        <?php if(isAdmin() || isManagement() || isDataClerk()){ ?>
+        <?php if($acl->checkPermission('DNA', ACTION_LIST)){ ?>
         <h3 id="head_dna"><a href="<?php echo $this->baseUrl('mobile/farmgroups'); ?>"><span class="caret"></span>DNA Profiles</a></h3>
         <div id="div_dna">
             <div class="accordion">
@@ -74,7 +74,7 @@ $(document).ready(function() {
             </div>
         </div>
         <?php } ?>
-        <?php if(isAdmin() || isManagement() || isDataClerk() || isFarmGroupAdmin()){ ?>
+        <?php if($acl->checkPermission('Payments', ACTION_LIST)){ ?>
         <h3 id="head_payment"><a href="<?php echo $this->baseUrl('mobile/payments'); ?>"><span class="caret"></span>Payments</a></h3>
         <div id="div_payment">
             <div class="accordion">
@@ -83,12 +83,14 @@ $(document).ready(function() {
             </div>
         </div>
         <?php } ?>
-        <?php if(isAdmin() || isManagement()){ ?>
+        <?php if($acl->checkPermission('User Account', ACTION_LIST)){ ?>
         <h3 id="head_settings"><a href="<?php echo $this->baseUrl('mobile/dnaprofiles'); ?>"><span class="caret"></span>Manage Data</a></h3>
         <div id="div_settings">
             <div class="accordion">
                 <a class="btn btn-primary" href="<?php echo $this->baseUrl('mobile/users'); ?>">Manage Users</a>
-                <a class="btn" href="<?php echo $this->baseUrl('mobile/farmer/type/other'); ?>"><i class="icon-plus"></i> New User</a>
+                <?php if($acl->checkPermission('User Account', ACTION_CREATE)){ ?>
+               	 <a class="btn" href="<?php echo $this->baseUrl('mobile/farmer/type/other'); ?>"><i class="icon-plus"></i> New User</a>
+                <?php } ?>
             </div>
         </div>
         <?php } ?>

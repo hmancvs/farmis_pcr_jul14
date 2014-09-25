@@ -108,7 +108,7 @@ class UserAccount extends BaseEntity {
 		$this->hasColumn('numberofbranches', 'integer', null);
 		$this->hasColumn('numberofemployees', 'integer', null);
 		$this->hasColumn('numberoffields', 'integer', null, array('default' => 1));
-		$this->hasColumn('hashistory', 'integer', null, array('default' => 0));
+		$this->hasColumn('hashistory', 'integer', null, array('default' => '0'));
 		$this->hasColumn('farmingtools', 'string', 50);
 		
 		$this->hasColumn('phone', 'string', 15);	
@@ -121,6 +121,15 @@ class UserAccount extends BaseEntity {
 		$this->hasColumn('phone2_activationdate', 'date');
 		$this->hasColumn('phone2_isactivated', 'integer', null, array('default' => '0'));
 		$this->hasColumn('companyid', 'integer', null);
+		$this->hasColumn('paymentid', 'integer', null);
+		$this->hasColumn('startdate', 'date', null);
+		$this->hasColumn('enddate', 'date', null);
+		$this->hasColumn('paymentstatus', 'integer', null, array('default' => '0'));
+		
+		$this->hasColumn('services', 'string', 50);
+		$this->hasColumn('languages', 'string', 50, array('default' => '1'));
+		$this->hasColumn('hasmobilemoney', 'integer', null, array('default' => '1'));
+		$this->hasColumn('hasbankaccount', 'integer', null, array('default' => '0'));
 	}
 	
 	# Contructor method for custom initialization
@@ -235,6 +244,12 @@ class UserAccount extends BaseEntity {
 		$this->hasOne('Company as company',
 				array(
 						'local' => 'companyid',
+						'foreign' => 'id'
+				)
+		);
+		$this->hasOne('Payment as payment',
+				array(
+						'local' => 'paymentid',
 						'foreign' => 'id'
 				)
 		);
@@ -391,7 +406,8 @@ class UserAccount extends BaseEntity {
 		if(isEmptyString($phone)){
 			$phone = $this->getPhone();
 		}
-		$query = "SELECT id FROM useraccount WHERE phone = '".$phone."' AND phone <> '' AND phone_isactivated = 1 ".$id_check;
+		// AND phone_isactivated = 1
+		$query = "SELECT id FROM useraccount WHERE phone = '".$phone."' AND phone <> '' ".$id_check;
 		// debugMessage($ref_query);
 		$result = $conn->fetchOne($query);
 		// debugMessage($ref_result);
@@ -524,11 +540,30 @@ class UserAccount extends BaseEntity {
 		}
 		
 		if(isArrayKeyAnEmptyString('emailmeoncomment', $formvalues)){
-			unset($formvalues['emailmeoncomment']); 
+			unset($formvalues['emailmeoncomment']);
+			if(!isArrayKeyAnEmptyString('emailmeoncomment_old', $formvalues)){
+				$formvalues['emailmeoncomment'] = 0;
+			}
 		}
 		if(isArrayKeyAnEmptyString('emailmeonmessage', $formvalues)){
 			unset($formvalues['emailmeonmessage']); 
+			if(!isArrayKeyAnEmptyString('emailmeonmessage_old', $formvalues)){
+				$formvalues['emailmeonmessage'] = 0;
+			}
 		}
+		if(isArrayKeyAnEmptyString('receivephonealerts', $formvalues)){
+			unset($formvalues['receivephonealerts']);
+			if(!isArrayKeyAnEmptyString('receivephonealerts_old', $formvalues)){
+				$formvalues['receivephonealerts'] = 0;
+			}
+		}
+		if(isArrayKeyAnEmptyString('receiveemailalerts', $formvalues)){
+			unset($formvalues['receiveemailalerts']);
+			if(!isArrayKeyAnEmptyString('receiveemailalerts_old', $formvalues)){
+				$formvalues['receiveemailalerts'] = 0;
+			}
+		}
+		
 		if(isArrayKeyAnEmptyString('dashwizard', $formvalues)){
 			unset($formvalues['dashwizard']);
 		}
@@ -799,39 +834,36 @@ class UserAccount extends BaseEntity {
 		}
 		
 		$crops = array();
-		if(!isArrayKeyAnEmptyString('regsource', $formvalues)){
-			if($formvalues['regsource'] == 1 && $formvalues['regsource'] == 3){
-				if(!isArrayKeyAnEmptyString('receivephonealerts', $formvalues)){
-					$formvalues['receivephonealerts'] = $formvalues['receivephonealerts'];
-				} else {
-					$formvalues['receivephonealerts'] = NULL;
-				}
-				
-				if(!isArrayKeyAnEmptyString('receiveemailalerts', $formvalues)){
-					$formvalues['receiveemailalerts'] = $formvalues['receiveemailalerts'];
-				} else {
-					$formvalues['receiveemailalerts'] = NULL;
-				}
-				if(!isArrayKeyAnEmptyString('updatesfrequency', $formvalues)){
-					$formvalues['updatesfrequency'] = $formvalues['updatesfrequency'];
-				}
-			}
+		if(!isArrayKeyAnEmptyString('crop_1', $formvalues)){
+			$formvalues['cropids'][] = $formvalues['crop_1'];
+		}
+		if(!isArrayKeyAnEmptyString('crop_2', $formvalues)){
+			$formvalues['cropids'][] = $formvalues['crop_2'];
+		}
+		if(!isArrayKeyAnEmptyString('crop_2', $formvalues)){
+			$formvalues['cropids'][] = $formvalues['crop_3'];
 		}
 		
-		$crops = array();
 		if(!isArrayKeyAnEmptyString('cropids', $formvalues)){
+			$formvalues['cropids'] = array_unique($formvalues['cropids']);
 			foreach ($formvalues['cropids'] as $key => $value){
+				// debugMessage($value);
 				if(!isArrayKeyAnEmptyString('id', $formvalues)){
 					$existing_crops = $this->getCropsForUser($formvalues['id'], $value);
-					$crops[$existing_crops['id']]['id'] = $existing_crops['id'];
-					$crops[$existing_crops['id']]['userid'] = $formvalues['id'];
-					$crops[$existing_crops['id']]['cropid'] = $value;
+					if(!isArrayKeyAnEmptyString('id', $existing_crops)){
+						$crops[$existing_crops['id']]['id'] = $existing_crops['id'];
+						$crops[$existing_crops['id']]['userid'] = $formvalues['id'];
+						$crops[$existing_crops['id']]['cropid'] = $value;
+					} else {
+						$crops[md5($key)]['userid'] = $formvalues['id'];
+						$crops[md5($key)]['cropid'] = $value;
+					}
 				} else {
-					$crops[md5($key)]['cropid'] = $value;
+					$crops[md5($key)]['cropid'] = $value; // debugMessage('NEW');
 				} 
 			}
-			
 		}
+		// debugMessage($crops);
 		if(count($crops) > 0){
 			$formvalues['crops'] = $crops;
 		}
@@ -941,6 +973,28 @@ class UserAccount extends BaseEntity {
 		if(isArrayKeyAnEmptyString('companyid', $formvalues)){
 			unset($formvalues['companyid']);
 		}
+		
+		if(!isArrayKeyAnEmptyString('serviceids', $formvalues)) {
+			$ids = $formvalues['serviceids'];
+			$typelist = '';
+			if(count($ids) > 0){
+				$typelist = createHTMLCommaListFromArray($ids, ",");
+			}
+			$formvalues['services'] = $typelist;
+			# remove the usergroups_groupid array, it will be ignored, but to be on the safe side
+			unset($formvalues['serviceids']);
+		} else {
+			if(!isArrayKeyAnEmptyString('serviceids_old', $formvalues)){
+				$formvalues['services'] = NULL;
+			} else {
+				unset($formvalues['services']);
+			}
+		}
+		
+		if(!isArrayKeyAnEmptyString('languageids', $formvalues)) {
+			$formvalues['languages'] = $formvalues['languageids'];
+		}
+		
 		// debugMessage($formvalues); exit();
 		parent::processPost($formvalues);
 	}
@@ -1019,7 +1073,7 @@ class UserAccount extends BaseEntity {
    	 	$update = false;
 		
    	 	# generate registration number for farmer
-   	 	if(isEmptyString($this->getRefNo()) && $this->isUgandan()){
+   	 	if(isEmptyString($this->getRefNo()) && $this->isUgandan() && $this->isFarmer()){
    	 		$this->setRefNo($this->generateRefNo());
    	 		$this->setRegNo($this->getCurrentRegNo());
    	 		$this->save();
@@ -1061,13 +1115,11 @@ class UserAccount extends BaseEntity {
     	$this->clearRelated(); 
     	
     	# generate registration number for farmer
-    	if(isEmptyString($this->getRefNo())){
+    	if(isEmptyString($this->getRefNo()) && $this->isFarmer()){
 			$this->setRefNo($this->generateRefNo());
 			$this->setRegNo($this->getCurrentRegNo());
 			$this->save();
-    		if($this->isFarmer()){
-				$session->setVar('custommessage', 'Farmer ID# '.$this->getRefNo().' generated.');
-			}
+			$session->setVar('custommessage', 'Farmer ID# '.$this->getRefNo().' generated.');
 		}
     	
    		# invite user to activate
@@ -1661,7 +1713,7 @@ class UserAccount extends BaseEntity {
 		return $result->get(0);
 		
 	}
-	function findByUsername($username) {
+	/* function findByUsername($username) {
 		# query active user details using email
 		$q = Doctrine_Query::create()->from('UserAccount u')->where('u.username = ?', $username);
 		$result = $q->fetchOne(); 
@@ -1680,6 +1732,17 @@ class UserAccount extends BaseEntity {
 		} 
 		
 		return true; 
+	} */
+	function findByUsername($username) {
+		# query active user details using email
+		$q = Doctrine_Query::create()->from('UserAccount u')->where('u.username = ?', $username);
+		$result = $q->fetchOne();
+	
+		if($result){
+			return $result;
+		} else {
+			return new UserAccount();
+		}
 	}
 	/**
 	 * Return the user's full names, which is a concatenation of the first and last names
@@ -1792,7 +1855,7 @@ class UserAccount extends BaseEntity {
 	}
 	# Determine if user profile has been activated
 	function isActivated(){
-		return $this->getChangePassword() == 1;
+		return $this->getIsActive() == 1;
 	}
 	# Determine if user has accepted terms
 	function hasAcceptedTerms(){
@@ -1893,7 +1956,7 @@ class UserAccount extends BaseEntity {
 	}
 	# relative path to profile image
 	function hasProfileImage(){
-		$real_path = APPLICATION_PATH.DIRECTORY_SEPARATOR."..".DIRECTORY_SEPARATOR."public".DIRECTORY_SEPARATOR."uploads".DIRECTORY_SEPARATOR."user_";
+		$real_path = BASE_PATH.DIRECTORY_SEPARATOR."uploads".DIRECTORY_SEPARATOR."users".DIRECTORY_SEPARATOR."user_";
 		$real_path = $real_path.$this->getID().DIRECTORY_SEPARATOR."avatar".DIRECTORY_SEPARATOR."large_".$this->getProfilePhoto();
 		if(file_exists($real_path) && !isEmptyString($this->getProfilePhoto())){
 			return true;
@@ -1902,14 +1965,14 @@ class UserAccount extends BaseEntity {
 	}
 	# determine if person has profile image
 	function getRelativeProfilePicturePath(){
-		$real_path = APPLICATION_PATH.DIRECTORY_SEPARATOR."..".DIRECTORY_SEPARATOR."public".DIRECTORY_SEPARATOR."uploads".DIRECTORY_SEPARATOR."user_";
+		$real_path = BASE_PATH.DIRECTORY_SEPARATOR."uploads".DIRECTORY_SEPARATOR."users".DIRECTORY_SEPARATOR."user_";
 		$real_path = $real_path.$this->getID().DIRECTORY_SEPARATOR."avatar".DIRECTORY_SEPARATOR."medium_".$this->getProfilePhoto();
 		if(file_exists($real_path) && !isEmptyString($this->getProfilePhoto())){
 			return $real_path;
 		}
-		$real_path = APPLICATION_PATH.DIRECTORY_SEPARATOR."..".DIRECTORY_SEPARATOR."public".DIRECTORY_SEPARATOR."uploads".DIRECTORY_SEPARATOR."user_0".DIRECTORY_SEPARATOR."avatar".DIRECTORY_SEPARATOR."default_medium_male.jpg";
+		$real_path = BASE_PATH.DIRECTORY_SEPARATOR."uploads".DIRECTORY_SEPARATOR."users".DIRECTORY_SEPARATOR."user_0".DIRECTORY_SEPARATOR."avatar".DIRECTORY_SEPARATOR."default_medium_male.jpg";
 		if($this->isFemale()){
-			$real_path = APPLICATION_PATH.DIRECTORY_SEPARATOR."..".DIRECTORY_SEPARATOR."public".DIRECTORY_SEPARATOR."uploads".DIRECTORY_SEPARATOR."user_0".DIRECTORY_SEPARATOR."avatar".DIRECTORY_SEPARATOR."default_medium_female.jpg";
+			$real_path = BASE_PATH.DIRECTORY_SEPARATOR."uploads".DIRECTORY_SEPARATOR."users".DIRECTORY_SEPARATOR."user_0".DIRECTORY_SEPARATOR."avatar".DIRECTORY_SEPARATOR."default_medium_female.jpg";
 		}
 		return $real_path;
 	}
@@ -1919,13 +1982,13 @@ class UserAccount extends BaseEntity {
 		$baseUrl = Zend_Controller_Front::getInstance()->getBaseUrl();
 		$path = "";
 		if($this->isMale()){
-			$path = $baseUrl.'/uploads/user_0/avatar/default_small_male.jpg';
+			$path = $baseUrl.'/uploads/users/user_0/avatar/default_small_male.jpg';
 		}  
 		if($this->isFemale()){
-			$path = $baseUrl.'/uploads/user_0/avatar/default_small_female.jpg'; 
+			$path = $baseUrl.'/uploads/users/user_0/avatar/default_small_female.jpg'; 
 		}
 		if($this->hasProfileImage()){
-			$path = $baseUrl.'/uploads/user_'.$this->getID().'/avatar/small_'.$this->getProfilePhoto();
+			$path = $baseUrl.'/uploads/users/user_'.$this->getID().'/avatar/small_'.$this->getProfilePhoto();
 		}
 		return $path;
 	}
@@ -1933,14 +1996,14 @@ class UserAccount extends BaseEntity {
 	function getThumbnailPicturePath() {
 		$baseUrl = Zend_Controller_Front::getInstance()->getBaseUrl();
 		$path = "";
-		if($this->isMale()){
-			$path = $baseUrl.'/uploads/user_0/avatar/default_thumbnail_male.jpg';
+		if($this->isMale() || isEmptyString($this->getID())){
+			$path = $baseUrl.'/uploads/users/user_0/avatar/default_thumbnail_male.jpg';
 		}  
 		if($this->isFemale()){
-			$path = $baseUrl.'/uploads/user_0/avatar/default_thumbnail_female.jpg'; 
+			$path = $baseUrl.'/uploads/users/user_0/avatar/default_thumbnail_female.jpg'; 
 		}
-		if($this->hasProfileImage()){
-			$path = $baseUrl.'/uploads/user_'.$this->getID().'/avatar/thumbnail_'.$this->getProfilePhoto();
+		if($this->hasProfileImage() && !isEmptyString($this->getID())){
+			$path = $baseUrl.'/uploads/users/user_'.$this->getID().'/avatar/thumbnail_'.$this->getProfilePhoto();
 		}
 		return $path;
 	}
@@ -1948,14 +2011,14 @@ class UserAccount extends BaseEntity {
 	function getMediumPicturePath() {
 		$baseUrl = Zend_Controller_Front::getInstance()->getBaseUrl();
 		$path = "";
-		if($this->isMale()){
-			$path = $baseUrl.'/uploads/user_0/avatar/default_medium_male.jpg';
+		if($this->isMale() || isEmptyString($this->getID())){
+			$path = $baseUrl.'/uploads/users/user_0/avatar/default_medium_male.jpg';
 		}  
 		if($this->isFemale()){
-			$path = $baseUrl.'/uploads/user_0/avatar/default_medium_female.jpg'; 
+			$path = $baseUrl.'/uploads/users/user_0/avatar/default_medium_female.jpg'; 
 		}
-		if($this->hasProfileImage()){
-			$path = $baseUrl.'/uploads/user_'.$this->getID().'/avatar/medium_'.$this->getProfilePhoto();
+		if($this->hasProfileImage() && !isEmptyString($this->getID())){
+			$path = $baseUrl.'/uploads/users/user_'.$this->getID().'/avatar/medium_'.$this->getProfilePhoto();
 		}
 		// debugMessage($path);
 		return $path;
@@ -1964,14 +2027,14 @@ class UserAccount extends BaseEntity {
 	function getLargePicturePath() {
 		$baseUrl = Zend_Controller_Front::getInstance()->getBaseUrl();
 		$path = "";
-		if($this->isMale()){
-			$path = $baseUrl.'/uploads/user_0/avatar/default_large_male.jpg';
+		if($this->isMale() || isEmptyString($this->getID())){
+			$path = $baseUrl.'/uploads/users/user_0/avatar/default_large_male.jpg';
 		}  
 		if($this->isFemale()){
-			$path = $baseUrl.'/uploads/user_0/avatar/default_large_female.jpg'; 
+			$path = $baseUrl.'/uploads/users/user_0/avatar/default_large_female.jpg'; 
 		}
-		if($this->hasProfileImage()){
-			$path = $baseUrl.'/uploads/user_'.$this->getID().'/avatar/large_'.$this->getProfilePhoto();
+		if($this->hasProfileImage() && !isEmptyString($this->getID())) {
+			$path = $baseUrl.'/uploads/users/user_'.$this->getID().'/avatar/large_'.$this->getProfilePhoto();
 		}
 		# debugMessage($path);
 		return $path;
@@ -2069,14 +2132,14 @@ class UserAccount extends BaseEntity {
 	}
 	# farmer's crops
 	function getTheCrops() {
-		$q = Doctrine_Query::create()->from('FarmCrop fc')->innerJoin('fc.crop c')->where("fc.userid = '".$this->getID()."' AND c.categoryid <> '27' ");
+		$q = Doctrine_Query::create()->from('FarmCrop fc')->innerJoin('fc.crop c')->where("fc.userid = '".$this->getID()."' AND c.categoryid <> '27' ")->orderby('c.name asc')->limit("3");
 		$result = $q->execute();
 		return $result;
 	}
 	# determine current enterprises
     function getEnterpriseIDs() {
         $ids = array();
-        $crops = $this->getCrops();
+        // $crops = $this->getCrops();
         $q = Doctrine_Query::create()->from('FarmCrop fc')->innerJoin('fc.crop c')->where("fc.userid = '".$this->getID()."' AND c.categoryid = '27' ");
 		$result = $q->execute();
         if($result){
@@ -2092,7 +2155,7 @@ class UserAccount extends BaseEntity {
 	# determine the cropids
 	function getCropIDs($enterprise = false) {
         $ids = array();
-        $crops = $this->getCrops();
+        $crops = $this->getTheCrops();
         if($crops){
 	        //debugMessage($groups->toArray());
 	        foreach($crops as $crop) {
@@ -2206,7 +2269,7 @@ class UserAccount extends BaseEntity {
 	}
 	# content for requesting activation code via  phone
 	function getActivationCodeContent(){
-		return "Dear ".$this->getFirstName().", \nThank you for your interest in the FARMIS Program. Your mobile phone activation code is: ".$this->getPhone_ActivationKey();
+		return "Dear ".$this->getFirstName().", \nYour FARMIS mobile activation code is: ".$this->getPhone_ActivationKey();
 	}
 	# send activation code to the user's mobile phone
 	function sendSignupCodeToMobile() {
@@ -2219,7 +2282,7 @@ class UserAccount extends BaseEntity {
 	}
 	# content for requesting activation code via  phone
 	function getSignupCodeContent(){
-		return "Dear ".$this->getFirstName().", \nThank you for your interest in the FARMIS Program. Your registration activation code is: ".$this->getActivationKey();
+		return "Dear ".$this->getFirstName().", \nYour FARMIS activation code is: ".$this->getActivationKey();
 	}
 	# verify that a code specified is valid for activation
 	function verifyPhone($code){
@@ -2412,8 +2475,10 @@ class UserAccount extends BaseEntity {
 			// save
 			$this->save();
 			// set owner and 
-			$this->setCreatedBy($this->getID());
-			if(isUganda()){
+			if(isEmptyString($this->getCreatedBy())){
+				$this->setCreatedBy($this->getID());
+			}
+			if(isUganda() && $this->isFarmer()){
 				if(isEmptyString($this->getRegNo())){
 					$this->setRegNo($this->getCurrentRegNo());
 		    	}
@@ -2457,7 +2522,7 @@ class UserAccount extends BaseEntity {
 	}
 	# determine if person has signature
 	function hasSignature(){
-		$real_path = APPLICATION_PATH.DIRECTORY_SEPARATOR."..".DIRECTORY_SEPARATOR."public".DIRECTORY_SEPARATOR."uploads".DIRECTORY_SEPARATOR."user_";
+		$real_path = BASE_PATH.DIRECTORY_SEPARATOR."uploads".DIRECTORY_SEPARATOR."users".DIRECTORY_SEPARATOR."user_";
 		$real_path = $real_path.$this->getID().DIRECTORY_SEPARATOR."sign".DIRECTORY_SEPARATOR."large_".$this->getSignature();
 		if(file_exists($real_path) && !isEmptyString($this->getSignature())){
 			return true;
@@ -2469,7 +2534,7 @@ class UserAccount extends BaseEntity {
 		$baseUrl = Zend_Controller_Front::getInstance()->getBaseUrl();
 		$path = $baseUrl.'/images/defaultupload_small.png';
 		if($this->hasSignature()){
-			$path = $baseUrl.'/uploads/user_'.$this->getID().'/sign/thumbnail_'.$this->getSignature();
+			$path = $baseUrl.'/uploads/users/user_'.$this->getID().'/sign/thumbnail_'.$this->getSignature();
 		}
 		return $path;
 	}
@@ -2478,7 +2543,7 @@ class UserAccount extends BaseEntity {
 		$baseUrl = Zend_Controller_Front::getInstance()->getBaseUrl();
 		$path = $baseUrl.'/images/defaultupload_small.png';
 		if($this->hasSignature()){
-			$path = $baseUrl.'/uploads/user_'.$this->getID().'/sign/large_'.$this->getSignature();
+			$path = $baseUrl.'/uploads/users/user_'.$this->getID().'/sign/large_'.$this->getSignature();
 		}
 		return $path;
 	}
@@ -3330,7 +3395,74 @@ class UserAccount extends BaseEntity {
 		$existing_query = "SELECT * from farmcrop as f where f.userid = '".$userid."' AND f.cropid = '".$crop."' ";
 		// debugMessage($existing_query);
 		$result = $conn->fetchRow($existing_query);
-		return $result;
+		if($result){
+			return $result;
+		}
+		return array();
+	}
+	# determine if user has active payment
+	function hasPaid(){
+		return $this->getPaymentStatus() == 1 ? true : false; 
+	}
+	# determine if user payment has expired
+	function hasExpired(){
+		return $this->getPaymentStatus() == 2 ? true : false;
+	}
+	# determine if user payment has expired
+	function hasNotPaid(){
+		return $this->getPaymentStatus() == 0 ? true : false;
+	}
+	# determine current status
+	function getServiceStatus(){
+		$status = 'Inactive';
+		if($this->hasNotPaid()){
+			$status = 'Inactive';
+		}
+		if($this->hasPaid()){
+			$status = 'Active';
+		}
+		if($this->hasExpired()){
+			$status = 'Expired';
+		}
+		return $status;	
+	}
+	# determine the login status 
+	function getLoginStatus(){
+		if(isEmptyString($this->getisactive())){
+			return '';
+		}
+		$status = getUserStatus($this->getisactive());
+		return $status;
+	}
+	# determine list of profiled services
+	function getListOfServices(){
+		if(isEmptyString($this->getServices())){
+			return '--';
+		}
+		$contenttypes = getAllContentTypes();
+		$contentarray = array_remove_empty(explode(',', $this->getServices())); 
+		$contentarray = array_combine($contentarray, $contentarray);
+		$services = array();
+		$list = '--';
+		
+		foreach($contentarray as $serviceid){
+			$services[] = $contenttypes[$serviceid];
+		}
+		if(count($services) > 0){
+			$list =  implode(', ', $services);
+		}
+		return $list;
+	}
+	# determine language preferrence
+	function getLanguagePreferrence(){
+		if(isEmptyString($this->getLanguages())){
+			return '--';
+		}
+		$languagetypes = getAllLanguageTypes();
+		if(!isArrayKeyAnEmptyString($this->getLanguages(), $languagetypes)){
+			return $languagetypes[$this->getLanguages()];
+		}
+		return '--';
 	}
 }
 ?>

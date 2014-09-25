@@ -47,22 +47,22 @@ class InventoryController extends SecureController   {
 	 	$upload->addValidator('Size', false, $config->profilephoto->maximumfilesize);
 		
 		// base path for profile pictures
-	 	$destination_path = APPLICATION_PATH."/../public/uploads/user_".$inventory->getUserID()."/inventory";
+	 	$destination_path = APPLICATION_PATH."/../public/uploads/users/user_".$inventory->getUserID()."/inventory";
 		// determine if folder exists
 		if(!is_dir($destination_path)){
 			// no folder exits. Create the folder
-			mkdir($destination_path, 0755);
+			mkdir($destination_path, 0775);
 		} 
 		// determine if folder exists
 		$destination_path = $destination_path.DIRECTORY_SEPARATOR."inventory_".$inventory->getID();
 		if(!is_dir($destination_path)){
-			mkdir($destination_path, 0755);
+			mkdir($destination_path, 0775);
 		}
 		
 		// create archive folder for each user
 		$archivefolder = $destination_path.DIRECTORY_SEPARATOR."archive";
 		if(!is_dir($archivefolder)){
-			mkdir($archivefolder, 0755);
+			mkdir($archivefolder, 0775);
 		}
 		$oldfilename = $inventory->getPhoto();
 		//debugMessage($destination_path); 
@@ -172,7 +172,7 @@ class InventoryController extends SecureController   {
 		//debugMessage($inventory->toArray());
 		
 		$oldfile = "large_".$inventory->getPhoto();
-		$base = APPLICATION_PATH.DIRECTORY_SEPARATOR."..".DIRECTORY_SEPARATOR."public".DIRECTORY_SEPARATOR."uploads".DIRECTORY_SEPARATOR."user_".$inventory->getUserID().DIRECTORY_SEPARATOR."inventory".DIRECTORY_SEPARATOR."inventory_".$inventory->getID().DIRECTORY_SEPARATOR; 
+		$base = BASE_PATH.DIRECTORY_SEPARATOR."uploads".DIRECTORY_SEPARATOR."users".DIRECTORY_SEPARATOR."user_".$inventory->getUserID().DIRECTORY_SEPARATOR."inventory".DIRECTORY_SEPARATOR."inventory_".$inventory->getID().DIRECTORY_SEPARATOR; 
 		$src = $base.$oldfile;
 		// debugMessage($src);
 		

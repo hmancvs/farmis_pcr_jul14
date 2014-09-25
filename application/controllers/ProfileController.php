@@ -26,7 +26,6 @@ class ProfileController extends SecureController  {
 	    	$action == "addsuccess"  || $action == "adderror" ||
 	    	$action == "invite" || $action == "inviteone" || $action == "inviteonebyphone" || $action == "invitemany" || 
 	    	$action == "invitemanyconfirm" || $action == "invitefriends" || $action == "invitefriendsconfirm" || 
-	    	
 	    	$action == "autosearch" || $action == "delete" || 
 	    	$action == "delete" || $action == "privacy" || $action == "resetprivacy" || $action == "processadd" || 
 	    	$action == "report" || $action == 'validatephonesuccess' || $action == 'verifyphone' || 
@@ -39,15 +38,43 @@ class ProfileController extends SecureController  {
 		if($action == "deactivate"){
 			return ACTION_DELETE;
 		}
-		
+		// debugMessage('the action is '.)
 		return parent::getActionforACL(); 
     }
     
 	public function editAction() {
     	$this->_setParam("action", ACTION_EDIT);
-		// debugMessage($this->_getAllParams());
-    	// exit();
+		// debugMessage($this->_getAllParams()); // exit();
+    	
     	$this->createAction();
+    }
+    
+    public function indexAction() {
+    	$session = SessionWrapper::getInstance();
+    	$failurl = $this->view->baseUrl("index/accessdenied");
+    	$acl = getACLInstance();
+    	$id = decode($this->_getParam('id'));
+    	 
+    	if(!isEmptyString($id) && isFarmer()){
+    		if($session->getVar('userid') != $id){
+    			$this->_helper->redirector->gotoUrl($failurl);
+    		}
+    	}
+    	parent::indexAction();
+    }
+    
+    public function viewAction() {
+    	$session = SessionWrapper::getInstance();
+    	$failurl = $this->view->baseUrl("index/accessdenied");
+    	$acl = getACLInstance();
+    	$id = decode($this->_getParam('id'));
+    	
+    	if(!isEmptyString($id) && isFarmer()){
+    		if($session->getVar('userid') != $id){
+    			$this->_helper->redirector->gotoUrl($failurl);
+    		}
+    	}
+    	parent::viewAction();
     }
     
     public function listAction(){
@@ -177,37 +204,27 @@ class ProfileController extends SecureController  {
 	 	$upload->addValidator('Size', false, $config->profilephoto->maximumfilesize);
 		
 		// base path for profile pictures
- 		$destination_path = APPLICATION_PATH.DIRECTORY_SEPARATOR."..".DIRECTORY_SEPARATOR."public".DIRECTORY_SEPARATOR."uploads".DIRECTORY_SEPARATOR."user_";
+ 		$destination_path = BASE_PATH.DIRECTORY_SEPARATOR."uploads".DIRECTORY_SEPARATOR."users".DIRECTORY_SEPARATOR."user_";
 	
 		// determine if user has destination avatar folder. Else user is editing there picture
 		if(!is_dir($destination_path.$user->getID())){
 			// no folder exits. Create the folder
-			mkdir($destination_path.$user->getID(), 0755);
+			mkdir($destination_path.$user->getID(), 0777);
 		} 
 		
 		// set the destination path for the image
 		$profilefolder = $user->getID();
-		if($type == 'photo'){
-			$destination_path = $destination_path.$profilefolder.DIRECTORY_SEPARATOR."avatar";
-		}
-		if($type == 'sign'){
-			$destination_path = $destination_path.$profilefolder.DIRECTORY_SEPARATOR."sign";
-		}
+		$destination_path = $destination_path.$profilefolder.DIRECTORY_SEPARATOR."avatar";
 		if(!is_dir($destination_path)){
-			mkdir($destination_path, 0755);
+			mkdir($destination_path, 0777);
 		}
 		// create archive folder for each user
 		$archivefolder = $destination_path.DIRECTORY_SEPARATOR."archive";
 		if(!is_dir($archivefolder)){
-			mkdir($archivefolder, 0755);
+			mkdir($archivefolder, 0777);
 		}
 		
-		if($type == 'photo'){
-			$oldfilename = $user->getProfilePhoto();
-		}
-		if($type == 'sign'){
-			$oldfilename = $user->getSignature();
-		}
+		$oldfilename = $user->getProfilePhoto();
 		//debugMessage($destination_path); 
 		$upload->setDestination($destination_path);
 		
@@ -244,30 +261,18 @@ class ProfileController extends SecureController  {
 			$newlargefilename = "large_".$currenttime_file;
 			// generate and save thumbnails for sizes 250, 125 and 50 pixels
 			resizeImage($basefile, $destination_path.DIRECTORY_SEPARATOR.'large_'.$currenttime.'.jpg', 400);
-			if($type == 'photo'){
-				resizeImage($basefile, $destination_path.DIRECTORY_SEPARATOR.'medium_'.$currenttime.'.jpg', 165);
-			}
+			resizeImage($basefile, $destination_path.DIRECTORY_SEPARATOR.'medium_'.$currenttime.'.jpg', 165);
 			// unlink($thefilename);
 			unlink($destination_path.DIRECTORY_SEPARATOR.'base_'.$currenttime.'.jpg');
 			
 			// exit();
 			// update the useraccount with the new profile images
 			try {
-				if($type == 'photo'){
-					$user->setProfilePhoto($currenttime.'.jpg');
-				}
-				if($type == 'sign'){
-					$user->setSignature($currenttime.'.jpg');
-				}
+				$user->setProfilePhoto($currenttime.'.jpg');
 				$user->save();
 				
 				// check if user already has profile picture and archive it
-				if($type == 'photo'){
-					$ftimestamp = current(explode('.', $user->getProfilePhoto()));
-				}
-				if($type == 'sign'){
-					$ftimestamp = current(explode('.', $user->getSignature()));
-				}
+				$ftimestamp = current(explode('.', $user->getProfilePhoto()));
 				
 				$allfiles = glob($destination_path.DIRECTORY_SEPARATOR.'*.*');
 				$currentfiles = glob($destination_path.DIRECTORY_SEPARATOR.'*'.$ftimestamp.'*.*');
@@ -333,14 +338,8 @@ class ProfileController extends SecureController  {
 		// debugMessage($formvalues);
 		//debugMessage($user->toArray());
 		
-		if($type == 'photo'){
-			$oldfile = "large_".$user->getProfilePhoto();
-			$base = APPLICATION_PATH.DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.PUBLICFOLDER.DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR.'user_'.$userfolder.''.DIRECTORY_SEPARATOR.'avatar'.DIRECTORY_SEPARATOR;
-		}
-		if($type == 'sign'){
-			$oldfile = "large_".$user->getSignature();
-			$base = APPLICATION_PATH.DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.PUBLICFOLDER.DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR.'user_'.$userfolder.''.DIRECTORY_SEPARATOR.'sign'.DIRECTORY_SEPARATOR;
-		}
+		$oldfile = "large_".$user->getProfilePhoto();
+		$base = BASE_PATH.DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR.'users'.DIRECTORY_SEPARATOR.'user_'.$userfolder.''.DIRECTORY_SEPARATOR.'avatar'.DIRECTORY_SEPARATOR;
 		// debugMessage($user->toArray()); 
 		$src = $base.$oldfile;
 		
@@ -353,8 +352,7 @@ class ProfileController extends SecureController  {
 		
 		// exit();
 		$image = WideImage::load($src);
-		if($type == 'photo'){
-			$cropped1 = $image->crop($formvalues['x1'], $formvalues['y1'], $formvalues['w'], $formvalues['h']);
+		$cropped1 = $image->crop($formvalues['x1'], $formvalues['y1'], $formvalues['w'], $formvalues['h']);
 			$resized_1 = $cropped1->resize(300, 300, 'fill');
 			$resized_1->saveToFile($newlargefilename);
 			
@@ -374,29 +372,11 @@ class ProfileController extends SecureController  {
 			$resized_4->saveToFile($newsmallfilename);
 			
 			$user->setProfilePhoto($currenttime_file);
-		}
-		if($type == 'sign'){
-			$cropped1 = $image->crop($formvalues['x1'], $formvalues['y1'], $formvalues['w'], $formvalues['h']);
-			$resized_1 = $cropped1->resize(180, 90, 'fill');
-			$resized_1->saveToFile($newthumbnailfilename);
-			
-			//$image2 = WideImage::load($src);
-			$cropped2 = $image->crop($formvalues['x1'], $formvalues['y1'], $formvalues['w'], $formvalues['h']);
-			$resized_2 = $cropped2->resize(300, 150, 'fill');
-			$resized_2->saveToFile($newlargefilename);
-			
-			$user->setSignature($currenttime_file);
-		}
 		
 		$user->save();
 			
 		// check if user already has profile picture and archive it
-		if($type == 'photo'){
-			$ftimestamp = current(explode('.', $user->getProfilePhoto()));
-		}
-		if($type == 'sign'){
-			$ftimestamp = current(explode('.', $user->getSignature()));
-		}
+		$ftimestamp = current(explode('.', $user->getProfilePhoto()));
 		$allfiles = glob($base.DIRECTORY_SEPARATOR.'*.*');
 		$currentfiles = glob($base.DIRECTORY_SEPARATOR.'*'.$ftimestamp.'*.*');
 		// debugMessage($currentfiles);
@@ -413,12 +393,7 @@ class ProfileController extends SecureController  {
 				rename($afile, $base.DIRECTORY_SEPARATOR.'archive'.DIRECTORY_SEPARATOR.$afile_filename);
 			}
 		}
-		if($type == 'photo'){
-			$this->_helper->redirector->gotoUrl($this->view->baseUrl('profile/view/id/'.encode($user->getID())));
-		}
-		if($type == 'sign'){
-			$this->_helper->redirector->gotoUrl($this->view->baseUrl('profile/view/id/'.encode($user->getID()).'/tab/personal'));
-		}	
+		$this->_helper->redirector->gotoUrl($this->view->baseUrl('profile/view/id/'.encode($user->getID())));
 		// exit();
     }
     

@@ -14,11 +14,12 @@ class Subscription extends BaseRecord  {
 		$this->hasColumn('planid', 'integer', null, array( 'notnull' => true, 'notblank' => true));
 		$this->hasColumn('startdate', 'date', null, array( 'notnull' => true, 'notblank' => true));
 		$this->hasColumn('enddate', 'date', null, array( 'notnull' => true, 'notblank' => true));
-		$this->hasColumn('isactive', 'integer', null, array('default' => 0));
-		$this->hasColumn('istrial', 'integer', null, array('default' => 1));
-		$this->hasColumn('verifier', 'string', 255);
-		$this->hasColumn('verifiedbyid', 'integer', null);
+		/* $this->hasColumn('isactive', 'integer', null, array('default' => 0));
+		$this->hasColumn('istrial', 'integer', null, array('default' => 1)); */
+		/* $this->hasColumn('verifier', 'string', 255);
+		$this->hasColumn('verifiedbyid', 'integer', null); */
 		$this->hasColumn('datecreated', 'date');
+		$this->hasColumn('paymentid', 'integer', null);
 		
 	}
 	/**
@@ -59,6 +60,12 @@ class Subscription extends BaseRecord  {
 									'foreign' => 'id'
 								)
 						);
+		$this->hasOne('Payment as payment', 
+								array(
+									'local' => 'paymentid',
+									'foreign' => 'id'
+								)
+						);
 	}
 	/*
 	 * Pre process model data
@@ -79,6 +86,9 @@ class Subscription extends BaseRecord  {
 		}
 		if(isArrayKeyAnEmptyString('datecreated', $formvalues)){
 			$formvalues['datecreated'] = date('Y-m-d H:i:s'); 
+		}
+		if(isArrayKeyAnEmptyString('paymentid', $formvalues)){
+			unset($formvalues['paymentid']);
 		}
 		// debugMessage($formvalues); exit();
 		parent::processPost($formvalues);

@@ -1,7 +1,6 @@
 <?php
 	require_once APPLICATION_PATH.'/includes/header.php';
-	require_once(APPLICATION_PATH.'/../'.PUBLICFOLDER.'/dompdf/dompdf_config.inc.php');
-	
+		
 	$user = new UserAccount();
 	
 	$theid = $request->id;
@@ -77,7 +76,7 @@ $(document).ready(function() {
 								$dompdf->render();
 								$output = $dompdf->output();
 								// debugMessage($output);
-								$path = APPLICATION_PATH.DIRECTORY_SEPARATOR."..".DIRECTORY_SEPARATOR."public".DIRECTORY_SEPARATOR."dompdf".DIRECTORY_SEPARATOR."temp".DIRECTORY_SEPARATOR.$temp_file_name;
+								$path = BASE_PATH.DIRECTORY_SEPARATOR."dompdf".DIRECTORY_SEPARATOR."temp".DIRECTORY_SEPARATOR.$temp_file_name;
 								$relativepathtodocument = $this->serverUrl($this->baseUrl('dompdf/temp/'.$temp_file_name));
 								
 								file_put_contents($path, $output);

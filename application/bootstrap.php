@@ -1,5 +1,7 @@
 <?php
+
 require_once 'doctrine/doctrine.compiled.php';
+require_once 'Zend/CustomRoute.php';
 
 class Bootstrap extends Zend_Application_Bootstrap_Bootstrap {
 	
@@ -53,41 +55,81 @@ class Bootstrap extends Zend_Application_Bootstrap_Bootstrap {
 		Zend_Controller_Front::getInstance()->registerPlugin ($plugin, 1000 );
 	}
 	
+	/**
+	 * Sets up a register_shutdown_function hook to give a nice error page when a
+	 * PHP fatal error is encountered.
+	 */
+	/* protected function _initFatalErrorCatcher()
+	{
+		register_shutdown_function(array($this, 'onApplicationShutdown'));
+	}
+	
+	public function onApplicationShutdown()
+	{
+		$error = error_get_last(); // debugMessage($error);
+		$wasFatal = ($error && ($error['type'] === E_ERROR) || ($error['type'] === E_USER_ERROR));
+		if ($wasFatal){
+			ob_end_clean();
+			$frontController = Zend_Controller_Front::getInstance();
+			$errorHandler = $frontController->getPlugin('Zend_Controller_Plugin_ErrorHandler');
+			$request_e = $frontController->getRequest();
+			$response_e = $frontController->getResponse();
+			debugMessage($error['message']);
+			
+			$response_e->setException(new Exception(
+					"Fatal error: $error[message] at $error[file]:$error[line]",
+					$error['type']));
+			$frontController->dispatch($request_e, $response_e);
+			/*
+			// Add the fatal exception to the response in a format that ErrorHandler will understand
+			$response->setException(new Exception(
+					"Fatal error: $error[message] at $error[file]:$error[line]",
+					$error['type']));
+	
+			// Call ErrorHandler->_handleError which will forward to the Error controller
+			$handleErrorMethod = new ReflectionMethod('Zend_Controller_Plugin_ErrorHandler', '_handleError');
+			$handleErrorMethod->setAccessible(true);
+			$handleErrorMethod->invoke($errorHandler, $request);
+	
+			// Discard any view output from before the fatal
+			ob_end_clean();
+	
+			// Now display the error controller:
+			$frontController->dispatch($request, $response);*/
+		/*} 
+	} */
+	
 	// Routes definitions goes here 
 	public function _initRoutes(){
 		$this->bootstrap('frontController');
 		$request = $this->getResource('frontController');
 		
-		/*$frontController  = Zend_Controller_Front::getInstance();
-		$route = new Zend_Controller_Router_Route('login', 
-					array(
-						'controller' => 'user',
-		                'action' => 'login'
-					)
-		);
+		$frontController  = Zend_Controller_Front::getInstance();
+		$router = $frontController->getRouter();
+		$route_login = new Zend_Controller_Router_Route('login', array('controller' => 'user', 'action' => 'login'));
+		$route_logout = new Zend_Controller_Router_Route('logout', array('controller' => 'user', 'action' => 'logout'));
 		
-       	// add this route to the front controller 
-        $frontController->getRouter()->addRoute('login', $route);
+        $routesArray = array('login' => $route_login, 'logout' => $route_logout);
+        $router->addRoutes($routesArray);
         
-        $frontController  = Zend_Controller_Front::getInstance();
-		$route = new Zend_Controller_Router_Route('logout', 
+        /* $frontController  = Zend_Controller_Front::getInstance();
+        $route = new Zend_Controller_Router_Route('profile/:username', 
 					array(
-						'controller' => 'user',
-		                'action' => 'logout'
+						'controller' => 'profile',
+		                'action' => 'view'
 					)
 		);
-       	// add this route to the front controller 
-        $frontController->getRouter()->addRoute('logout', $route);
+		$frontController->getRouter()->addRoute('profile', $route); */
         
-        $frontController  = Zend_Controller_Front::getInstance();
-        $route = new Zend_Controller_Router_Route('user/:username', 
-					array(
-						'controller' => 'farmer',
-		                'action' => 'view',
-		                'username' => 1
-					),
-					array('user' => '\d+')
-		);
-		$frontController->getRouter()->addRoute('user', $route);*/
+        $router->addRoute('username',
+        		new Application_Route_Custom (
+        				'username',
+        				array(
+        						'module' => 'default',
+        						'controller' => 'profile',
+        						'action' => 'view'
+        				)
+        		));
+        
 	}
 }

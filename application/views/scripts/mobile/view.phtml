@@ -326,18 +326,42 @@
               <div class="controls"><?php echo $user->getUsername(); ?></div>
             </div>
             <div class="control-group">
-                <label class="control-label" for="regdate">Status:</label>
-                <div class="controls"><?php echo $user->isUserActive() ? 'Active' : 'In Active'; ?></div>
+                <label class="control-label" for="regdate">Login Status:</label>
+                <div class="controls"><?php echo $user->getLoginStatus(); ?></div>
             </div>
+            <?php if($isfarmer){ ?>
+                <div class="control-group">
+                    <label class="control-label" for="regdate">Service Status:</label>
+                    <div class="controls"><?php echo $user->getServiceStatus(); ?></div>
+                </div>
+            <?php } ?>
             <div class="control-group">
                 <label class="control-label" for="regdate"><?php echo $this->translate("farmgroup_dateregistered_label"); ?>:</label>
                 <div class="controls"><?php echo changeMySQLDateToPageFormat($user->getRegDate()); ?></div>
             </div>
-            <div class="control-group">
-                <label class="control-label" for="regdate">Date Activated:</label>
-                <div class="controls"><?php echo changeMySQLDateToPageFormat($user->getActivationDate()); ?></div>
-            </div>
-            
+            <?php if($user->isUserActive()){ ?>
+                <div class="control-group">
+                    <label class="control-label" for="regdate">Date Activated:</label>
+                    <div class="controls"><?php echo changeMySQLDateToPageFormat($user->getActivationDate()); ?></div>
+                </div>
+            <?php } ?>
+            <?php if($user->hasPaid()){ ?>
+            	<div class="control-group">
+                    <label class="control-label" for="regdate">Payment Date:</label>
+                    <div class="controls"><?php echo changeMySQLDateToPageFormat($user->getPayment()->getTrxDate(), false); ?></div>
+                </div>
+                <div class="control-group">
+                    <label class="control-label" for="regdate">Service Start:</label>
+                    <div class="controls"><?php echo changeMySQLDateToPageFormat($user->getStartDate(), false); ?></div>
+                </div>
+                <div class="control-group">
+                    <label class="control-label" for="regdate">Service End:</label>
+                    <div class="controls"><?php echo changeMySQLDateToPageFormat($user->getEndDate(), false); ?>
+                    	<div class="divider10"></div>
+                        <a class="btn btn-mini" href="<?php echo $this->baseUrl('mobile/viewpayment/id/'.encode($user->getPaymentID())); ?>">View Payment Details</a>
+                    </div>
+                </div>
+            <?php } ?>
         </fieldset>
         <fieldset class="fieldsetcontainer well">
             <legend>Location</legend>
@@ -469,7 +493,7 @@
                         <?php foreach($crops as $crop){ ?>
                             <li style="margin-right:20px; margin-bottom:5px;">
                                 <label style="color:#55A411; margin:5px 0; font-weight:bold;"><?php echo $crop->getCrop()->getName(); ?></label>
-                                <img class="imagecontainer profileinfo" src="<?php echo $crop->getCrop()->getImagePath(); ?>" />
+                                <img class="imagecontainer profileinfo" style="max-height:125px;" src="<?php echo $crop->getCrop()->getImagePath(); ?>" />
                             </li>
                         <?php } ?>
                     <?php } ?>
@@ -497,22 +521,47 @@
 		</fieldset>
         <fieldset class="fieldsetcontainer well hideonsuper">
             <legend>Profile Settings</legend>            
-            <div class="control-group">
-              <label class="control-label" style="width:100%;">Recieve Market Information alerts?</label>
-              <div class="controls" style="margin-left:0;">
-                 <div class="blocked" style="margin-top:5px;"><label class="lineblocked">Send updates and alerts to Phone?</label> <?php echo $user->getreceivephonealerts() == 0 ? 'No' : 'Yes'; ?></div>
-                 <div class="blocked" style="margin-top:5px;"><label class="lineblocked">Send updates and alerts to Email?</label> <?php echo $user->getreceiveemailalerts() == 0 ? 'No' : 'Yes'; ?></div>
-              </div>
-            </div>
-            <div class="control-group">
-                <label class="control-label" for="updatesfrequency">Frequency of Updates<?php //echo $this->translate("farmer_updatesfrequency_label"); ?>:</label>
-                <div class="controls">
-                    <?php
-                        $values = array("1"=>"Weekly","2"=>"Bi-weekly","3"=>"Fortnightly","4"=>"Monthly");
-                        echo $values[$user->getUpdatesFrequency()]; 
-                   ?>
+            <?php if($user->isFarmer()){ ?>
+                <div class="control-group">
+                    <label class="control-label">Mobile Money Account?</label>
+                    <div class="controls"><?php echo $user->gethasmobilemoney() == 1 ? 'Yes' : 'No'; ?></div>
                 </div>
-            </div>
+                <div class="control-group">
+                    <label class="control-label">Bank Account?</label>
+                    <div class="controls"><?php echo $user->gethasbankaccount() == 1 ? 'Yes' : 'No'; ?></div>
+                </div>
+                <div class="control-group">
+                    <label class="control-label">Services Profiled:</label>
+                    <div class="controls"><?php echo $user->getListOfServices(); ?></div>
+                </div>
+                <div class="control-group">
+                    <label class="control-label">Preferred Language:</label>
+                    <div class="controls"><?php echo $user->getLanguagePreferrence(); ?></div>
+                </div>
+                <div class="control-group">
+                    <label class="control-label" style="width:100%;">Market Information Alert Settingss:</label>
+                    <div class="controls" style="margin-left:0;">
+                        <div class="blocked"><label class="lineblocked">Send updates and alerts to Phone?</label> <?php echo $user->getreceivephonealerts() == 0 ? 'No' : 'Yes'; ?></div>
+                        <div class="blocked"><label class="lineblocked">Send updates and alerts to Email?</label> <?php echo $user->getreceiveemailalerts() == 0 ? 'No' : 'Yes'; ?></div>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label class="control-label">Frequency of Updates:</label>
+                    <div class="controls">
+						<?php
+							$values = array("1"=>"Weekly","2"=>"Bi-weekly","3"=>"Fortnightly","4"=>"Monthly");
+							echo $values[$user->getUpdatesFrequency()]; 
+						?>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label class="control-label" style="width:100%;">System Notification Settings:</label>
+                    <div class="controls" style="margin-left:0;">
+						<div class="blocked"><label class="lineblocked"><?php echo $this->translate("useraccount_emailmeonmessage_label"); ?>?</label> &nbsp; <?php echo $user->getEmailMeOnMessage() == 1 ? 'Yes' : 'No'; ?></div>  
+						<div class="blocked"><label class="lineblocked"><?php echo $this->translate("useraccount_emailmeoncomment_label"); ?>?</label> &nbsp; <?php echo $user->getEmailMeOnComment() == 1 ? 'Yes' : 'No'; ?></div> 
+                    </div>
+                </div>
+            <?php } ?>
             <div class="control-group">
                 <label class="control-label" for="landacquiremethod">Profiled By:</label>
                 <div class="controls"><?php echo $user->getCreator()->getName(); ?></div>

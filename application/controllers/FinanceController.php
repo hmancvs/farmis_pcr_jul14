@@ -70,13 +70,5 @@ class FinanceController extends SecureController   {
     	return false;
     }
     
-	public function statementAction() {}
-	
-	public function statementsearchAction() {
-		$this->_helper->redirector->gotoSimple('statement', 'finance', 
-    	$this->getRequest()->getModuleName(),
-    	array_remove_empty(array_merge_maintain_keys($this->_getAllParams(), $this->getRequest()->getQuery())));
-	}
-	
 	public function creditreportAction() {}
 }

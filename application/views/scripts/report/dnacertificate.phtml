@@ -1,0 +1,530 @@
+<?php
+	require_once APPLICATION_PATH.'/includes/header.php';
+		
+	$title = "DNA Membership Certificate";
+	$this->headTitle($title); 
+	
+	$loggedinfarmer = new UserAccount();
+	$loggedinfarmer->populate($userid);
+	$dna = new FarmGroup();
+	$id = $request->id;
+	
+	if(!isEmptyString($id)){
+		$dna->populate($id);
+	}
+	
+	$companyname = ' FIT Uganda Ltd';
+	$country = 'UG';
+	$location_label = 'District';
+	$locations_label = 'Districts';
+	if(isKenya() || $loggedinfarmer->isKenyan()){
+		$country = 'KE';
+		$location_label = 'County';
+		$locations_label = 'Counties';
+		$companyname = ' Sokopepe Ltd';
+	}
+	$countryreq = strtolower($request->country); 
+	
+?>
+<script>
+$(document).ready(function() {
+	<?php if($request->print == 1){ ?>
+		$("#headercontainer, #leftcolumn, .footer, #blankrow").remove().hide();
+		$(".printpage").html($("#printer_page_action_buttons").html());
+	<?php } ?>
+	
+	// trigger path to farmer report to be generated
+	$("#id").change(function(){
+		var id = $(this).val()
+		var url = '<?php echo $this->baseUrl('report/dnacertificate/id/'); ?>'+id;
+		$("#generate").attr('href', url);
+	});
+});
+</script>
+<style>
+#contentcolumn {
+	min-height:600px;
+}
+#centercolumn {
+	padding: 5px 0;
+	width: 100%;
+	margin-left:0;
+	float:left;
+}
+#centercolumn h1, #centercolumn h2 {
+	font-family:calibri, Telex, sans-serif;
+}
+#pageleft {
+	margin:0 5px 0 0;
+	width:100%;
+	float:left;
+	position:relative;
+}
+#pageleft .widgetsection {
+	width:100%;
+}
+.widgetsection {
+	margin-bottom:10px;
+}
+.widgetsection h3 {
+	font-size:15px;
+}
+.contenttable {
+	border:solid 1px #b3b3b3;
+	border-collapse: separate;
+ 	*border-collapse: collapsed;
+	-webkit-border-radius: 4px;
+	-moz-border-radius: 4px;
+	border-radius: 4px;
+}
+.contenttable .control-label {
+	width:auto;
+	white-space:normal;
+	text-align:left;
+	display:block;
+}
+.contenttable h2 {
+	margin: 0;
+	padding: 8px 0 8px 0;
+	line-height:auto;
+	text-align: left;
+	border-bottom:1px solid #c4c2c2;
+	color:#498D0F;
+	font-size:18px;
+	width:100%;
+	font-weight:bold;
+	line-height:16px;
+}
+.contenttable#estimates thead tr td {
+	font-weight:bold;
+	font-size:11px;
+	color:#000;
+}
+.contenttable#estimates thead tr td span {
+	font-size:10px;
+}
+#outlength {
+	width:72%;
+}
+.reportcontainer {
+	height:auto; 
+	min-height:750px; 
+	display:block; 
+	margin-top:10px;
+	position:relative;
+}
+.reportlabel {
+	display:inline-block;
+	font-weight:bold;
+	font-size:16px;
+	padding-right:5px;
+}
+.reportfilter {
+	margin-top:0; 
+	float:right;
+	margin-right:-10px;
+}
+.reportactions {
+	position:absolute; 
+	right:20px; 
+	top:8px;
+}
+.reportlinks {
+	margin-top:-10px;
+}
+
+#generate {
+	margin-top:0;
+}
+.printpage {
+	display:none;
+}
+pdfquicklinks {
+	position:absolute; 
+	left:10px; 
+	top:8px;
+}
+.widgetsection h3.reportpagetitle {
+	color:#282727;
+}
+.control-label {
+	font-size:12px;
+	white-space:nowrap;
+	display:block;
+	width:100%;
+	text-align:left;
+}
+.table#data tr td {
+	white-space:nowrap;
+}
+.paginatecustom {
+	position:absolute;
+	left:12px;
+	top:10px;
+	width:auto;
+	text-align:left;
+	float:left;
+}
+.pager {
+	text-align:right;
+}
+<?php if($request->print == 1) { ?> 
+#contentwrapper {
+	margin: 10px 0 5px;
+}
+#centercolumn {
+	float:left;
+	width:90%;
+}
+#maincontainer.container {
+	margin-left:20px;
+	margin-top:10px;
+}
+#printer_page_action_buttons {
+	margin:10px;
+}
+.hideonprint {
+	display:none;
+}
+.printpage {
+	margin:10px;
+	display:block;
+}
+<?php } ?>
+
+</style>
+<form action="<?php echo $this->baseUrl("report/dnacertificatesearch"); ?>" method="get" id="listform" class="form-search margin0" style="margin-top:5px;">
+	<div id="centercolumn" class="reportpage">
+        <div class="printpage"></div>
+        <div class="hideonprint" style="width:100%;">
+            <?php if(!isFarmGroupAdmin()){ ?>
+                <table class="table table-condensed noborder margin0" style="width:980px;">
+                    <tr>
+                        <td style="width:60%;"></td>
+                        <td>
+                            <span class="reportfilter pull-left">
+                                <label class="reportlabel cal-font" style="vertical-align:top;">DNA: </label>
+                                <?php
+                                    // $farmgroupid = 65;
+                                    $dnaarray = getAllDNAs($session->getVar('country'));
+                                    $dropdown = new Zend_Form_Element_Select('id',
+                                                        array(
+                                                                'multiOptions' => array_merge_maintain_keys(array('' => '<Browse DNA>'), $dnaarray),								
+                                                            'view' => new Zend_View(),
+                                                            'decorators' => array('ViewHelper'),
+                                                                'class' => array('chzn-select', 'width180', 'novalidate')
+                                                        )
+                                                    );
+                                    $dropdown->setValue($request->getParam('id')); 
+                                    echo $dropdown->render(); 
+                                  ?>&nbsp;&nbsp;
+                                 <a id="generate" style="vertical-align:top;" href="<?php echo $this->baseUrl('report/dnacertificate/id/'); ?>" class="btn btn-primary" title="Generate Report"><i class="icon-list-alt icon-white"></i> Generate</a>&nbsp;
+                            </span>
+                        </td>
+                    </tr>
+                </table>
+            <?php } ?>
+        </div>
+        <div class="pull-left" id="pageleft">
+                <div class="widgetsection reportcontainer" style="width:980px; margin-bottom:0; padding-bottom:0;">
+                    <h3 class="reportpagetitle"><?php echo $title; ?></h3>
+                    <?php if($request->print != 1){ ?>
+                        <span class="reportactions">
+                            <a href="<?php echo $this->viewurl.'/print/1'; ?>" target="_blank" class="btn btn-primary btn-mini" title="Print Report"><i class="icon-print icon-white"></i> Print</a>&nbsp;
+                            <a href="<?php echo $this->viewurl.'/pdf/1'; ?>" class="btn btn-primary btn-mini" title="View PDF Report"><i class="icon-list-alt icon-white"></i> PDF</a>&nbsp;
+                            <a href="<?php echo $this->viewurl.'/download/1'; ?>" class="btn btn-primary btn-mini" title="Print Report"><i class="icon-download icon-white"></i> Download</a>&nbsp;
+                        </span>
+                    <?php } ?>
+                    <?php
+						$certbg = $this->baseUrl('images/certificate.png');
+						if(isEmptyString($id)){ 
+							$username = '';
+							$fin = '';
+							$startday =  '';
+							$startmonth = '';
+							$startyear = '';
+							$farmgrpname = '';
+						} else { 
+							$username = $dna->getName();
+							$fin = ' <span class="pagedescription" style="font-size:16px; font-style:normal;">RegNo# '.$dna->getRegNo().'</span>';
+							$startday =  date('jS');
+							$startmonth = date('F');
+							$startyear = date('Y');
+							$farmgrpname = '';
+							// $farmgrpname = isEmptyString($user->getFarmGroup()->getName()) ? "--": $user->getFarmGroup()->getName();
+						}
+                    ?>
+                    <?php // if(!isEmptyString($id)){ 
+						ob_start(); 
+					?>
+                    <div style="height:655px; overflow:hidden; margin-bottom:10px; display:block; background-image: url(<?php echo $certbg; ?>); background-repeat:no-repeat; background-position:2px 3px; background-size: 975px; border:solid 1px #016c5c;">
+                    	<div style="height:50px;"></div>
+                        <div style="height:150px; width:100%;">
+							<?php if(isUganda()){ ?>
+                                <div style="margin:0 auto; margin-top:5px; text-align:center;"><img src="<?php echo $this->baseUrl('images/infotrade.png'); ?>" style="height:120px;" /></div>
+                            <?php } ?>
+                            <?php if(isKenya()){ ?>
+                                <div style="margin:0 auto; margin-top:20px; text-align:center;"><img src="<?php echo $this->baseUrl('images/sokopepe.png'); ?>" style="height:100px;" /></div>
+                            <?php } ?>
+                        </div>
+                        <div style="height:70px; display:block;"></div>
+                        <div style="height:65px; display:block;"></div>
+                        <div style="color:#000; font-weight:bold; font-size:18px; height:25px; border-bottom:1px dashed #333333; width:65%; margin:0 auto; text-align:center; padding-top:15px;">&nbsp; <?php echo $username.$fin; ?></div>  
+                        <div style="height:30px; display:block;"></div>
+                        <div style="color:#27843e; font-size:18px; height:50px; text-align:center; display:block;">has on this 
+                        	<span style="border-bottom:1px dashed #333333; width:70px; color:#000; display:inline-block; margin:0 auto; ">&nbsp; <?php echo $startday; ?></span> 
+                        	day of 
+                            <span style="border-bottom:1px dashed #333333; width:150px; color:#000; display:inline-block; margin:0 auto; ">&nbsp; <?php echo $startmonth; ?></span> 
+                            the year of 
+                            <span style="border-bottom:1px dashed #333333; width:80px; color:#000; display:inline-block; margin:0 auto; ">&nbsp; <?php echo $startyear; ?></span> 
+                            been accorded <!--provisional -->DNA Membership to 
+                        </div>               
+                        <div style="color:#27843e; font-size:18px; height:50px; text-align:center; display:block;"><span style="color:#8f1b1b;">Farmer Record Management Information Services</span></div>              
+                        <div style="color:#27843e; font-size:18px; height:75px; text-align:center; display:block;"> managed by <?php echo $companyname; ?></div>               
+                        <div style="color:#27843e; font-size:18px; height:50px; border-top:1px dashed #333333; width:35%; margin:0 auto; text-align:center; padding-top:15px;"><?php echo $companyname; ?> Representative</div>               
+                    </div>
+                    <?php $html = ob_get_clean(); ?>
+                    <?php // if($request->pdf != 1){ ?>
+						<?php echo $html; ?>
+                    <?php // } ?>
+                </div>
+  		</div>
+	</div>
+</form>
+<?php if($request->download == 1 || $request->pdf == 1){ 
+	$baseurl_bootstrap = $this->serverUrl($this->baseUrl('stylesheets/3.bootstrap-cerulean.css'));
+	$baseurl_farmis =  $this->serverUrl($this->baseUrl('stylesheets/9.farmis.css'));
+?>
+	<?php ob_start(); ?>
+        <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+        <html lang="en">
+        <head>
+            <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+            <link href="<?php echo $baseurl_bootstrap; ?>" type="text/css" rel="stylesheet" />
+            <link href="<?php echo $baseurl_farmis; ?>" type="text/css" rel="stylesheet" />
+        </head>
+        <style>
+            body {
+                color: #555555;
+                font-family: calibri, Telex, sans-serif;
+                font-size: 13px;
+                line-height: 18px;
+            }
+            .table-bordered {
+              border: 1px solid #dddddd;
+              border-left: 0;
+              border-collapse: separate;
+              *border-collapse: collapsed;
+               background-color: transparent;
+                border-spacing: 0;
+                max-width: 100%;
+            }
+            .table-bordered th,
+            .table-bordered td {
+              border-left: 1px solid #dddddd;
+              border-top: 1px solid #dddddd;
+              padding: 2px 3px;
+              vertical-align: top;
+            }
+            .widgetsection {
+                -moz-border-radius: 4px;	
+                -webkit-border-radius:4px;
+                -khtml-border-radius:4px;	
+                border-radius:4px;	
+                border-left: 4px solid #DDDDDD;
+                border-right: 4px solid #DDDDDD;
+                border-top: 2px solid #DDDDDD;
+                border-bottom: 2px solid #DDDDDD;
+                margin: 0 0 15px;
+                padding: 0 5px 10px 5px;
+                min-height:50px;
+                height:auto;
+                /*width:100%;*/
+            }
+            .widgetsection h3 {
+                margin: 0;
+                padding: 5px 5px 5px 5px;
+                text-align: left;
+                border-bottom:2px solid #E0E0E0;
+                color:#498D0F;
+                font-size:16px;
+            }
+            .widgetsection.height100 {
+                min-height:100px;
+            }
+            .widgetsection.height150 {
+                min-height:150px;
+            }
+            .widgetsection.height200 {
+                min-height:200px;
+            }
+            .widgetsection.height300 {
+                min-height:300px;
+            }
+            .widgetsection.height400 {
+                min-height:400px;
+            }
+            .widgetsection.height500 {
+                min-height:500px;
+            }
+            .widgetsection.height600 {
+                min-height:600px;
+            }
+            
+            #profileinfo, .profileinfo, #thumbinfo, .thumbinfo {
+                position:relative;
+                max-height: 195px;
+                height:auto;
+                width:165px;
+                padding: 0;
+                margin: 0 auto;
+                border: 1px solid #C2C2C2;
+                border: 1px solid rgba(0, 0, 0, 0.05);
+                border-style: ridge;
+                background-color:#f1f1f1;
+                -webkit-border-radius: 3px;
+                -moz-border-radius: 3px;
+                border-radius: 3px;
+            }
+            #profileinfo.new_pic, .profileinfo.new_pic {
+                box-shadow: 0 0 0 1px #F5F5F5, 0 0 0 2px #EBEBEB, 0 0 0 3px #E0E0E0, 0 0 0 4px #D6D6D6;
+                -moz-box-shadow: 0 0 0 1px #F5F5F5, 0 0 0 2px #EBEBEB, 0 0 0 3px #E0E0E0, 0 0 0 4px #D6D6D6;
+                -webkit-shadow: 0 0 0 1px #F5F5F5, 0 0 0 2px #EBEBEB, 0 0 0 3px #E0E0E0, 0 0 0 4px #D6D6D6;
+            }
+            #profileinfo #profileimage, .profileinfo .profileimage {
+                margin-top:2px;
+            }
+    
+            #centercolumn {
+                padding: 5px 0;
+                width: 78%;
+            }
+            #centercolumn h1, #centercolumn h2 {
+                font-family: calibri, Telex, sans-serif;
+            }
+            #pageleft {
+                margin:0 5px 0 0;
+                width:98%;
+                float:left;
+            }
+            #pageleft .widgetsection {
+                width:100%;
+            }
+            .widgetsection {
+                margin-bottom:10px;
+            }
+            .widgetsection h3 {
+                font-size:15px;
+            }
+            .contenttable {
+                border:solid 1px #b3b3b3;
+                border-collapse: separate;
+                *border-collapse: collapsed;
+                -webkit-border-radius: 4px;
+                -moz-border-radius: 4px;
+                border-radius: 4px;
+                width:100%;
+            }
+            .contenttable .control-label {
+                width:auto;
+                white-space:normal;
+                text-align:left;
+                display:block;
+                color: #333333;
+                margin-bottom: 5px;
+                font-size: 13px;
+                line-height: 18px;
+                font-weight: bold;
+            }
+            .contenttable h2 {
+                margin: 0;
+                padding: 8px 0 8px 0;
+                line-height:auto;
+                text-align: left;
+                border-bottom:1px solid #c4c2c2;
+                color:#498D0F;
+                font-size:18px;
+                width:100%;
+                font-weight:bold;
+                line-height:16px;
+                calibri,Telex,sans-serif;
+            }
+            .contenttable#estimates thead tr td {
+                font-weight:bold;
+                font-size:10px;
+                color:#000;
+            }
+            .contenttable#estimates thead tr td span {
+                font-size:10px;
+            }
+            #printer_page_action_buttons {
+                display:block;
+                margin:10px;
+            }
+            table#crops {
+                height:180px;
+            }
+            table#crops ul#croplist {
+                margin:0;
+                margin-left: -15px;
+                height:130px;
+            }
+            .reportcontainer {
+                height:auto; 
+                min-height:800px; 
+                display:block; 
+                margin-top:10px;
+                position:relative;
+            }
+            .reportlabel {
+                display:inline-block;
+                font-weight:bold;
+                font-size:16px;
+                padding-right:5px;
+            }
+            .reportfilter {
+                margin-top:0; 
+                float:right;
+                margin-right:-10px;
+            }
+            #generate, .printpage, .pdfquicklinks, .reportactions{
+                display:none;
+            }
+            .widgetsection h3.reportpagetitle {
+                color:#282727;
+            }
+        </style>
+        <body>
+            <div style="width:100%;">
+                <?php echo $html; ?>
+            </div>
+        </body>
+        </html>
+        <?php $pdf_html = ob_get_clean(); ?>
+        <?php 
+			$timestamp = time().rand(100, 5000);
+			$temp_file_name = ($timestamp).".pdf";
+			$temp_file_text = ($timestamp).".html";
+			
+			$path = BASE_PATH.DIRECTORY_SEPARATOR."temp".DIRECTORY_SEPARATOR.$temp_file_name;
+			$path_txt = BASE_PATH.DIRECTORY_SEPARATOR."temp".DIRECTORY_SEPARATOR.$temp_file_text;
+			$relativepathtodocument = $this->serverUrl($this->baseUrl('temp/'.$temp_file_name));
+			file_put_contents($path_txt, $pdf_html);
+			
+			$mpdf=new mPDF('win-1252','A4-L'); 
+			$mpdf->WriteHTML($pdf_html);
+			$mpdf->Output($path, 'F');
+        ?>
+    
+    <?php } ?>
+<script>
+$(document).ready(function() {
+<?php if($request->download == 1 || $request->pdf == 1){ ?>
+	var url = '<?php echo $this->baseUrl('download/index/type/certificate/filename/'.encode($temp_file_name)); ?>';
+	window.location.href = url;
+<?php } ?>
+});
+</script>
+<?php
+	require_once APPLICATION_PATH.'/includes/footer.php';
+?>

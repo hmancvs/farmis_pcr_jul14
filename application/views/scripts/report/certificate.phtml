@@ -1,16 +1,16 @@
 <?php
 	require_once APPLICATION_PATH.'/includes/header.php';
-	require_once(APPLICATION_PATH.'/../'.PUBLICFOLDER.'/mpdf/mpdf.php');
 		
-	$title = "Membership Certificate";
+	$title = "Farmer Membership Certificate";
 	$this->headTitle($title); 
 	
 	$user = new UserAccount();
 	$id = $request->id;
+	$farmgroupid = '';
 	
 	$loggedinfarmer = new UserAccount();
 	$loggedinfarmer->populate($userid);
-	if(!isAdmin()){
+	if(!isEmptyString($loggedinfarmer->getFarmGroupID())){
 		$farmgroupid = $loggedinfarmer->getFarmGroupID();
 	}
 	
@@ -201,7 +201,7 @@ pdfquicklinks {
 	<div id="centercolumn" class="reportpage">
         <div class="printpage"></div>
         <div class="hideonprint" style="width:100%;">
-            <?php if((isAdmin() || isFarmGroupAdmin() || isManagement())){ ?>
+            <?php if((!isFarmer())){ ?>
                 <table class="table table-condensed noborder margin0" style="width:980px;">
                     <tr>
                         <td style="width:60%;"></td>
@@ -240,50 +240,73 @@ pdfquicklinks {
                         </span>
                     <?php } ?>
                     <?php
-						$certbg = $this->baseUrl('images/certificate.png');
 						if(isEmptyString($id)){ 
 							$username = '';
+							$fin = '';
 							$startday =  '';
 							$startmonth = '';
 							$startyear = '';
+							$thedate = '';
 							$farmgrpname = '';
 						} else { 
 							$username = $user->getName();
+							$fin = ' <span class="pagedescription" style="font-size:16px; font-style:normal;">FIN# '.$user->getRefNo().'</span>';
 							$startday =  date('jS');
 							$startmonth = date('F');
 							$startyear = date('Y');
-							$farmgrpname = isEmptyString($user->getFarmGroup()->getName()) ? "--": $user->getFarmGroup()->getName();
+							$thedate = date('jS F, Y');
+							$farmgrpname = isEmptyString($user->getFarmGroup()->getName()) ? "": $user->getFarmGroup()->getName();
+						}
+						
+						if(isUganda()){
+							$logo = $this->baseUrl('images/infotrade.png');
+							$certbg = $this->baseUrl('images/certificate.png');
+						} 
+						if(isKenya()){
+							$logo = $this->baseUrl('images/sokopepe.png');
+							$certbg = $this->baseUrl('images/certficate_ke.png');
+							if(!isEmptyString($id)){ 
+								$fin = ' <span class="pagedescription" style="font-size:14px; font-style:normal;">ID# '.$user->getRefNo().'</span>';
+							}
 						}
                     ?>
                     <?php // if(!isEmptyString($id)){ 
 						ob_start(); 
 					?>
-                    <div style="height:655px; overflow:hidden; margin-bottom:10px; display:block; background-image: url(<?php echo $certbg; ?>); background-repeat:no-repeat; background-position:2px 3px; background-size: 975px; border:solid 1px #016c5c;">
-                    	<div style="height:50px;"></div>
-                        <div style="height:150px; width:100%;">
-							<?php if(isUganda()){ ?>
-                                <div style="margin:0 auto; margin-top:5px; text-align:center;"><img src="<?php echo $this->baseUrl('images/infotrade.png'); ?>" style="height:120px;" /></div>
-                            <?php } ?>
-                            <?php if(isKenya()){ ?>
-                                <div style="margin:0 auto; margin-top:20px; text-align:center;"><img src="<?php echo $this->baseUrl('images/sokopepe.png'); ?>" style="height:100px;" /></div>
-                            <?php } ?>
+                    <?php if(isUganda()){ ?>
+                    	<div style="height:655px; overflow:hidden; margin-bottom:10px; display:block; background-image: url(<?php echo $certbg; ?>); background-repeat:no-repeat; background-position:2px 3px; background-size: 975px; border:solid 1px #016c5c;">
+                            <div style="height:50px;"></div>
+                            <div style="height:150px; width:100%;">
+                                <div style="margin:0 auto; margin-top:5px; text-align:center;"><img src="<?php echo $logo; ?>" style="height:120px;" /></div>
+                            </div>
+                            <div style="height:70px; display:block;"></div>
+                            <div style="height:65px; display:block;"></div>
+                            <div style="color:#000; font-weight:bold; font-size:18px; height:25px; border-bottom:1px dashed #333333; width:50%; margin:0 auto; text-align:center; padding-top:15px;">&nbsp; <?php echo $username.$fin; ?></div>  
+                            <div style="height:30px; display:block;"></div>
+                            <div style="color:#27843e; font-size:18px; height:50px; text-align:center; display:block;">has on this 
+                                <span style="border-bottom:1px dashed #333333; width:70px; color:#000; display:inline-block; margin:0 auto; ">&nbsp; <?php echo $startday; ?></span> 
+                                day of 
+                                <span style="border-bottom:1px dashed #333333; width:150px; color:#000; display:inline-block; margin:0 auto; ">&nbsp; <?php echo $startmonth; ?></span> 
+                                the year of 
+                                <span style="border-bottom:1px dashed #333333; width:80px; color:#000; display:inline-block; margin:0 auto; ">&nbsp; <?php echo $startyear; ?></span> 
+                                been accorded <!--provisional -->membership to 
+                            </div>               
+                            <div style="color:#27843e; font-size:18px; height:50px; text-align:center; display:block;"><span style="color:#8f1b1b;">Farmer Record Management Information Services</span></div>              
+                            <div style="color:#27843e; font-size:18px; height:75px; text-align:center; display:block;"> under <span style="border-bottom:1px dashed #333333; color:#000; padding:0 10px; width:450px; display:inline-block; margin:0 auto;">&nbsp; <?php echo $farmgrpname; ?></span> managed by <?php echo $companyname; ?></div>               
+                            <div style="color:#27843e; font-size:18px; height:50px; border-top:1px dashed #333333; width:35%; margin:0 auto; text-align:center; padding-top:15px;">DNA / Farm Group Representative</div>               
                         </div>
-                        <div style="height:70px; display:block;"></div>
-                        <div style="height:65px; display:block;"></div>
-                        <div style="color:#000; font-weight:bold; font-size:18px; height:25px; border-bottom:1px dashed #333333; width:35%; margin:0 auto; text-align:center; padding-top:15px;">&nbsp; <?php echo $username; ?></div>  
-                        <div style="height:30px; display:block;"></div>
-                        <div style="color:#27843e; font-size:18px; height:50px; text-align:center; display:block;">has on this 
-                        	<span style="border-bottom:1px dashed #333333; width:70px; color:#000; display:inline-block; margin:0 auto; ">&nbsp; <?php echo $startday; ?></span> 
-                        	day of 
-                            <span style="border-bottom:1px dashed #333333; width:150px; color:#000; display:inline-block; margin:0 auto; ">&nbsp; <?php echo $startmonth; ?></span> 
-                            the year of 
-                            <span style="border-bottom:1px dashed #333333; width:80px; color:#000; display:inline-block; margin:0 auto; ">&nbsp; <?php echo $startyear; ?></span> 
-                            been accorded <!--provisional -->membership to 
-                        </div>               
-                        <div style="color:#27843e; font-size:18px; height:50px; text-align:center; display:block;"><span style="color:#8f1b1b;">Farmer Record Management Information Services</span></div>              
-                        <div style="color:#27843e; font-size:18px; height:75px; text-align:center; display:block;"> under <span style="border-bottom:1px dashed #333333; color:#000; padding:0 10px; width:450px; display:inline-block; margin:0 auto;">&nbsp; <?php echo $farmgrpname; ?></span> managed by <?php echo $companyname; ?></div>               
-                        <div style="color:#27843e; font-size:18px; height:50px; border-top:1px dashed #333333; width:35%; margin:0 auto; text-align:center; padding-top:15px;">DNA / Farm Group Representative</div>               
-                    </div>
+                    <?php } ?>
+                    <?php if(isKenya()){ ?>
+                    	<div style="height:655px; overflow:hidden; margin-bottom:10px; display:block; background-image: url(<?php echo $certbg; ?>); background-repeat:no-repeat; background-position:2px 3px; background-size: 975px; border:solid 1px #016c5c;">
+                            <div style="height:290px; width:100%;"></div>
+                            <div style="color:#000; font-weight:bold; font-size:13px; height:auto; width:50%; margin:0 auto; text-align:center;">&nbsp; <?php echo $username.$fin; ?></div>  
+                            <div style="height:43px; display:block;"></div>
+                            <div style="color:#27843e; font-size:14px; height:25px;; text-align:center; display:block; font-weight:bold;"><span style="color:#000; padding:0 10px; width:450px; display:inline-block; margin:0 auto;">&nbsp;<?php echo $farmgrpname; ?></span>
+                            <div style="height:190px; display:block;"></div>
+                            <div style="color:#27843e; font-size:14px; height:40px; text-align:center; display:block;"><span style="color:#000; display:inline-block; margin:0 auto; font-weight:bold;">&nbsp; <?php echo $thedate; ?></span> </div>
+                        </div>
+                    <?php } ?>
+                    
                     <?php $html = ob_get_clean(); ?>
                     <?php // if($request->pdf != 1){ ?>
 						<?php echo $html; ?>
@@ -507,8 +530,8 @@ pdfquicklinks {
 			$temp_file_name = ($timestamp).".pdf";
 			$temp_file_text = ($timestamp).".html";
 			
-			$path = APPLICATION_PATH.DIRECTORY_SEPARATOR."..".DIRECTORY_SEPARATOR."public".DIRECTORY_SEPARATOR."temp".DIRECTORY_SEPARATOR.$temp_file_name;
-			$path_txt = APPLICATION_PATH.DIRECTORY_SEPARATOR."..".DIRECTORY_SEPARATOR."public".DIRECTORY_SEPARATOR."temp".DIRECTORY_SEPARATOR.$temp_file_text;
+			$path = BASE_PATH.DIRECTORY_SEPARATOR."temp".DIRECTORY_SEPARATOR.$temp_file_name;
+			$path_txt = BASE_PATH.DIRECTORY_SEPARATOR."temp".DIRECTORY_SEPARATOR.$temp_file_text;
 			$relativepathtodocument = $this->serverUrl($this->baseUrl('temp/'.$temp_file_name));
 			file_put_contents($path_txt, $pdf_html);
 			

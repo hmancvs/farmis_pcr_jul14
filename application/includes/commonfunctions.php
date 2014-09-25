@@ -79,10 +79,9 @@ define("COUNTRY_UG_CURRENCY", "(UGX)");
 define("COUNTRY_UG_CURRENCY_KENYA", "(KSHS)");
 define("BILLING_SERVER", "http://localhost.com/test.php");
 
-define("SMS_SERVER", "http://121.241.242.114:8080/bulksms/bulksms");
-define("SMS_USERNAME", 'fti-farmis');
-define("SMS_PASSWORD", 'farmis');
-define("SMS_PORT", "8080");
+define("SMS_SERVER", "http://sms.shreeweb.com/sendsms/sendsms.php");
+define("SMS_USERNAME", 'paulfit');
+define("SMS_PASSWORD", 'maxine12');
 define("SMS_TEST_NUMBER", "256776595279");
 
 define("SMS_SERVER_KENYA", "http://41.220.239.178:65015/sokopepe/farmis.jsp");
@@ -197,7 +196,7 @@ function getGoogleMapsKey(){
 function loadMaps(){
 	$config = Zend_Registry::get("config");
 	// $value = $config->api->google_disablemaps;
-	$value = '0';
+	$value = '1';
 	return $value == 1 || $value == 'on' || $value == 'yes' || $value == 'true' ? true : false;
 }
 function getSmsStatus(){
@@ -230,17 +229,21 @@ function changeMySQLDateToPageFormat($mysqldate) {
  * @param String $pagedate The string representing the date
  * @return String The MYSQL datetime format or NULL if the provided date is an empty string or the string NULL 
  */
-function changeDateFromPageToMySQLFormat($pagedate) {
+function changeDateFromPageToMySQLFormat($pagedate, $ignoretime = true) {
 	if ($pagedate == "NULL") {
 		return NULL;
 	}
 	if (isEmptyString($pagedate)) {
 		return NULL;
 	} else {
-		return date("Y-m-d H:i:s", strtotime($pagedate));
+		$timestr = '';
+		if($ignoretime === true){
+			$timestr = ' H:i:s';
+		}
+		return date("Y-m-d".$timestr, strtotime($pagedate));
 	}
 }
-function formatDateAndTime($mysqldate, $ignoretime = true){
+function formatDateAndTime($mysqldate, $ignoretime = false){
 	if(isEmptyString($mysqldate)){
 		return '--';
 	}
@@ -407,74 +410,8 @@ function sendTestMessage($subject = "", $message = "") {
 	}
 }
 # send sms message to phone number
-function sendSMSMessage($to, $txt, $returnresult = false, $country = 'ug', $source = 'FARMIS') {
-	$phone = $to;
-    // $port = SMS_PORT;
-    $message = $txt;
-	$sendsms = true;
-	$server = SMS_SERVER;
-	$username = SMS_USERNAME;
-    $password = SMS_PASSWORD;
-	if(isKenya()){
-		$server = SMS_SERVER_KENYA;
-		$username = SMS_USERNAME_KENYA;
-    	$password = SMS_PASSWORD_KENYA;
-	}
-	return sendSMS($to, $txt, $source);
-	    
-    $client = new Zend_Http_Client($server);
-    // the GET Parameters
-	
-    if(isUganda()){
-		$client->setParameterGet(array(
-			'username'  => $username,
-			'password'  => $password,
-			'type'	=>	0,
-			'dlr'	=>	0,
-			'source'=>	$source,
-			'destination' => $phone,
-			'message' => $message
-		));
-    }
-    if(isKenya()){
-    	$client->setParameterGet(array(
-			'userName&'  => $username,
-			'password'  => $password,
-			'msisdn' => $phone,
-			// 'msg' => urlencode(addslashes($message))
-    		'msg' => $message
-		));
-    }
-    
-	/*debugMessage($client); 
-	debugMessage(getClientUrl($client));*/
-	// exit();
-	if($sendsms){
-		try {
-			$response = $client->request();
-			$body = $response->getBody();
-			// debugMessage($body);
-			
-			if($returnresult){
-				return $body;
-			}
-			// debugMessage($client->getLastRequest());
-			 
-		} catch (Exception $e) {
-			# error handling
-			$message = "Error in sending Message: ".$e->getMessage();
-			if($returnresult){
-				// debugMessage($message);
-				return $message;
-			}
-		}
-	}
-	
-	if(!$returnresult){
-		return true;
-	}
-}
-function sendSMS($to, $txt, $returnresult = false, $source = 'FARMIS') {
+function sendSMSMessage($to, $txt, $source = 'FARMIS') {
+	$session = SessionWrapper::getInstance();
 	$phone = $to;
     $message = $txt;
 	$sendsms = true;
@@ -482,49 +419,39 @@ function sendSMS($to, $txt, $returnresult = false, $source = 'FARMIS') {
 	if(isUganda()){
 		$server = SMS_SERVER;
 		$username = SMS_USERNAME;
-	    $password = SMS_PASSWORD;
+		$password = SMS_PASSWORD;
 		$parameters = array(
-			'username'  => $username,
-			'password'  => $password,
-			'type'	=>	0,
-			'dlr'	=>	0,
-			'source'=>	$source,
-			'destination' => $phone,
-			'message' => $message
+				'username'  => $username,
+				'password'  => $password,
+				'type'	=>	'TEXT',
+				'sender'=>	'FARMIS',
+				'mobile'=> $phone,
+				'message' => $message
 		);
 	}
 	if(isKenya()){
 		$server = SMS_SERVER_KENYA;
 		$username = SMS_USERNAME_KENYA;
-    	$password = SMS_PASSWORD_KENYA;
-    	$parameters = array(
-			'userName&'  => $username,
-			'password'  => $password,
-			'msisdn' => $phone,
-    		'msg' => $message
+		$password = SMS_PASSWORD_KENYA;
+		$parameters = array(
+				'userName&'  => $username,
+				'password'  => $password,
+				'msisdn' => $phone,
+				'msg' => $message
 		);
 	}
-	$result = curlContents($server, 'GET', $parameters, false, false);
-	$resultcode = substr($result, 0, 4);
-	debugMessage($result);
-	if($resultcode == 1701){
-		debugMessage('Success');
-	} else {
-		debugMessage('Error with code: '.$resultcode);
-		$str = "1701 - Success<br>
-				1702 - Invalid Url<br>
-				1703 - Invalid Username or password<br>
-				1704 - invalid type<br>
-				1705 - invalid message<br>
-				1706 - invalid destination<br>
-				1707 - invalid source<br>
-				1708 - invalid 'dlr' field<br>
-				1709 - user validation failed<br>
-				1710 - internal serve error<br>
-				1025 - insufficient credit<br>
-				1715 - Response timeout";
-		
-		debugMessage($str);
+	// debugMessage($parameters); exit;
+	if($sendsms && isUganda()){
+		$result = curlContents($server, 'GET', $parameters, false, false);
+		debugMessage($result);
+		// $result = 'SUBMIT_SUCCESS | 74f2b84c-8018-5fbf-c74c-49f7e7d10401';
+		$result_array = explode('|', $result);
+		$result_code = isArrayKeyAnEmptyString(0, $result_array) ? $result : $result_array[0];
+		$conn = Doctrine_Manager::connection();
+		$query = "INSERT INTO outbox (phone, msg, source, result, datecreated, createdby, country) values ('".$phone."', '".$message."', '".$parameters['source']."', '".$result_code."', '".getCurrentMysqlTimestamp()."', '".$session->getVar('userid')."', '".strtoupper($session->getVar('country'))."') ";
+		// debugMessage($query);
+		$conn->execute($query);
+		// debugMessage($result);
 	}
 	return true;
 }
@@ -564,7 +491,7 @@ function curlContents($url, $method = 'GET', $data = false, $headers = false, $r
     if($returnInfo) {
         $info = curl_getinfo($ch);
     }
-	debugMessage(curl_getinfo($ch, CURLINFO_EFFECTIVE_URL));
+	// debugMessage(curl_getinfo($ch, CURLINFO_EFFECTIVE_URL));
     curl_close($ch);
 
     if($returnInfo) {
@@ -665,7 +592,7 @@ function formatMoney($amount) {
 	if (isEmptyString($amount)) {
 		return '--';
 	}
-	return formatNumber($amount)."&nbsp;<span class='pagedescription'>(".$aconfig->currency->default.")</span>";
+	return formatNumber($amount)."&nbsp;<span class='pagedescription'>(".getCurrencySymbol().")</span>";
 }
 function formatMoneyOnly($amount) {
 	$aconfig = Zend_Registry::get("config");
@@ -914,7 +841,7 @@ function textToUrl($txtstring){
 }
 # determine if person has profile image
 function hasProfileImage($id, $photoname){
-	$real_path = APPLICATION_PATH."/../public/uploads/user_";
+	$real_path = APPLICATION_PATH."/../public/uploads/users/user_";
  	if (APPLICATION_ENV == "production") {
  		$real_path = str_replace("public/", "", $real_path); 
  	}
@@ -929,13 +856,13 @@ function getSmallPicturePath($id, $gender, $photoname) {
 	$baseUrl = Zend_Controller_Front::getInstance()->getBaseUrl();
 	$path= "";
 	if(isMale($gender)){
-		$path = $baseUrl.'/uploads/user_0/avatar/default_small_male.jpg';
+		$path = $baseUrl.'/uploads/users/user_0/avatar/default_small_male.jpg';
 	}  
 	if(isFemale($gender)){
-		$path = $baseUrl.'/uploads/user_0/avatar/default_small_female.jpg'; 
+		$path = $baseUrl.'/uploads/users/user_0/avatar/default_small_female.jpg'; 
 	}
 	if(hasProfileImage($id, $photoname)){
-		$path = $baseUrl.'/uploads/user_'.$id.'/avatar/small_'.$photoname;
+		$path = $baseUrl.'/uploads/users/user_'.$id.'/avatar/small_'.$photoname;
 	}
 	return $path;
 }
@@ -944,13 +871,13 @@ function getThumbnailPicturePath($id, $gender, $photoname) {
 	$baseUrl = Zend_Controller_Front::getInstance()->getBaseUrl();
 	$path= "";
 	if(isMale($gender)){
-		$path = $baseUrl.'/uploads/user_0/avatar/default_thumbnail_male.jpg';
+		$path = $baseUrl.'/uploads/users/user_0/avatar/default_thumbnail_male.jpg';
 	}  
 	if(isFemale($gender)){
-		$path = $baseUrl.'/uploads/user_0/avatar/default_thumbnail_female.jpg'; 
+		$path = $baseUrl.'/uploads/users/user_0/avatar/default_thumbnail_female.jpg'; 
 	}
 	if(hasProfileImage($id, $photoname)){
-		$path = $baseUrl.'/uploads/user_'.$id.'/avatar/thumbnail_'.$photoname;
+		$path = $baseUrl.'/uploads/users/user_'.$id.'/avatar/thumbnail_'.$photoname;
 	}
 	return $path;
 }
@@ -959,13 +886,13 @@ function getMediumPicturePath($id, $gender, $photoname) {
 	$baseUrl = Zend_Controller_Front::getInstance()->getBaseUrl();
 	$path= "";
 	if(isMale($gender)){
-		$path = $baseUrl.'/uploads/user_0/avatar/default_medium_male.jpg';
+		$path = $baseUrl.'/uploads/users/user_0/avatar/default_medium_male.jpg';
 	}  
 	if(isFemale($gender)){
-		$path = $baseUrl.'/uploads/user_0/avatar/default_medium_female.jpg'; 
+		$path = $baseUrl.'/uploads/users/user_0/avatar/default_medium_female.jpg'; 
 	}
 	if(hasProfileImage($id, $photoname)){
-		$path = $baseUrl.'/uploads/user_'.$id.'/avatar/medium_'.$photoname;
+		$path = $baseUrl.'/uploads/users/user_'.$id.'/avatar/medium_'.$photoname;
 	}
 	return $path;
 }
@@ -974,13 +901,13 @@ function getLargePicturePath($id, $gender, $photoname) {
 	$baseUrl = Zend_Controller_Front::getInstance()->getBaseUrl();
 	$path= "";
 	if(isMale($gender)){
-		$path = $baseUrl.'/uploads/user_0/avatar/default_large_male.jpg';
+		$path = $baseUrl.'/uploads/users/user_0/avatar/default_large_male.jpg';
 	}  
 	if(isFemale($gender)){
-		$path = $baseUrl.'/uploads/user_0/avatar/default_large_female.jpg'; 
+		$path = $baseUrl.'/uploads/users/user_0/avatar/default_large_female.jpg'; 
 	}
 	if(hasProfileImage($id, $photoname)){
-		$path = $baseUrl.'/uploads/user_'.$id.'/avatar/large_'.$photoname;
+		$path = $baseUrl.'/uploads/users/user_'.$id.'/avatar/large_'.$photoname;
 	}
 	// debugMessage($path);
 	return $path;
@@ -1023,7 +950,7 @@ function getDomain(){
 # determine if browsing uganda
 function isUganda() {
 	$session = SessionWrapper::getInstance();
-	return $session->getVar('country') == 'ug' ? true : false;
+	return strtolower($session->getVar('country')) == 'ug' ? true : false;
 }
 # determine the country name
 function getCountryName($country = '') {
@@ -1049,10 +976,18 @@ function getServiceAmount() {
 	$session = SessionWrapper::getInstance();
 	return $session->getVar('country') == 'ug' ? '20000' : '850';
 }
+function getDefaultConfirmTextUG(){
+	$text = 'Dear %1$s, Your payment of Shs %2$s for FARMIS has been received. Services have been activated on your account untill %3$s';
+	return $text;
+}
+function getDefaultConfirmTextKE(){
+	$text = 'Dear %1$s,\n This is to confirm that your payment of Kshs %2$s for FARMIS has been received. Services have been activated on your account untill %3$s';
+	return $text;
+}
 # determine if browsing kenya
 function isKenya() {
 	$session = SessionWrapper::getInstance(); 
-	return $session->getVar('country') == 'ke' ? true : false;
+	return strtolower($session->getVar('country')) == 'ke' ? true : false;
 }
 # determine if loggedin user is subscriber
 function isFarmer() {
@@ -1509,5 +1444,56 @@ function greatUser($name){
 }
 function format($str){
 	return isEmptyString($str) ? '--' : $str;
+}
+function getJsIncludes(){
+	$files = array(
+		'javascript/2.jquery-1.7.1.min.js',
+		'javascript/3.jquery-ui-1.8.14.custom.min.js',
+		'javascript/5.bootbox.min.js',
+		'javascript/5.chosen.jquery.min.0.9.8.js',
+		'javascript/5.jquery.autocomplete.js',
+		'javascript/5.jquery.calculation.min.js',
+		'javascript/5.jquery.cycle.js',
+		'javascript/5.jquery.elastic.source.1.6.11.js',
+		'javascript/5.jquery.fullcalendar.min.js',
+		'javascript/5.jquery.imgareaselect.min.js',
+		'javascript/5.jquery.metadata.2.1.js',
+		'javascript/5.jquery.placeholder.min.js',
+		'javascript/5.jquery.qtip.min.js',
+		'javascript/5.jquery.stepy.js',
+		'javascript/5.jquery.tipsy.js',
+		'javascript/5.jquery.validate.min.1.9.0.js',
+		'javascript/5.pdfobject.js',
+		'javascript/5.select-chain.js',
+		'javascript/6.bootstrap.min.js',
+		'javascript/7.highcharts.js',
+		'javascript/8.exporting.js',
+		'javascript/8.app.js'
+	);
+	
+	return $files;
+}
+function trim_all($str , $what = NULL , $with = ' ' ){
+	if( $what === NULL ) {
+		//  Character      Decimal      Use
+		//  "\0"            0           Null Character
+		//  "\t"            9           Tab
+		//  "\n"           10           New line
+		//  "\x0B"         11           Vertical Tab
+		//  "\r"           13           New Line in Mac
+		//  " "            32           Space
+		 
+		$what   = "\\x00-\\x20";    //all white-spaces and control chars
+	}
+	return trim( preg_replace( "/[".$what."]+/" , $with , $str ) , $what );
+}
+function get_dirs($path = '.') {
+	$dirs = array();
+	foreach (new DirectoryIterator($path) as $file) {
+		if ($file->isDir() && !$file->isDot()) {
+			$dirs[] = $file->getFilename();
+		}
+	}
+	return $dirs;
 }
 ?>

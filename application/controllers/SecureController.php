@@ -20,10 +20,10 @@ class SecureController extends IndexController  {
 		$cache = Zend_Registry::get('cache');
 		// load the acl instance
 		$acl = getACLInstance(); 
-		
+		// debugMessage($this->getResourceForACL().' - - '.$this->getActionforACL());
 		if (!$acl->checkPermission($this->getResourceForACL(), $this->getActionforACL())) { 
 			// redirect to the access denied page 
-			 $this->_helper->redirector->gotoSimpleAndExit("accessdenied", "index");
+			$this->_helper->redirector->gotoSimpleAndExit("accessdenied", "index");
 		}
 	}
 	
@@ -43,12 +43,12 @@ class SecureController extends IndexController  {
 	 */
 	function getActionforACL() {
 		$action = strtolower($this->getRequest()->getActionName()); 
-		if ($action == ACTION_INDEX) {
+		/* if ($action == ACTION_INDEX) {
 			return ACTION_CREATE; 
-		}
-		if ($action == ACTION_CREATE) {
+		} */
+		if ($action == ACTION_CREATE || $action == ACTION_INDEX) {
 			// check whether this is an update action or a create action 
-			if (!isEmptyString($this->getRequest()->id)) {
+			if (!isEmptyString($this->_getParam('id'))) {
 				return ACTION_EDIT; 
 			} else {
 				return ACTION_CREATE; 

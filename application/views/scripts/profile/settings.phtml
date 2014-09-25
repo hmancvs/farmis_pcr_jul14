@@ -8,6 +8,7 @@
                 <?php if($sessionhaserror) { ?>
                     <div class="alert alert-error"><?php echo $session->getVar(ERROR_MESSAGE); ?></div>
                 <?php } ?> 
+                <?php if(isEmptyString($request->section)){ ?>
                 <div class="row margin0 padding0">
                     <fieldset class="fieldsetcontainer well">
                         <legend>Login Credentials</legend>
@@ -49,7 +50,6 @@
                                 <td><label class="control-label leftalign">Account Type: </label></td>
                                 <td><?php echo $user->getTypeLabel(); ?></td>
                            </tr>
-                           
                            <tr>		                    
                           		<td colspan="2">
 									<?php if($acl->checkPermission($resourcename, ACTION_DELETE) && !$isme && $user->isUserInActive()){ ?>
@@ -66,65 +66,91 @@
                         </table>
                 	</fieldset>
                 </div>
-                <div class="row margin0 padding0" style="min-height:200px;">
-                	<fieldset class="fieldsetcontainer well">
-                        <legend>Settings</legend>
-                   		<table class="table nohover noborder margin10" style="width:550px;">
-                        	<tr>
-                                <td style="padding-left:10px;">
-                                    <div class="makerelative">
-                                        <span id="emailmeonmessage_wait" class="hidden" style="position:absolute; left:-5px; top:0;">
-                                            <img style="width:20px;" src='<?php echo $this->baseUrl('images/farmisloader.gif'); ?>' />
-                                        </span>
-                                        <fieldset id="emailmeonmessage" class="radio btn-group lineblocked" style="width:85px;">
-                                            <input type="radio" id="emailmeonmessage1" name="emailmeonmessage" class="changesetting <?php echo $user->getEmailMeOnMessage() == 1 ? 1 : 0; ?>" value="1" field="emailmeonmessage" userid="<?php echo $user->getID(); ?>" /><label id="lbl-emailmeonmessage1" for="emailmeonmessage1">Yes</label>
-                                            <input type="radio" id="emailmeonmessage0" name="emailmeonmessage" class="changesetting <?php echo $user->getEmailMeOnMessage() == 0 ? 1 : 0; ?>" value="0" field="emailmeonmessage" userid="<?php echo $user->getID(); ?>" /><label id="lbl-emailmeonmessage0" for="emailmeonmessage0">No</label>
-                                        </fieldset>
-                                        &nbsp;<div class="lineblocked" style="margin-top:6px; vertical-align:top;"><?php echo $this->translate("useraccount_emailmeonmessage_label"); ?></div>
-                                    </div>   
-                                </td>
-                            </tr>
-                            <tr>
-                                <td style="padding-left:10px;">
-                                    <div class="makerelative">
-                                        <span id="emailmeoncomment_wait" class="hidden" style="position:absolute; left:-5px; top:0;">
-                                            <img style="width:20px;" src='<?php echo $this->baseUrl('images/farmisloader.gif'); ?>' />
-                                        </span>
-                                        <fieldset id="emailmeoncomment" class="radio btn-group lineblocked" style="width:85px;">
-                                            <input type="radio" id="emailmeoncomment1" name="emailmeoncomment" class="changesetting <?php echo $user->getEmailMeOnComment() == 1 ? 1 : 0; ?>" value="1" field="emailmeoncomment" userid="<?php echo $user->getID(); ?>" /><label id="lbl-emailmeoncomment1" for="emailmeoncomment1">Yes</label>
-                                            <input type="radio" id="emailmeoncomment0" name="emailmeoncomment" class="changesetting <?php echo $user->getEmailMeOnComment() == 0 ? 1 : 0; ?>" value="0" field="emailmeoncomment" userid="<?php echo $user->getID(); ?>" /><label id="lbl-emailmeoncomment0" for="emailmeoncomment0">No</label>
-                                        </fieldset>
-                                        &nbsp;<div class="lineblocked" style="margin-top:6px; vertical-align:top;"><?php echo $this->translate("useraccount_emailmeoncomment_label"); ?></div>
-                                    </div>   
-                                </td>
-                            </tr>
-                            <?php if($user->isFarmer()){ ?>
+                <?php } ?>
+                <?php if(isEmptyString($request->section)){ ?>
+                    <div class="row margin0 padding0" style="min-height:200px;">
+                        <fieldset class="fieldsetcontainer well">
+                            <legend>Settings</legend>
+                            <table class="table nohover noborder margin10" style="width:700px;">
+                                <?php if($user->isFarmer()){ ?>
                                 <tr>
-                                    <td style="padding-left:30px;">
-                                        <div class="control-group">
-                                          <label class="control-label" style="width:100%;">Recieve Market Information alerts?</label>
+                                    <td style="width:25%;"><label class="control-label" style="width:100%;">Mobile Money Account?</label></td>
+                                    <td><?php echo $user->gethasmobilemoney() == 1 ? 'Yes' : 'No'; ?></td>
+                                </tr>
+                                <tr>
+                                    <td><label class="control-label" style="width:100%;">Bank Account?</label></td>
+                                    <td><?php echo $user->gethasbankaccount() == 1 ? 'Yes' : 'No'; ?></td>
+                                </tr>
+                                <tr>
+                                    <td style="width:20%;"><label class="control-label">Services Profiled:</label></td>
+                                    <td><label class="lineblocked"><?php echo $user->getListOfServices(); ?></label></td>
+                                </tr>
+                                <tr>
+                                    <td><label class="control-label">Preferred Language:</label></td>
+                                    <td><label class="lineblocked"><?php echo $user->getLanguagePreferrence(); ?></label></td>
+                                </tr>
+                                <tr>
+                                    <td colspan="2">
+                                          <label class="control-label" style="width:100%;">Market Information Alert Settingss:</label>
                                           <div class="controls" style="margin-left:0;">
                                              <div class="blocked" style="margin-top:5px;"><label class="lineblocked">Send updates and alerts to Phone?</label> <?php echo $user->getreceivephonealerts() == 0 ? 'No' : 'Yes'; ?></div>
                                              <div class="blocked" style="margin-top:5px;"><label class="lineblocked">Send updates and alerts to Email?</label> <?php echo $user->getreceiveemailalerts() == 0 ? 'No' : 'Yes'; ?></div>
                                           </div>
-                                        </div>
-                                        <div class="control-group">
-                                            <label class="control-label" for="updatesfrequency">Frequency of Updates:</label>
-                                            <div class="controls" style="margin-left:0;">
-                                                <div class="blocked" style="margin-top:5px;">
-                                                    <?php
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><label class="control-label" for="updatesfrequency">Frequency of Updates:</label></td>
+                                    <td>
+                                        <div class="controls" style="margin-left:0;">
+                                            <div class="blocked">
+                                                <?php
                                                     $values = array("1"=>"Weekly","2"=>"Bi-weekly","3"=>"Fortnightly","4"=>"Monthly");
                                                     echo $values[$user->getUpdatesFrequency()]; 
-                                                    ?>
-                                                </div>
+                                                ?>
                                             </div>
                                         </div>
                                     </td>
                                 </tr>
-                            <?php } ?>
-                        </table>
-                  	</fieldset>
-                </div>
+                                <?php } ?>
+                                <tr>
+                                    <td colspan="2">
+                                        <label class="control-label">System Notification Settings:</label>
+                                        <div class="lineblocked" style="vertical-align:top;"><?php echo $this->translate("useraccount_emailmeonmessage_label"); ?>? &nbsp; <?php echo $user->getEmailMeOnMessage() == 1 ? 'Yes' : 'No'; ?></div>  
+                                        <div class="lineblocked" style="margin-top:6px; vertical-align:top;"><?php echo $this->translate("useraccount_emailmeoncomment_label"); ?>? &nbsp; <?php echo $user->getEmailMeOnComment() == 1 ? 'Yes' : 'No'; ?></div> 
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td colspan="2">
+										<?php if($acl->checkPermission($resourcename, ACTION_EDIT) || $isme){ ?>
+                                            <a class="btn btn-primary" href="<?php echo $this->baseUrl($request->getControllerName().'/view/id/'.encode($user->getID()).'/tab/account/section/edit'); ?>"><i class="icon-pencil icon-white"></i> Update Settings</a>
+                                        <?php } ?>
+                                   	</td>
+                               	</tr>
+                            </table>
+                        </fieldset>
+                    </div>
+                	<?php } else { ?>
+                    	<script>
+                        $(document).ready(function(){
+							$("form#profileform-account").attr('method','post').attr('action', '<?php echo $this->baseUrl('mobile/edit'); ?>');
+						});
+                        </script>
+                    	<div class="control-group well actions" id="topactions">
+                              <a href="<?php echo $this->referer; ?>" class="btn"><i class="icon-remove"></i> <?php echo $this->translate('global_button_cancel'); ?></a>
+                              <button type="submit" class="btn btn-primary"><i class="icon-ok icon-white"></i> <?php echo $this->translate('global_button_save'); ?></button>
+                              <input type="hidden" id="<?php echo SUCCESS_MESSAGE; ?>" name="<?php echo SUCCESS_MESSAGE; ?>" value="<?php echo $this->translate("global_save_success"); ?>" /> 
+                        </div>  
+                    	<fieldset class="fieldsetcontainer well" style="padding-left:20px; width:98%;">
+                            <legend>Update Settings</legend> 
+                            <input type="hidden" name="entityname" value="Farmer" />
+                            <input type="hidden" id="id" name="id" value="<?php echo encode($user->getID()); ?>" />
+                            <input type="hidden" id="thecontroller" name="thecontroller" value="<?php echo $request->getControllerName(); ?>" />
+                            <input type="hidden" id="theaction" name="theaction" value="<?php echo $request->getActionName(); ?>" />
+                            <input type="hidden" name="<?php echo URL_SUCCESS; ?>" value="<?php echo encode($this->baseUrl($request->getControllerName().'/view/id/'.encode($user->getID()).'/tab/account')); ?>" />
+                            <input type="hidden" name="<?php echo URL_FAILURE; ?>" value="<?php echo encode($this->viewurl); ?>" />
+                            <?php require APPLICATION_PATH."/views/scripts/profile/settingfields.phtml"; ?>
+                        </fieldset>
+                    <?php } ?>
                 <?php } ?>
             </form>
         </div>

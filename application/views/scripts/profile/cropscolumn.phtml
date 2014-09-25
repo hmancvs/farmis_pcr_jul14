@@ -1,45 +1,162 @@
-<span class="marginleft0 span9" style="width:99%;">
-                    <div class="margin0" style="position:absolute; right:15px; top:15px;">
-                         <a href="<?php echo $this->baseUrl('profile/addcrop/userid/'.encode($user->getID()).'/pgc/true'); ?>" class="addpopup addfarmcrop btn btn-primary btn-mini" title="Add Crops" rel="Add Crop" id="newcrop" formtitle="indexform" successurl="<?php echo $this->baseUrl('profile/view/id/'.encode($user->getID()).'/tab/farm'); ?>" action="<?php echo $this->baseUrl("profile/processaddcrop"); ?>"><i class="icon-plus icon-white"></i> Add Crops</a>
-                    </div>
-                    <style>
-						ul.sectionitems li {
-							display:block;
-							width:100%;
-							margin-bottom:20px;
-							background:none;
-							height:170px;
-							position:relative;
-							padding-top:0;
-							text-align:left;
-							border-bottom: 1px dashed #9F9D9D;
-							margin-bottom: 20px;
-							padding-bottom: 50px;
+<?php if($request->getActionName() == 'view'){ ?>
+	<h2>Enterprise Crops</h2>
+    <span class="marginleft0 span9" style="width:99%;">
+		<style>
+			ul.sectionitems li {
+				display:block;
+				width:100%;
+				margin-bottom:20px;
+				background:none;
+				height:170px;
+				position:relative;
+				padding-top:0;
+				text-align:left;
+				border-bottom: 1px dashed #9F9D9D;
+				margin-bottom: 20px;
+				padding-bottom: 50px;
+			}
+			ul.sectionitems li:hover {
+				background:none;
+			}
+		</style>
+		<ul class="sectionitems">
+			<?php 
+				$crops = $user->getTheCrops();
+				$countcrops = $crops->count();
+				//debugMessage($crops->toArray());
+				if($countcrops == 0) { ?>
+				<div class="alert alert-info">No Crops have been Setup yet. Click on 'Add Crops' to get started</div>
+			<?php } else { ?>                
+				<label class="labeldescription">Viewing <?php echo $countcrops; ?> <?php echo $countcrops == 1 ? ' Farm Crop' : 'Farm Crops'; ?></label>
+				<?php foreach($crops as $crop){ ?>
+					<li>
+						<div class="imagecontainer" style="width:22%; min-height:90px; padding:2px; position:absolute; top:10px; left:5px;">
+							<img style="width:100%; max-height:175px;" src="<?php echo $crop->getCrop()->getImagePath(); ?>" />
+						</div>
+						<div style="float:right; width:74%; margin-top:0;">
+							<h2><?php echo $crop->getCrop()->getName(); ?></h2>
+						</div>
+					</li>
+				<?php } ?>
+			<?php } ?>
+		</ul>
+	</span>
+    <h2>Other Enterprises</h2>
+    <span class="marginleft0 span9" style="width:99%;">
+    	<ul class="nav">
+			<?php 
+                $others = $user->getTheEnterprises();
+                $countothers = $others->count();
+                //debugMessage($others->toArray());
+                if($countothers == 0) { ?>
+                None
+            <?php } else { ?>                
+                <label class="labeldescription"><?php echo $countothers; ?> currently profiled</label>
+                <?php foreach($others as $enterprise){ ?>
+                    <li style="margin-right:20px; margin-bottom:5px;">
+                        <label style="color:#55A411; margin:5px 0; font-weight:bold;"><?php echo $enterprise->getCrop()->getName(); ?></label>
+                    </li>
+                <?php } ?>
+            <?php } ?>
+        </ul>
+    </span>
+<?php } ?>
+<?php if($request->getActionName() == 'index'){ ?>
+	<div class="row margin0 padding0" style="width:100%;">
+		<div class="well lighter row marginleft0">
+ 			<h3 class="well-legend">Enterprise Crops:</h3>
+            <div class="controls blocked" style="margin-left:5px; margin-top:10px;">
+                <?php 
+                    $commodities = getFarmisCommodities();
+                    $preselectarray = $user->getCropIDs();
+                    if(!isEmptyString($session->getVar(ERROR_MESSAGE))){
+						if(!isArrayKeyAnEmptyString('crop_1', $formvalues)){
+							$formvalues['cropids'][0] = $formvalues['crop_1'];
+							$formvalues['cropids'][1] = $formvalues['crop_2'];
+							$formvalues['cropids'][2] = $formvalues['crop_3'];
 						}
-						ul.sectionitems li:hover {
-							background:none;
-						}
-                    </style>
-                    <ul class="sectionitems">
-                    	<?php 
-							$crops = $user->getCrops();
-							$countcrops = $crops->count();
-							//debugMessage($crops->toArray());
-							if($countcrops == 0) { ?>
-                            <div class="alert alert-info">No Crops have been Setup yet. Click on 'Add Crops' to get started</div>
-                        <?php } else { ?>                
-                        	<label class="labeldescription">Viewing <?php echo $countcrops; ?> <?php echo $countcrops == 1 ? ' Farm Crop' : 'Farm Crops'; ?></label>
-							<?php foreach($crops as $crop){ ?>
-                                <li>
-                                    <div class="imagecontainer" style="width:22%; min-height:90px; padding:2px; position:absolute; top:10px; left:5px;">
-                                        <img style="width:100%;" src="<?php echo $crop->getCrop()->getImagePath(); ?>" />
-                                    </div>
-                                    <div style="float:right; width:74%; margin-top:0;">
-                                        <h2><?php echo $crop->getCrop()->getName(); ?></h2>
-                                    </div>
-                                    <a style="position:absolute; left:2px; bottom:5px;" href="javascript: void(0)" id="deleteline" title="Remove Crop" class="btn btn-mini  deleteline noimgbutton" action="<?php echo $this->baseUrl('index/delete/id/'.$crop->getID()."/entityname/FarmCrop/successurl/".encode($this->baseUrl('profile/view/tab/farm/id/'.encode($user->getID())))); ?>"><!--<i class="icon-trash"></i>--> Remove</a>
-                                </li>
-                            <?php } ?>
-                        <?php } ?>
-                    </ul>
-                </span>
+                        $preselectarray = $formvalues['cropids'];
+                    }
+                ?>
+                1. <?php
+                    $crop1 = ''; $crop2 = ''; $crop3 = '';
+					if(!isArrayKeyAnEmptyString(0, $preselectarray)){
+						$crop1 = $preselectarray[0];
+					}
+					if(!isArrayKeyAnEmptyString(1, $preselectarray)){
+                        $crop2 = $preselectarray[1];
+					}
+					if(!isArrayKeyAnEmptyString(2, $preselectarray)){
+                        $crop3 = $preselectarray[2];
+                    }
+                    
+                    $dropdown1 = new Zend_Form_Element_Select('crop_1',
+                                        array(
+                                            'multiOptions' => array_merge_maintain_keys(array('' => '<Select>'), $commodities),								
+                                            'view' => new Zend_View(),
+                                            'decorators' => array('ViewHelper'),
+                                            'class' => array('span2')
+                                        )
+                                    );
+                    $dropdown1->setValue($crop1); 
+                    echo $dropdown1->render(); 
+               ?>
+            </div>
+            <div class="controls blocked" style="margin-left:5px; margin-top:10px;">
+                2. <?php
+                    $dropdown2 = new Zend_Form_Element_Select('crop_2',
+                                        array(
+                                            'multiOptions' => array_merge_maintain_keys(array('' => '<Select>'), $commodities),								
+                                            'view' => new Zend_View(),
+                                            'decorators' => array('ViewHelper'),
+                                            'class' => array('span2')
+                                        )
+                                    );
+                    $dropdown2->setValue($crop2); 
+                    echo $dropdown2->render(); 
+               ?>
+            </div>
+            <div class="controls blocked" style="margin-left:5px; margin-top:10px;">
+                3. <?php
+                    $dropdown3 = new Zend_Form_Element_Select('crop_3',
+                                        array(
+                                            'multiOptions' => array_merge_maintain_keys(array('' => '<Select>'), $commodities),								
+                                            'view' => new Zend_View(),
+                                            'decorators' => array('ViewHelper'),
+                                            'class' => array('span2')
+                                        )
+                                    );
+                    $dropdown3->setValue($crop3); 
+                    echo $dropdown3->render(); 
+               ?>
+            </div>
+        </div>
+	</div>
+	<div class="row margin0 padding0" style="width:100%;">
+		<div class="well lighter row marginleft0">
+ 			<h3 class="well-legend">Other Enterprises:</h3>
+            <div class="controls blocked" style="margin-left:5px; margin-top:10px;">
+                <?php
+                    $preselectarray = $user->getEnterpriseIDs();
+                    if(!isEmptyString($session->getVar(ERROR_MESSAGE))){
+                        $preselectarray = $formvalues['cropids'];
+                    }
+                    // debugMessage($preselectarray);
+                    $enterprises = getOtherEnterprises();
+                ?>
+                <ul class="nav croplist">
+                    <?php foreach($enterprises as $key => $value){
+                            $isselected = false;
+                            if(in_array($key, $preselectarray)){
+                                // debugMessage('is selected');
+                                $isselected = true;
+                            }
+                    ?>
+                        <li><label for="cropids-<?php echo $key; ?>"><input type="checkbox" class="checkbox <?php echo $isselected == true ? 1 : 0; ?>" id="enterpriseids-<?php echo $key; ?>" name="cropids[]" value="<?php echo $key; ?>" />&nbsp; <?php echo $value; ?></label></li>
+                    <?php } ?>
+                </ul>
+            </div>
+    	</div>
+    </div>
+    </fieldset>
+<?php } ?>    

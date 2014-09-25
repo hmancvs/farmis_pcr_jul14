@@ -1,11 +1,22 @@
 <?php
 	require_once APPLICATION_PATH.'/includes/header.php';
+	
 	$title = "Application Error";
-	$this->headMeta()->appendName('keywords', '');
-	$this->headMeta()->appendName('description', $title);
-	$this->headTitle($title); 
+	$description = "Runtime error occured. Contact Admin";
+	
+	$this->headTitle($title.$browserappend); 
 ?>
-<h1><?php echo $title; ?></h1>
+<div>
+	<?php require APPLICATION_PATH."/views/scripts/index/leftcolumn.phtml"; ?>
+    <div id="centercolumn">
+        <div class="container-fluid">
+            <div class="row margin0 maxwidth">
+            	<div class="alert alert-danger">Application Runtime Error</div>
+				<p class="bg-warning padding10"><?php echo $this->message; ?></p>
+            </div>
+       	</div>
+  	</div>
+</div>    
 <?php 
 	echo $session->getVar(APPLICATION_ERROR_PAGE_MESSAGE); 
 	require_once APPLICATION_PATH.'/includes/footer.php';

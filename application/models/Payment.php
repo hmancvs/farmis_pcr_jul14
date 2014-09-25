@@ -121,7 +121,7 @@ class Payment extends BaseRecord  {
 				$formvalues['subscription']['id'] = $formvalues['subscriptionid'];
 			}
 		}
-		// debugMessage($formvalues); exit();
+		// debugMessage($formvalues); // exit();
 		parent::processPost($formvalues);
 	}
 	/**
@@ -134,7 +134,12 @@ class Payment extends BaseRecord  {
     	$update = false;
     	
     	# save changes 
-    	if($update){
+   		if(!isEmptyString($this->getSubscriptionID())){
+    		$this->getSubscription()->setPaymentID($this->getID());
+    		$this->getUser()->setPaymentStatus(1);
+    		$this->getUser()->setPaymentID($this->getID());
+    		$this->getUser()->setStartDate($this->getSubscription()->getStartDate());
+    		$this->getUser()->setEndDate($this->getSubscription()->getEndDate());
     		$this->save();
     	}
     	
@@ -238,9 +243,9 @@ class Payment extends BaseRecord  {
 		$template->assign('firstname', $this->getUser()->getFirstName());
 		$template->assign('email', $this->getUser()->getEmail());
 		$template->assign('phone', $this->getUser()->getPhone());
-		$template->assign('paymentdate', changeMySQLDateToPageFormat($this->gettrxdate()));
-		$template->assign('startdate', changeMySQLDateToPageFormat($this->getSubscription()->getStartDate()));
-		$template->assign('enddate', changeMySQLDateToPageFormat($this->getSubscription()->getEndDate()));
+		$template->assign('paymentdate', formatDateAndTime($this->gettrxdate(), false));
+		$template->assign('startdate', formatDateAndTime($this->getSubscription()->getStartDate(), false));
+		$template->assign('enddate', formatDateAndTime($this->getSubscription()->getEndDate(), false));
 		$template->assign('paymentref', $this->getTrxCode());
 		$template->assign('status', $this->getPaymentStatus());
 		$template->assign('amount', formatMoney($this->getAmount()));
@@ -269,7 +274,7 @@ class Payment extends BaseRecord  {
 	}
 	# invite user by phone to login
 	function sendSubscriptionConfirmationByPhone() {
-		$message =  "Dear ".$this->getUser()->getFirstName().", \nYour Payment of ".formatMoney($this->getAmount())." for FARMIS membership has been successfully received.";
+		$message = 'Dear '.$this->getUser()->getFirstName().', your payment of Shs '.$this->getAmount().' for FARMIS has been received. Services have been activated on your account untill '.formatDateAndTime($this->getSubscription()->getEndDate(), false);
 		// debugMessage($message);
 		$sendresult = sendSMSMessage($this->getUser()->getPhone(), $message);
 		// debugMessage($sendresult);

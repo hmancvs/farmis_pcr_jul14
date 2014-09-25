@@ -1,7 +1,7 @@
 <?php
 	require_once APPLICATION_PATH.'/includes/header.php';
 	
-		$result = $this->prices;
+		$result = $this->prices; //debugMessage($result); exit();
 		$has_no_data = (count($result) == 0) ? true : false;
 ?>
 	<label class="blocked" style="margin-top:15px; margin-bottom:10px;"><b>As at <?php echo changeMySQLDateToPageFormat($result[0]['datecollected']); ?></b></label>

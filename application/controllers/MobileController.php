@@ -42,7 +42,7 @@ class MobileController extends IndexController  {
 		if(!isEmptyString($this->_getParam('password')) && $this->_getParam('adminactivate') == '1'){
 			$password = $formvalues['password'];
 		}
-		// debugMessage($formvalues); exit();
+		// debugMessage($formvalues); // exit();
 		
 		$user = new UserAccount();
 		if(!isArrayKeyAnEmptyString('id', $formvalues)){
@@ -100,7 +100,12 @@ class MobileController extends IndexController  {
 				$session->setVar('phoneinvitesuccess', sprintf($this->_translate->translate("farmer_login_phone_success"), $user->getFormattedPhone()));
 			}
 			
-			$url = $this->view->baseUrl($formvalues['thecontroller']."/view/id/".encode($user->getID()));
+			if(!isEmptyString($this->_getParam(URL_SUCCESS))){
+				$url = decode($formvalues[URL_SUCCESS]);
+			} else {
+				$url = $this->view->baseUrl($formvalues['thecontroller']."/view/id/".encode($user->getID()));
+			}
+			
 			// debugMessage($user->toArray());
 		} catch (Exception $e) {
 			$error = $e->getMessage().$user->getErrorStackAsString();
@@ -128,11 +133,11 @@ class MobileController extends IndexController  {
 	}
 	
 	function editAction() {
-		$this->createAction();
 		$session = SessionWrapper::getInstance();
 		if(isEmptyString($session->getVar('userid'))){
 			$this->_helper->redirector->gotoUrl($this->view->baseUrl("mobile/login"));
 		}
+		$this->createAction();
 	}
 	
 	function listAction(){
@@ -300,12 +305,12 @@ class MobileController extends IndexController  {
 	 	$upload->addValidator('Size', false, $config->profilephoto->maximumfilesize);
 		
 		// base path for profile pictures
- 		$destination_path = APPLICATION_PATH.DIRECTORY_SEPARATOR."..".DIRECTORY_SEPARATOR."public".DIRECTORY_SEPARATOR."uploads".DIRECTORY_SEPARATOR."user_";
+ 		$destination_path = BASE_PATH.DIRECTORY_SEPARATOR."uploads".DIRECTORY_SEPARATOR."users".DIRECTORY_SEPARATOR."user_";
 	
 		// determine if user has destination avatar folder. Else user is editing there picture
 		if(!is_dir($destination_path.$user->getID())){
 			// no folder exits. Create the folder
-			mkdir($destination_path.$user->getID(), 0755);
+			mkdir($destination_path.$user->getID(), 0777);
 		} 
 		
 		// set the destination path for the image
@@ -317,12 +322,12 @@ class MobileController extends IndexController  {
 			$destination_path = $destination_path.$profilefolder.DIRECTORY_SEPARATOR."sign";
 		}
 		if(!is_dir($destination_path)){
-			mkdir($destination_path, 0755);
+			mkdir($destination_path, 0777);
 		}
 		// create archive folder for each user
 		$archivefolder = $destination_path.DIRECTORY_SEPARATOR."archive";
 		if(!is_dir($archivefolder)){
-			mkdir($archivefolder, 0755);
+			mkdir($archivefolder, 0777);
 		}
 		
 		if($type == 'photo'){
@@ -459,11 +464,11 @@ class MobileController extends IndexController  {
 		
 		if($type == 'photo'){
 			$oldfile = "large_".$user->getProfilePhoto();
-			$base = APPLICATION_PATH.DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.PUBLICFOLDER.DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR.'user_'.$userfolder.''.DIRECTORY_SEPARATOR.'avatar'.DIRECTORY_SEPARATOR;
+			$base = BASE_PATH.DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR.'users'.DIRECTORY_SEPARATOR.'user_'.$userfolder.''.DIRECTORY_SEPARATOR.'avatar'.DIRECTORY_SEPARATOR;
 		}
 		if($type == 'sign'){
 			$oldfile = "large_".$user->getSignature();
-			$base = APPLICATION_PATH.DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.PUBLICFOLDER.DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR.'user_'.$userfolder.''.DIRECTORY_SEPARATOR.'sign'.DIRECTORY_SEPARATOR;
+			$base = BASE_PATH.DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR.'users'.DIRECTORY_SEPARATOR.'user_'.$userfolder.''.DIRECTORY_SEPARATOR.'sign'.DIRECTORY_SEPARATOR;
 		}
 		// debugMessage($user->toArray()); 
 		$src = $base.$oldfile;
@@ -796,20 +801,29 @@ class MobileController extends IndexController  {
 		}
 		
 		$payment = new Payment();
+		$startdate = changeDateFromPageToMySQLFormat($formvalues['startdate'], false);
+		$enddate = changeDateFromPageToMySQLFormat($formvalues['enddate'], false);
+		$formvalues['subscription']['startdate'] = $startdate;
+		$formvalues['subscription']['enddate'] = $enddate;
+		$formvalues['subscription']['userid'] = $formvalues['userid'];
+		$formvalues['subscription']['planid'] = $formvalues['item'];
+		$formvalues['subscription']['istrial'] = 0;
+		$formvalues['subscription']['isactive'] = 1;
+		$formvalues['subscription']['datecreated'] = $formvalues['datecreated'] = getCurrentMysqlTimestamp();
+		
 		if(!isArrayKeyAnEmptyString('id', $formvalues)){
 			$id = $formvalues['id'] = decode($formvalues['id']);
 			$payment->populate($id);
 		}
 		$payment->processPost($formvalues);
-		/*debugMessage($payment->toArray());
-		debugMessage('error is '.$payment->getErrorStackAsString()); exit();*/
+		// debugMessage($payment->toArray());
+		// debugMessage('error is '.$payment->getErrorStackAsString()); // exit();
 		
 		if($payment->hasError()){
-			// debugMessage('Error: '.$user->getErrorStackAsString());
+			debugMessage('Error: '.$payment->getErrorStackAsString());
 			$session->setVar(ERROR_MESSAGE, $payment->getErrorStackAsString());
 			$session->setVar(FORM_VALUES, $formvalues);
-			$url = $this->view->baseUrl("mobile/addpayment/id/".encode($payment->getID()));
-			$this->_helper->redirector->gotoUrl($url);
+			$url = decode($this->_getParam(URL_FAILURE));
 		} 
 		try {
 			$payment->beforeSave();
@@ -819,35 +833,34 @@ class MobileController extends IndexController  {
 				$session->setVar(SUCCESS_MESSAGE, $this->_translate->translate("global_save_success"));
 			}
 			if($this->_getParam('action') == 'edit'){
-				$payment->afterUpdate();
+				$payment->afterSave();
 				$session->setVar(SUCCESS_MESSAGE, $this->_translate->translate("global_update_success"));
 			}
-			
-			# send confirmation to email 
-			if($this->_getParam('sendconfirmationtoemail') == 1 && !isEmptyString($this->_getParam('email'))){
-				$payment->sendSubscriptionConfirmationByEmail();
-				$session->setVar('emailinvitesuccess', sprintf($this->_translate->translate("farmer_subscription_email_success"), $payment->getUser()->getEmail()));
-			}
+			// debugMessage($payment->toArray());
 			
 			# send credentials to phone
 			if($this->_getParam('sendconfirmationtophone') == 1 && !isEmptyString($this->_getParam('phone'))){
 				$payment->sendSubscriptionConfirmationByPhone();
 				$session->setVar('phoneinvitesuccess', sprintf($this->_translate->translate("farmer_subscription_phone_success"), getShortPhone($payment->getUser()->getPhone())));
 			}
-			
+			# send confirmation to email 
+			if($this->_getParam('sendconfirmationtoemail') == 1 && !isEmptyString($this->_getParam('email'))){
+				$payment->sendSubscriptionConfirmationByEmail();
+				$session->setVar('emailinvitesuccess', sprintf($this->_translate->translate("farmer_subscription_email_success"), $payment->getUser()->getEmail()));
+			}
 			$url = $this->view->baseUrl("mobile/viewpayment/id/".encode($payment->getID()));
-			// debugMessage($user->toArray());
+			if($this->_getParam('regsource') == 0){
+				$url = decode($this->_getParam(URL_SUCCESS));
+			}
 		} catch (Exception $e) {
-			$error = $e->getMessage()." - ".$payment->getErrorStackAsString();
+			$error = $e->getMessage()." - ".$payment->getErrorStackAsString(); // debugMessage($error)
 			$session->setVar(ERROR_MESSAGE, $error);
 			$session->setVar(FORM_VALUES, $formvalues);
-			$url = $this->view->baseUrl("mobile/addpayment/id/".encode($payment->getID()));
-			// debugMessage($error);
+			$url = decode($this->_getParam(URL_FAILURE));
 		}
 		
 		// debugMessage($url); exit();
 		$this->_helper->redirector->gotoUrl($url);
-		// exit();
 	}
 	function viewpaymentAction() {
 		$this->_helper->layout->disableLayout();

@@ -140,7 +140,7 @@
                           <div class="peopleinfo">
                             <h4><a href="<?php echo $this->baseUrl("mobile/viewseasonevent/id/".encode($line['id']).'/stage/input/type/'.$type); ?>"><?php echo changeMySQLDateToPageFormat($input->getStartDate()); ?> <?php echo !isEmptyString($input->getActivityName()) ? '- '.$input->getActivityName() : ''; ?></a></h4>
                             <ul>
-                                <?php if(isAdmin() || isManagement() || isDataClerk() || isFarmGroupAdmin()){ ?>
+                                <?php if(!isFarmer()){ ?>
                                   <li><span>Farmer:</span> <a href="<?php echo $this->baseUrl('mobile/view/id/'.encode($season->getUserID())); ?>"><?php echo $season->getUser()->getName(); ?></a></li>
                                 <?php } ?>
                                 <?php if($count_items == 1){ ?>

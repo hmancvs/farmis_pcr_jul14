@@ -13,6 +13,16 @@
 	$loan = $season->getLoans()->get(0);
 	$user = $season->getUser();
 	$request->setParam('tab', 'seasons');
+	$resourcename = 'Farmer';
+	
+	$isme = false;
+	if($userid == $user->getID()){
+		$isme = true;
+	}
+	$metxt = '';
+	if($isme){
+		$metxt = 'My ';
+	}
 	
 	// default title is to enable adding any payee
 	$title = $season->getName()." - ".$season->getRef();

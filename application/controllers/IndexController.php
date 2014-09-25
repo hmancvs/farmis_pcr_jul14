@@ -83,9 +83,9 @@ class IndexController extends Zend_Controller_Action  {
      */
     public function indexAction()  {
     	$session = SessionWrapper::getInstance(); 
-    	/* if($this->getRequest()->getControllerName() == 'index' && !isEmptyString($session->getVar('userid'))){
+    	if($this->getRequest()->getControllerName() == 'index' && !isEmptyString($session->getVar('userid'))){
     		$this->_helper->redirector->gotoUrl($this->view->baseUrl("dashboard"));
-    	} */
+    	}
     }
     
 	/**
@@ -96,7 +96,7 @@ class IndexController extends Zend_Controller_Action  {
     }
     
    public function createAction() {
-    	// debugMessage($this->_getAllParams()); // exit();	
+    	//debugMessage($this->_getAllParams()); exit();	
    		$session = SessionWrapper::getInstance(); 
     	// the name of the class to be instantiated
     	$classname = $this->_getParam("entityname");
@@ -124,9 +124,9 @@ class IndexController extends Zend_Controller_Action  {
     	// populate the object with data from the post and validate the object
     	// to ensure that its wellformed 
     	$new_object->processPost($this->_getAllParams());
-    	/*debugMessage($new_object->toArray());
-    	debugMessage('errors are '.$new_object->getErrorStackAsString());*/
-    	// exit();
+    	/* debugMessage($new_object->toArray());
+    	debugMessage('errors are '.$new_object->getErrorStackAsString());
+    	exit(); */
     	if ($new_object->hasError()) {
     		// there were errors - add them to the session
     		$this->_logger->info("Validation Error for ".$classname." - ".$new_object->getErrorStackAsString());

@@ -26,7 +26,7 @@ class SeasonController extends SecureController   {
     }
     
     public function getResourceForACL(){
-        return "Farmer"; 
+        return "Farmer Seasons"; 
     }
     
 	function inputAction(){}

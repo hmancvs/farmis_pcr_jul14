@@ -40,6 +40,34 @@ class FarmerController extends ProfileController   {
 		return parent::getActionforACL();
 	}
 	
+	public function indexAction() {
+		$session = SessionWrapper::getInstance();
+		$failurl = $this->view->baseUrl("index/accessdenied");
+		$acl = getACLInstance();
+		$id = decode($this->_getParam('id'));
+	
+		if(!isEmptyString($id) && isFarmer()){
+			if($session->getVar('userid') != $id){
+				$this->_helper->redirector->gotoUrl($failurl);
+			}
+		}
+		parent::indexAction();
+	}
+	
+	public function viewAction() {
+		$session = SessionWrapper::getInstance();
+		$failurl = $this->view->baseUrl("index/accessdenied");
+		$acl = getACLInstance();
+		$id = decode($this->_getParam('id'));
+		 
+		if(!isEmptyString($id) && isFarmer()){
+			if($session->getVar('userid') != $id){
+				$this->_helper->redirector->gotoUrl($failurl);
+			}
+		}
+		parent::viewAction();
+	}
+	
 	public function editAction() {
 		$this->_setParam("action", ACTION_EDIT);
 		// debugMessage($this->_getAllParams());
@@ -146,8 +174,7 @@ class FarmerController extends ProfileController   {
 		$this->_helper->redirector->gotoUrl($successurl);
 	}
 	
-	public function pictureAction() {
-	}
+	public function pictureAction() {}
 	
 	public function processpictureAction() {
 		// disable rendering of the view and layout so that we can just echo the AJAX output
@@ -175,38 +202,36 @@ class FarmerController extends ProfileController   {
 		$upload->addValidator('Size', false, $config->profilephoto->maximumfilesize);
 	
 		// base path for profile pictures
-		$destination_path = APPLICATION_PATH.DIRECTORY_SEPARATOR."..".DIRECTORY_SEPARATOR."public".DIRECTORY_SEPARATOR."uploads".DIRECTORY_SEPARATOR."user_";
-	
+		$destination_path = BASE_PATH.DIRECTORY_SEPARATOR."uploads".DIRECTORY_SEPARATOR."users".DIRECTORY_SEPARATOR."user_";
+		//shell_exec("chown -R vsftpd:www-data ".$destination_path);
+		//shell_exec("chmod -R 777 ".$destination_path);
+		
 		// determine if user has destination avatar folder. Else user is editing there picture
 		if(!is_dir($destination_path.$user->getID())){
 			// no folder exits. Create the folder
-			mkdir($destination_path.$user->getID(), 0755);
+			mkdir($destination_path.$user->getID(), 0777);
 		}
 	
 		// set the destination path for the image
 		$profilefolder = $user->getID();
-		if($type == 'photo'){
-			$destination_path = $destination_path.$profilefolder.DIRECTORY_SEPARATOR."avatar";
-		}
-		if($type == 'sign'){
-			$destination_path = $destination_path.$profilefolder.DIRECTORY_SEPARATOR."sign";
-		}
+		$destination_path = $destination_path.$profilefolder.DIRECTORY_SEPARATOR."avatar";
+		//shell_exec("chown -R vsftpd:www-data ".$destination_path);
+		//shell_exec("chmod -R 777 ".$destination_path);
+		
 		if(!is_dir($destination_path)){
-			mkdir($destination_path, 0755);
+			mkdir($destination_path, 0775);
 		}
 		// create archive folder for each user
 		$archivefolder = $destination_path.DIRECTORY_SEPARATOR."archive";
+		//shell_exec("chown -R vsftpd:www-data ".$archivefolder);
+		//shell_exec("chmod -R 777 ".$archivefolder);
+		
 		if(!is_dir($archivefolder)){
-			mkdir($archivefolder, 0755);
+			mkdir($archivefolder, 0775);
 		}
 	
-		if($type == 'photo'){
-			$oldfilename = $user->getProfilePhoto();
-		}
-		if($type == 'sign'){
-			$oldfilename = $user->getSignature();
-		}
-		//debugMessage($destination_path);
+		$oldfilename = $user->getProfilePhoto();
+		// debugMessage($destination_path); exit();
 		$upload->setDestination($destination_path);
 	
 		// the profile image info before upload
@@ -223,7 +248,7 @@ class FarmerController extends ProfileController   {
 	
 		// rename the base image file
 		$upload->addFilter('Rename',  array('target' => $thefilename, 'overwrite' => true));
-		// exit();
+		
 		// process the file upload
 		if($upload->receive()){
 			// debugMessage('Completed');
@@ -242,30 +267,18 @@ class FarmerController extends ProfileController   {
 			$newlargefilename = "large_".$currenttime_file;
 			// generate and save thumbnails for sizes 250, 125 and 50 pixels
 			resizeImage($basefile, $destination_path.DIRECTORY_SEPARATOR.'large_'.$currenttime.'.jpg', 400);
-			if($type == 'photo'){
-				resizeImage($basefile, $destination_path.DIRECTORY_SEPARATOR.'medium_'.$currenttime.'.jpg', 165);
-			}
+			resizeImage($basefile, $destination_path.DIRECTORY_SEPARATOR.'medium_'.$currenttime.'.jpg', 165);
 			// unlink($thefilename);
 			unlink($destination_path.DIRECTORY_SEPARATOR.'base_'.$currenttime.'.jpg');
 				
 			// exit();
 			// update the useraccount with the new profile images
 			try {
-				if($type == 'photo'){
-					$user->setProfilePhoto($currenttime.'.jpg');
-				}
-				if($type == 'sign'){
-					$user->setSignature($currenttime.'.jpg');
-				}
+				$user->setProfilePhoto($currenttime.'.jpg');
 				$user->save();
 	
 				// check if user already has profile picture and archive it
-				if($type == 'photo'){
-					$ftimestamp = current(explode('.', $user->getProfilePhoto()));
-				}
-				if($type == 'sign'){
-					$ftimestamp = current(explode('.', $user->getSignature()));
-				}
+				$ftimestamp = current(explode('.', $user->getProfilePhoto()));
 	
 				$allfiles = glob($destination_path.DIRECTORY_SEPARATOR.'*.*');
 				$currentfiles = glob($destination_path.DIRECTORY_SEPARATOR.'*'.$ftimestamp.'*.*');
@@ -331,14 +344,8 @@ class FarmerController extends ProfileController   {
 		// debugMessage($formvalues);
 		//debugMessage($user->toArray());
 	
-		if($type == 'photo'){
-			$oldfile = "large_".$user->getProfilePhoto();
-			$base = APPLICATION_PATH.DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.PUBLICFOLDER.DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR.'user_'.$userfolder.''.DIRECTORY_SEPARATOR.'avatar'.DIRECTORY_SEPARATOR;
-		}
-		if($type == 'sign'){
-			$oldfile = "large_".$user->getSignature();
-			$base = APPLICATION_PATH.DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.PUBLICFOLDER.DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR.'user_'.$userfolder.''.DIRECTORY_SEPARATOR.'sign'.DIRECTORY_SEPARATOR;
-		}
+		$oldfile = "large_".$user->getProfilePhoto();
+		$base = BASE_PATH.DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR.'users'.DIRECTORY_SEPARATOR.'user_'.$userfolder.''.DIRECTORY_SEPARATOR.'avatar'.DIRECTORY_SEPARATOR;
 		// debugMessage($user->toArray());
 		$src = $base.$oldfile;
 	
@@ -351,7 +358,6 @@ class FarmerController extends ProfileController   {
 	
 		// exit();
 		$image = WideImage::load($src);
-		if($type == 'photo'){
 			$cropped1 = $image->crop($formvalues['x1'], $formvalues['y1'], $formvalues['w'], $formvalues['h']);
 			$resized_1 = $cropped1->resize(300, 300, 'fill');
 			$resized_1->saveToFile($newlargefilename);
@@ -372,29 +378,11 @@ class FarmerController extends ProfileController   {
 			$resized_4->saveToFile($newsmallfilename);
 				
 			$user->setProfilePhoto($currenttime_file);
-		}
-		if($type == 'sign'){
-			$cropped1 = $image->crop($formvalues['x1'], $formvalues['y1'], $formvalues['w'], $formvalues['h']);
-			$resized_1 = $cropped1->resize(180, 90, 'fill');
-			$resized_1->saveToFile($newthumbnailfilename);
-				
-			//$image2 = WideImage::load($src);
-			$cropped2 = $image->crop($formvalues['x1'], $formvalues['y1'], $formvalues['w'], $formvalues['h']);
-			$resized_2 = $cropped2->resize(300, 150, 'fill');
-			$resized_2->saveToFile($newlargefilename);
-				
-			$user->setSignature($currenttime_file);
-		}
 	
 		$user->save();
 			
 		// check if user already has profile picture and archive it
-		if($type == 'photo'){
-			$ftimestamp = current(explode('.', $user->getProfilePhoto()));
-		}
-		if($type == 'sign'){
-			$ftimestamp = current(explode('.', $user->getSignature()));
-		}
+		$ftimestamp = current(explode('.', $user->getProfilePhoto()));
 		$allfiles = glob($base.DIRECTORY_SEPARATOR.'*.*');
 		$currentfiles = glob($base.DIRECTORY_SEPARATOR.'*'.$ftimestamp.'*.*');
 		// debugMessage($currentfiles);
@@ -411,12 +399,7 @@ class FarmerController extends ProfileController   {
 				rename($afile, $base.DIRECTORY_SEPARATOR.'archive'.DIRECTORY_SEPARATOR.$afile_filename);
 			}
 		}
-		if($type == 'photo'){
-			$this->_helper->redirector->gotoUrl($this->view->baseUrl('farmer/view/id/'.encode($user->getID())));
-		}
-		if($type == 'sign'){
-			$this->_helper->redirector->gotoUrl($this->view->baseUrl('farmer/view/id/'.encode($user->getID()).'/tab/personal'));
-		}
+		$this->_helper->redirector->gotoUrl($this->view->baseUrl('farmer/view/id/'.encode($user->getID())));
 		// exit();
 	}
 	
@@ -467,7 +450,6 @@ class FarmerController extends ProfileController   {
 
 		return true;
 	}
-	
 	# Send contact us notification
 	function sendContactNotification($dataarray) {
 		$template = new EmailTemplate();
@@ -504,6 +486,7 @@ class FarmerController extends ProfileController   {
 	
 		return true;
 	}
+	
 	public function inviteAction(){
 		 
 	}
