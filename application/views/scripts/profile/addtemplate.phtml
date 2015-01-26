@@ -5,7 +5,7 @@
 </div>
 <fieldset class="fieldsetcontainer well">
     <legend>Account</legend>
-    <?php if($isfarmer){ ?>
+    <?php if($isfarmer || $user->isFarmer() || $request->getParam('type') == 2){ ?>
         <div class="control-group hideonsuper">
             <label class="control-label" for="refno"><?php echo isKenya() ? 'National ID#'.$this->translate("global_required_field_marker") : $this->translate("farmer_regno_label"); ?>: </label>
             <div class="controls">
@@ -617,26 +617,27 @@
     </div>
     <div class="control-group">
         <label class="control-label" for="crops">Crops:</label>
+        <div class="divider10"></div>
+        <span class="pagedescription blocked">Select your current priority Crop(s) or the Crops for which you would like too receive regular Market Information via SMS and Email</span>
+		<?php 
+            $commodities = getFarmisCommodities();
+            $preselectarray = $user->getCropIDs();
+            if(!isEmptyString($session->getVar(ERROR_MESSAGE))){
+                $preselectarray = $formvalues['cropids'];
+            }
+            $crop1 = ''; $crop2 = ''; $crop3 = '';
+            if(!isArrayKeyAnEmptyString(0, $preselectarray)){
+                $crop1 = $preselectarray[0];
+            }
+            if(!isArrayKeyAnEmptyString(1, $preselectarray)){
+                $crop2 = $preselectarray[1];
+            }
+            if(!isArrayKeyAnEmptyString(2, $preselectarray)){
+                $crop3 = $preselectarray[2];
+            }
+        ?>
         <div class="controls blocked">
-        	<?php 
-				$commodities = getFarmisCommodities();
-				$preselectarray = $user->getCropIDs();
-                if(!isEmptyString($session->getVar(ERROR_MESSAGE))){
-                    $preselectarray = $formvalues['cropids'];
-                }
-			?>
         	1. <?php
-				$crop1 = ''; $crop2 = ''; $crop3 = '';
-				if(!isArrayKeyAnEmptyString(0, $preselectarray)){
-					$crop1 = $preselectarray[0];
-				}
-				if(!isArrayKeyAnEmptyString(1, $preselectarray)){
-					$crop2 = $preselectarray[1];
-				}
-				if(!isArrayKeyAnEmptyString(2, $preselectarray)){
-					$crop3 = $preselectarray[2];
-				}
-                
                 $dropdown1 = new Zend_Form_Element_Select('crop_1',
                                     array(
                                         'multiOptions' => array_merge_maintain_keys(array('' => '<Select>'), $commodities),								
@@ -678,6 +679,77 @@
            ?>
         </div>
     </div>
+    <?php if(isUganda()){ ?>
+    	<div class="control-group">
+            <label class="control-label">Market Locations:</label>
+            <div class="divider10"></div>
+            <span class="pagedescription blocked">Select the Market(s) that you are Interested in or those Markets from which we shall send you weekly Prices and any other Market Information.</span>
+            <?php 
+                $markets = getMarkets();
+				$preselectarray = $user->getMarketIDs();
+				if(!isEmptyString($session->getVar(ERROR_MESSAGE))){
+					if(!isArrayKeyAnEmptyString('market_1', $formvalues)){
+						$formvalues['marketids'][0] = $formvalues['market_1'];
+						$formvalues['marketids'][1] = $formvalues['market_2'];
+						$formvalues['marketids'][2] = $formvalues['market_3'];
+					}
+					$preselectarray = $formvalues['marketids'];
+				}
+				$market1 = ''; $market2 = ''; $market3 = '';
+				if(!isArrayKeyAnEmptyString(0, $preselectarray)){
+					$market1 = $preselectarray[0];
+				}
+				if(!isArrayKeyAnEmptyString(1, $preselectarray)){
+					$market2 = $preselectarray[1];
+				}
+				if(!isArrayKeyAnEmptyString(2, $preselectarray)){
+					$market3 = $preselectarray[2];
+				}
+            ?>
+            <div class="controls blocked">
+                1. <?php
+                    $dropdown1 = new Zend_Form_Element_Select('market_1',
+                                        array(
+                                            'multiOptions' => array_merge_maintain_keys(array('' => '<Select>'), $markets),								
+                                            'view' => new Zend_View(),
+                                            'decorators' => array('ViewHelper'),
+                                            'class' => array('span2')
+                                        )
+                                    );
+                    $dropdown1->setValue($market1); 
+                    echo $dropdown1->render(); 
+               ?>
+            </div>
+            <div class="controls blocked" style="margin-top:5px;">
+                2. <?php
+                    $dropdown2 = new Zend_Form_Element_Select('market_2',
+                                        array(
+                                            'multiOptions' => array_merge_maintain_keys(array('' => '<Select>'), $markets),								
+                                            'view' => new Zend_View(),
+                                            'decorators' => array('ViewHelper'),
+                                            'class' => array('span2')
+                                        )
+                                    );
+                    $dropdown2->setValue($market2); 
+                    echo $dropdown2->render(); 
+               ?>
+            </div>
+            <div class="controls" style="margin-top:10px;">
+                3. <?php
+                    $dropdown3 = new Zend_Form_Element_Select('market_3',
+                                        array(
+                                            'multiOptions' => array_merge_maintain_keys(array('' => '<Select>'), $markets),								
+                                            'view' => new Zend_View(),
+                                            'decorators' => array('ViewHelper'),
+                                            'class' => array('span2')
+                                        )
+                                    );
+                    $dropdown3->setValue($market3); 
+                    echo $dropdown3->render(); 
+               ?>
+            </div>
+       	</div>
+    <?php } ?>
     <div class="control-group">
         <label class="control-label" for="enterpriseids">Other Enterprises:</label>
         <div class="controls">
@@ -704,8 +776,355 @@
         </div>
     </div>
 </fieldset>
+<?php if(isUganda() && isAdmin() && false){ ?>
 <fieldset class="fieldsetcontainer well xhideonsuper">
-    <legend>Profile Assessment</legend>  
+    <legend>Intake Assessment</legend>  
+    <div class="control-group">
+        <label class="control-label maxwidth">Where do you sell your produce?</label>
+        <div class="controls" style="margin-left:0;">
+        	<?php $options = getDataOptionsAsArray('WHERETO_SELL'); ?>
+			<?php 
+                $existing_values = getDataArray($user->getWhereToSell());
+                foreach($options as $key => $value){
+            ?>
+                <label class="checkbox-inline notbolded inline" style="margin-right:10px;">
+                  <input type="checkbox" id="workshiftids_<?php echo $key; ?>" name="wheretosellids[]" class="" value="<?php echo $key; ?>" <?php echo in_array($key, $existing_values) ? 'checked' : 1; ?> style="margin-top:-2px;"> <?php echo $value; ?>
+                </label>
+            <?php } ?>
+            <input type="hidden" name="wheretosell_old" id="wheretosell_old" value="<?php echo $user->getWhereToSell(); ?>" />
+        </div>
+    </div>
+    
+    <div class="control-group">
+        <label class="control-label maxwidth">Preferred Communication Methods:</label>
+        <div class="controls" style="margin-left:0;">
+        	<?php $options = getDataOptionsAsArray('PREFERRED_COMMUNICATION'); ?>
+			<?php 
+                $existing_values = getDataArray($user->getpreferredcommunication());
+                foreach($options as $key => $value){
+            ?>
+                <label class="checkbox-inline notbolded inline" style="margin-right:10px;">
+                  <input type="checkbox" id="preferredcommunicationids_<?php echo $key; ?>" name="preferredcommunicationids[]" class="" value="<?php echo $key; ?>" <?php echo in_array($key, $existing_values) ? 'checked' : 1; ?> style="margin-top:-2px;"> <?php echo $value; ?>
+                </label>
+            <?php } ?>
+            <input type="hidden" name="preferredcommunication_old" id="preferredcommunication_old" value="<?php echo $user->getpreferredcommunication(); ?>" />
+        </div>
+    </div>
+    
+    <div class="control-group">
+        <label class="control-label maxwidth">Are you willing to pay for Market Information?</label>
+        <div class="controls" style="margin-left:0;">
+        	<label class="radio-inline inline" style="margin-right:20px;">
+            	<input type="radio" name="willingtopay" id="willingtopay_1" class="<?php echo $user->getwillingtopay() == '1' ? '1' : ''; ?>" value="1" style="margin-top:-2px;" /> &nbsp;Yes
+            </label>
+            <label class="radio-inline inline">
+                <input type="radio" name="willingtopay" id="willingtopay_0" class="<?php echo $user->getwillingtopay() == '0' ? '1' : ''; ?>" value="0" style="margin-top:-2px;" /> &nbsp;No
+            </label>
+        </div>
+    </div>
+    
+    <div class="control-group">
+        <label class="control-label maxwidth">If yes, when do you plan to pay?</label>
+        <div class="controls" style="margin-left:0;">
+        	<input type="text" class="form-control input-sm datefield readonly width100" name="whentopay" id="whentopay" value="<?php echo changeMySQLDateToPageFormat($user->getwhentopay()); ?>" />
+        </div>
+    </div>
+    <div class="control-group">
+        <label class="control-label maxwidth">Is organisation paying for you?</label>
+        <div class="controls" style="margin-left:0;">
+        	<label class="radio-inline inline" style="margin-right:20px;">
+            	<input type="radio" name="isorgpaying" id="isorgpaying_1" class="<?php echo $user->getisorgpaying() == '1' ? '1' : ''; ?>" value="1" style="margin-top:-2px;" /> &nbsp;Yes
+            </label>
+            <label class="radio-inline inline">
+                <input type="radio" name="isorgpaying" id="isorgpaying_0" class="<?php echo $user->getisorgpaying() == '0' ? '1' : ''; ?>" value="0" style="margin-top:-2px;" /> &nbsp;No
+            </label>
+        </div>
+    </div>
+    <div class="control-group">
+        <label class="control-label maxwidth">Give details of Organisation:</label>
+        <div class="controls" style="margin-left:0;">
+        	<input name="supportprovider" id="supportprovider" type="text" class="span6" value="<?php echo $user->getsupportprovider(); ?>" />
+        </div>
+    </div>
+    <div class="control-group">
+        <label class="control-label maxwidth">Which radio stations do you listen to?</label>
+        <div class="controls" style="margin-left:0;">
+        	<textarea name="radiostations" id="radiostations" type="text" class="span6 expanding"><?php echo $user->getradiostations(); ?></textarea>
+        </div>
+    </div>
+    <div class="control-group">
+        <label class="control-label maxwidth">Which agricultural programs do you listen to?</label>
+        <div class="controls" style="margin-left:0;">
+        	<textarea name="radioshows" id="radioshows" type="text" class="span6 expanding"><?php echo $user->getradioshows(); ?></textarea>
+        </div>
+    </div>
+    <div class="divider10"></div>
+    <div class="subheadcontainer"><label class="subheading">Saving Culture</label></div>
+    <div class="control-group">
+      <label class="control-label" style="width:100%;">Do you have a Mobile Money Account?</label>
+      <div class="controls" style="margin-left:0;">
+         <div class="inline" style="margin-right:20px;">
+         	<input type="radio" name="hasmobilemoney" id="hasmobilemoney_1" class="<?php echo $user->gethasmobilemoney() == '1' ? '1' : ''; ?>" value="1" /> &nbsp;<label class="lineblocked">Yes</label>
+         </div>
+         <div class="inline">
+         	<input type="radio" name="hasmobilemoney" id="hasmobilemoney_0" class="<?php echo $user->gethasmobilemoney() == '0' ? '1' : ''; ?>" value="0" /> &nbsp;<label class="lineblocked">No</label>
+         </div>
+      </div>
+    </div>
+    <div class="control-group">
+      <label class="control-label" style="width:100%;">Do you have a Bank Account?</label>
+      <div class="controls" style="margin-left:0;">
+         <div class="inline" style="margin-right:20px;">
+         	<input type="radio" name="hasbankaccount" id="hasbankaccount_1" class="<?php echo $user->gethasbankaccount() == '1' ? '1' : ''; ?>" value="1" /> &nbsp;<label class="lineblocked">Yes</label>
+         </div>
+         <div class="inline">
+         	<input type="radio" name="hasbankaccount" id="hasbankaccount_0" class="<?php echo $user->gethasbankaccount() == '0' ? '1' : ''; ?>" value="0" /> &nbsp;<label class="lineblocked">No</label>
+         </div>
+      </div>
+    </div>
+    <div class="control-group">
+        <label class="control-label maxwidth">Which of these are you actually doing?</label>
+        <div class="controls" style="margin-left:0;">
+        	<?php $options = getDataOptionsAsArray('MONEY_BEHAVIOR'); ?>
+			<?php 
+                $existing_values = getDataArray($user->getmoneybehavior());
+                foreach($options as $key => $value){
+            ?>
+                <label class="checkbox-inline notbolded" style="margin-right:10px;">
+                  <input type="checkbox" id="moneybehaviorids_<?php echo $key; ?>" name="moneybehaviorids[]" class="" value="<?php echo $key; ?>" <?php echo in_array($key, $existing_values) ? 'checked' : 1; ?> style="margin-top:-2px;"> <?php echo $value; ?>
+                </label>
+            <?php } ?>
+            <input type="hidden" name="moneybehavior_old" id="moneybehavior_old" value="<?php echo $user->getmoneybehavior(); ?>" />
+        </div>
+    </div>
+    <div class="control-group">
+        <label class="control-label maxwidth">If you put money in a safe place, where do you put it?</label>
+        <div class="controls" style="margin-left:0;">
+        	<?php $options = getDataOptionsAsArray('MONEY_PLACES'); ?>
+			<?php 
+                $existing_values = getDataArray($user->getmoneyplace());
+                foreach($options as $key => $value){
+            ?>
+                <label class="checkbox-inline inline notbolded" style="margin-right:10px;">
+                  <input type="checkbox" id="moneyplaceids_<?php echo $key; ?>" name="moneyplaceids[]" class="" value="<?php echo $key; ?>" <?php echo in_array($key, $existing_values) ? 'checked' : 1; ?> style="margin-top:-2px;" /> <?php echo htmlspecialchars($value); ?>
+                </label>
+            <?php } ?>
+            <input type="hidden" name="moneyplace_old" id="moneyplace_old" value="<?php echo $user->getmoneyplace(); ?>" />
+        </div>
+    </div>
+    <div class="control-group">
+        <label class="control-label maxwidth">What do you do with your savings?</label>
+        <div class="controls" style="margin-left:0;">
+        	<?php $savingoptions = getDataOptionsAsArray('SAVING_PLAN'); ?>
+			<?php 
+                $existing_values = getDataArray($user->getsavingplan());
+                foreach($savingoptions as $key => $value){
+            ?>
+                <label class="checkbox-inline inline notbolded" style="margin-right:10px;">
+                  <input type="checkbox" id="savingplanids_<?php echo $key; ?>" name="savingplanids[]" class="" value="<?php echo $key; ?>" <?php echo in_array($key, $existing_values) ? 'checked' : 1; ?> style="margin-top:-2px;"> <?php echo $value; ?>
+                </label>
+            <?php } ?>
+            <input type="hidden" name="savingplan_old" id="savingplan_old" value="<?php echo $user->getsavingplan(); ?>" />
+        </div>
+    </div>
+    <div class="control-group">
+        <label class="control-label maxwidth">Have you ever taken loan?</label>
+        <div class="controls" style="margin-left:0;">
+        	<label class="radio-inline inline" style="margin-right:20px;">
+            	<input type="radio" name="takenloan" id="takenloan_1" class="<?php echo $user->gettakenloan() == '1' ? '1' : ''; ?>" value="1" style="margin-top:-2px;" /> &nbsp;Yes
+            </label>
+            <label class="radio-inline inline">
+                <input type="radio" name="takenloan" id="takenloan_0" class="<?php echo $user->gettakenloan() == '0' ? '1' : ''; ?>" value="0" style="margin-top:-2px;" /> &nbsp;No
+            </label>
+        </div>
+    </div>
+    <div class="control-group">
+        <label class="control-label maxwidth">How long did it take you to pay back the loan?</label>
+        <div class="controls" style="margin-left:0;">
+        	<input name="paybackperiod" id="paybackperiod" type="text" class="span2" value="<?php echo $user->getpaybackperiod(); ?>" />
+        </div>
+    </div>
+    <div class="control-group">
+        <label class="control-label maxwidth">Have you ever had difficulties to pay back a loan? </label>
+        <div class="controls" style="margin-left:0;">
+        	<label class="radio-inline inline" style="margin-right:20px;">
+            	<input type="radio" name="paydifficulty" id="paydifficulty_1" class="<?php echo $user->getpaydifficulty() == '1' ? 1 : ''; ?>" value="1" style="margin-top:-2px;" /> &nbsp;Yes
+            </label>
+            <label class="radio-inline inline">
+                <input type="radio" name="paydifficulty" id="paydifficulty_0" class="<?php echo $user->getpaydifficulty() == '0' ? 1 : ''; ?>" value="0" style="margin-top:-2px;" /> &nbsp;No
+            </label>
+        </div>
+    </div>
+    <div class="control-group">
+        <label class="control-label maxwidth">What arrangements have you made for old age?</label>
+        <div class="controls" style="margin-left:0;">
+        	<?php $options = getDataOptionsAsArray('RETIREMENT_PLANS'); ?>
+			<?php 
+                $existing_values = getDataArray($user->getoldageplan());
+                foreach($options as $key => $value){
+            ?>
+                <label class="checkbox-inline notbolded" style="margin-right:10px;">
+                  <input type="checkbox" id="oldageplanids_<?php echo $key; ?>" name="oldageplanids[]" class="" value="<?php echo $key; ?>" <?php echo in_array($key, $existing_values) ? 'checked' : 1; ?> style="margin-top:-2px;"> <?php echo $value; ?>
+                </label>
+            <?php } ?>
+            <input type="hidden" name="oldageplan_old" id="oldageplan_old" value="<?php echo $user->getoldageplan(); ?>" />
+        </div>
+    </div>
+    <div class="divider10"></div>
+    <div class="subheadcontainer"><label class="subheading">Budgeting</label></div>
+    <div class="control-group">
+        <label class="control-label maxwidth">How do you keep track of your income and spending?</label>
+        <div class="controls" style="margin-left:0;">
+        	<?php
+                $allvalues = getDataOptionsAsArray('BUDGET_METHODS');
+                $dropdown = new Zend_Form_Element_Select('budgettracking',
+                                    array(
+                                        'multiOptions' => array_merge_maintain_keys(array('' => '<Select One>'), $allvalues),								
+                                        'view' => new Zend_View(),
+                                        'decorators' => array('ViewHelper'),
+                                        'class' => array('span2 minwidth100')
+                                    )
+                                );
+                $dropdown->setValue($user->getbudgettracking()); 
+                echo $dropdown->render(); 
+           ?><div id="updatesfrequency_error"></div>
+        </div>
+    </div>
+    <div class="control-group">
+        <label class="control-label maxwidth">Do you know how much money you have earned and spent in the last week?</label>
+        <div class="controls" style="margin-left:0;">
+        	<span class="span2" style="margin-left:0; margin-right:5px; display:inline;">
+            	<label class="control-label notbolded">Earned (<?php echo getCurrencySymbol(); ?>):</label>
+	        	<input name="earnedlastwk" id="earnedlastwk" type="text" class="span2" value="<?php echo $user->getearnedlastwk(); ?>" />
+            </span>
+            <span class="span2" style="margin-left:0; margin-right:0; display:inline;">
+            	<label class="control-label notbolded">Spent (<?php echo getCurrencySymbol(); ?>):</label>
+	        	<input name="spentlastwk" id="spentlastwk" type="text" class="span2" value="<?php echo $user->getspentlastwk(); ?>" />
+            </span>
+        </div>
+    </div>
+    <div class="control-group">
+        <label class="control-label maxwidth">Do you know how much money you have earned and spent in the last month?</label>
+        <div class="controls" style="margin-left:0;">
+        	<span class="span2" style="margin-left:0; margin-right:5px; display:inline;">
+            	<label class="control-label notbolded">Earned (<?php echo getCurrencySymbol(); ?>):</label>
+	        	<input name="earnedlastmonth" id="earnedlastmonth" type="text" class="span2" value="<?php echo $user->getearnedlastmonth(); ?>" />
+            </span>
+            <span class="span2" style="margin-left:0; margin-right:0; display:inline;">
+            	<label class="control-label notbolded">Spent (<?php echo getCurrencySymbol(); ?>):</label>
+	        	<input name="spentlastmonth" id="spentlastmonth" type="text" class="span2" value="<?php echo $user->getspentlastmonth(); ?>" />
+            </span>
+        </div>
+    </div>
+    <div class="control-group">
+        <label class="control-label maxwidth">Do you know how much money you have earned and spent in the last year?</label>
+        <div class="controls" style="margin-left:0;">
+        	<span class="span2" style="margin-left:0; margin-right:5px; display:inline;">
+            	<label class="control-label notbolded">Earned (<?php echo getCurrencySymbol(); ?>):</label>
+	        	<input name="earnedlastyear" id="earnedlastyear" type="text" class="span2" value="<?php echo $user->getearnedlastyear(); ?>" />
+            </span>
+            <span class="span2" style="margin-left:0; margin-right:0; display:inline;">
+            	<label class="control-label notbolded">Spent (<?php echo getCurrencySymbol(); ?>):</label>
+	        	<input name="spentlastyear" id="spentlastyear" type="text" class="span2" value="<?php echo $user->getspentlastyear(); ?>" />
+            </span>
+        </div>
+    </div>
+    <div class="divider10"></div>
+    <div class="subheadcontainer"><label class="subheading">Financial Stress</label></div>
+    <div class="control-group">
+        <label class="control-label maxwidth">During the last month, did you eat less or of lower quality than usual because of lack of money?</label>
+        <div class="controls" style="margin-left:0;">
+        	<?php $options = getDataOptionsAsArray('DECISION_OPTIONS'); ?>
+			<?php 
+                $existing_values = getDataArray($user->geteatless());
+                foreach($options as $key => $value){
+            ?>
+                <label class="radio-inline inline notbolded" style="margin-right:10px;">
+                  <input type="radio" id="eatless_<?php echo $key; ?>" name="eatless" class="<?php echo $key == $user->geteatless() ? '1' : ''; ?>" value="<?php echo $key; ?>" <?php echo $key == $user->geteatless() ? 'checked' : 1; ?> style="margin-top:-2px;" /> <?php echo htmlspecialchars($value); ?>
+                </label>
+            <?php } ?>
+            <input type="hidden" name="eatless_old" id="eatless_old" value="<?php echo $user->geteatless(); ?>" />
+        </div>
+    </div>
+    <div class="control-group">
+        <label class="control-label maxwidth">During the last 6 Months, did you have to take out your children from school because of lacking funds?</label>
+        <div class="controls" style="margin-left:0;">
+        	<?php $options = getDataOptionsAsArray('DECISION_OPTIONS'); ?>
+			<?php 
+                $existing_values = getDataArray($user->getchildlackoffunds());
+                foreach($options as $key => $value){
+            ?>
+                <label class="radio-inline inline notbolded" style="margin-right:10px;">
+                  <input type="radio" id="childlackoffunds_<?php echo $key; ?>" name="childlackoffunds" class="<?php echo $key == $user->getchildlackoffunds() ? '1' : ''; ?>" value="<?php echo $key; ?>" <?php echo $key == $user->getchildlackoffunds() ? 'checked' : 1; ?> style="margin-top:-2px;" /> <?php echo htmlspecialchars($value); ?>
+                </label>
+            <?php } ?>
+            <input type="hidden" name="childlackoffunds_old" id="childlackoffunds_old" value="<?php echo $user->getchildlackoffunds(); ?>" />
+        </div>
+    </div>
+    <div class="control-group">
+        <label class="control-label maxwidth">During the last 6 Months, has/have any asset(s) of yours been seized by member(s) of your borrowing group or by your bank you failed to meet your (re-)payment obligations?</label>
+        <div class="controls" style="margin-left:0;">
+        	<?php $options = getDataOptionsAsArray('DECISION_OPTIONS'); ?>
+			<?php 
+                $existing_values = getDataArray($user->getseizedforloan());
+                foreach($options as $key => $value){
+            ?>
+                <label class="radio-inline inline notbolded" style="margin-right:10px;">
+                  <input type="radio" id="seizedforloan_<?php echo $key; ?>" name="seizedforloan" class="<?php echo $key == $user->getseizedforloan() ? '1' : ''; ?>" value="<?php echo $key; ?>" <?php echo $key == $user->getseizedforloan() ? 'checked' : 1; ?> style="margin-top:-2px;" /> <?php echo htmlspecialchars($value); ?>
+                </label>
+            <?php } ?>
+            <input type="hidden" name="seizedforloan_old" id="seizedforloan_old" value="<?php echo $user->getseizedforloan(); ?>" />
+        </div>
+    </div>
+    <div class="control-group">
+        <label class="control-label maxwidth">Do you (or any other member of your household) currently have any unpaid bills (open balance)?</label>
+        <div class="controls" style="margin-left:0;">
+        	<?php $options = getDataOptionsAsArray('DECISION_OPTIONS'); ?>
+			<?php 
+                $existing_values = getDataArray($user->getunpaidbills());
+                foreach($options as $key => $value){
+            ?>
+                <label class="radio-inline inline notbolded" style="margin-right:10px;">
+                  <input type="radio" id="unpaidbills_<?php echo $key; ?>" name="unpaidbills" class="<?php echo $key == $user->getunpaidbills() ? '1' : ''; ?>" value="<?php echo $key; ?>" <?php echo $key == $user->getunpaidbills() ? 'checked' : 1; ?> style="margin-top:-2px;" /> <?php echo htmlspecialchars($value); ?>
+                </label>
+            <?php } ?>
+            <input type="hidden" name="unpaidbills_old" id="unpaidbills_old" value="<?php echo $user->getunpaidbills(); ?>" />
+        </div>
+    </div>
+    <div class="control-group">
+        <label class="control-label maxwidth">During the last 6 Months, did your household have to sell any of its assets (i.e. land, motorcycle, etc.) to meet other payment obligations?</label>
+        <div class="controls" style="margin-left:0;">
+        	<?php $options = getDataOptionsAsArray('DECISION_OPTIONS'); ?>
+			<?php 
+                $existing_values = getDataArray($user->getselloutassets());
+                foreach($options as $key => $value){
+            ?>
+                <label class="radio-inline inline notbolded" style="margin-right:10px;">
+                  <input type="radio" id="unpaidbills_<?php echo $key; ?>" name="unpaidbills" class="<?php echo $key == $user->getselloutassets() ? '1' : ''; ?>" value="<?php echo $key; ?>" <?php echo $key == $user->getselloutassets() ? 'checked' : 1; ?> style="margin-top:-2px;" /> <?php echo htmlspecialchars($value); ?>
+                </label>
+            <?php } ?>
+            <input type="hidden" name="selloutassets_old" id="selloutassets_old" value="<?php echo $user->getselloutassets(); ?>" />
+        </div>
+    </div>
+    <div class="control-group">
+        <label class="control-label maxwidth">How often during the last 6 Months did your household run out of money from previous revenues before the next revenues arrived (e.g. wages)? </label>
+        <div class="controls" style="margin-left:0;">
+        	<?php $options = getDataOptionsAsArray('DECISION_OPTIONS'); ?>
+			<?php 
+                $existing_values = getDataArray($user->getrunoutrevenue());
+                foreach($options as $key => $value){
+            ?>
+                <label class="radio-inline inline notbolded" style="margin-right:10px;">
+                  <input type="radio" id="unpaidbills_<?php echo $key; ?>" name="unpaidbills" class="<?php echo $key == $user->getrunoutrevenue() ? '1' : ''; ?>" value="<?php echo $key; ?>" <?php echo $key == $user->getrunoutrevenue() ? 'checked' : 1; ?> style="margin-top:-2px;" /> <?php echo htmlspecialchars($value); ?>
+                </label>
+            <?php } ?>
+            <input type="hidden" name="runoutrevenue_old" id="runoutrevenue_old" value="<?php echo $user->getrunoutrevenue(); ?>" />
+        </div>
+    </div>
+</fieldset>
+<?php } ?>    
+<fieldset class="fieldsetcontainer well xhideonsuper">
+    <legend>Profile Settings</legend>  
     <?php if(($user->isFarmer() && !isEmptyString($user->getID())) || (isEmptyString($user->getID()) && in_array($request->getControllerName(), array('farmer','mobile')))){ ?>          
     	<?php require APPLICATION_PATH."/views/scripts/profile/settingfields.phtml"; ?>
     <?php } ?>

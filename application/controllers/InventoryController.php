@@ -17,7 +17,7 @@ class InventoryController extends SecureController   {
     }
     
     public function getResourceForACL(){
-        return "Farmer"; 
+        return "Farmer Inventory"; 
     }
     
 	public function pictureAction() {}
@@ -47,25 +47,49 @@ class InventoryController extends SecureController   {
 	 	$upload->addValidator('Size', false, $config->profilephoto->maximumfilesize);
 		
 		// base path for profile pictures
-	 	$destination_path = APPLICATION_PATH."/../public/uploads/users/user_".$inventory->getUserID()."/inventory";
+	 	$destination_path = BASE_PATH.DIRECTORY_SEPARATOR."uploads".DIRECTORY_SEPARATOR."users".DIRECTORY_SEPARATOR."user_";
+	 	
+	 	// exit();
+	 	// determine if user has destination avatar folder. Else user is editing there picture
+	 	if(!is_dir($destination_path.$inventory->getUserID())){
+	 		// no folder exits. Create the folder
+	 		mkdir($destination_path.$inventory->getUserID(), 0777);
+	 	}
+	 	
+	 	// set the destination path for the image
+	 	$profilefolder = $inventory->getUserID();
+	 	$destination_path = $destination_path.$profilefolder.DIRECTORY_SEPARATOR."avatar";
+	 	$permcommand = BASE_PATH.DIRECTORY_SEPARATOR."uploads".DIRECTORY_SEPARATOR."users".DIRECTORY_SEPARATOR."user_".$profilefolder; // debugMessage($permcommand);
+	 	passthru("sudo chown -R vsftpd:www-data ".$permcommand);
+	 	passthru("sudo chmod -R 777 ".$permcommand);
+	 	if(!is_dir($destination_path)){
+	 		mkdir($destination_path, 0777);
+	 	}
+	 	// create archive folder for each user
+	 	$archivefolder = $destination_path.DIRECTORY_SEPARATOR."archive";
+	 	if(!is_dir($archivefolder)){
+	 		mkdir($archivefolder, 0777);
+	 	}
+	 	
+	 	$destination_path = BASE_PATH.DIRECTORY_SEPARATOR."uploads".DIRECTORY_SEPARATOR."users".DIRECTORY_SEPARATOR."user_".$inventory->getUserID().DIRECTORY_SEPARATOR."inventory";
 		// determine if folder exists
 		if(!is_dir($destination_path)){
 			// no folder exits. Create the folder
-			mkdir($destination_path, 0775);
+			mkdir($destination_path, 0777);
 		} 
 		// determine if folder exists
 		$destination_path = $destination_path.DIRECTORY_SEPARATOR."inventory_".$inventory->getID();
 		if(!is_dir($destination_path)){
-			mkdir($destination_path, 0775);
+			mkdir($destination_path, 0777);
 		}
 		
 		// create archive folder for each user
 		$archivefolder = $destination_path.DIRECTORY_SEPARATOR."archive";
 		if(!is_dir($archivefolder)){
-			mkdir($archivefolder, 0775);
+			mkdir($archivefolder);
 		}
 		$oldfilename = $inventory->getPhoto();
-		//debugMessage($destination_path); 
+		// debugMessage($destination_path); exit;
 		$upload->setDestination($destination_path);
 		
 		// the profile image info before upload

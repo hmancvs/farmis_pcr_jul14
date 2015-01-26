@@ -157,7 +157,7 @@ class Company extends BaseEntity  {
 				unset($formvalues['dnaids']);
 			}
 		}
-		debugMessage($formvalues); // exit;
+		// debugMessage($formvalues); // exit;
 		parent::processPost($formvalues);
 	}
 	# determine the allocation type

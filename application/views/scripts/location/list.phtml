@@ -122,7 +122,7 @@
 	}
 	
 	$paginate->processPost($request->getParams());
-	$all_results_query = "SELECT l.id as lid, l.name as `Name`, l.description as `Description`, l.locationtype, r.name as Region, d.name as District, c.name as County, s.name as Subcounty, p.name as Parish FROM location l
+	$all_results_query = "SELECT l.id as lid, l.name as `Name`, l.description as Description, l.locationtype, r.name as Region, d.name as District, c.name as County, s.name as Subcounty, p.name as Parish FROM location l
 		LEFT JOIN location r on l.regionid = r.id
 		LEFT JOIN location d on l.districtid = d.id
 		LEFT JOIN location c on l.countyid = c.id
@@ -169,18 +169,19 @@ $(document).ready(function() {
                     <div class="wellcontent">
                     	<div class="blocked clear makerelative">
                             <ul class="peoplegroup">
-                                <li style="width:120px;">
-									<?php if(isAdmin() || isManagement() || isDataClerk()){ ?>
+                                <li style="width:140px;">
+									<?php if($acl->checkPermission('Locations', ACTION_CREATE)) { ?>
                                             <a href="<?php echo $addurl; ?>" class="addpopup btn btn-primary" title="New Location" rel="New Location" formtitle="indexform" successurl="<?php echo $listurl; ?>" action="<?php echo $this->baseUrl("location/create"); ?>"><i class="icon-plus icon-white"></i> New Location</a>
+                                            <div class="divider10"></div>
                                     <?php } ?>     
-                                    <?php if($loggedinuser->isUgandan() && isUganda() && (isAdmin() || isManagement())){ ?>
-                                        <?php if(isEmptyString($request->country) || $countryreq == 'ug'){ ?>
-                                            <a class="btn btn-mini" style="margin-top: 10px; display:block;" href="<?php echo $this->baseUrl('location/list/country/ke'); ?>" title="Browse Kenya Directory"><i class="icon-list"></i> Browse Kenya</a>
+                                    <?php if($loggedinuser->isUgandan() && isUganda() && $acl->checkPermission('Is UG Admin can Administer KE', ACTION_YESNO)){ ?>
+										<?php if(isEmptyString($request->country) || $countryreq == 'ug'){ ?>
+                                            <a class="btn" href="<?php echo $this->baseUrl('location/list/country/ke'); ?>" title="Browse Kenya"><i class="icon-list"></i> Browse Kenya</a>
                                         <?php } ?>
-                                    <?php } ?>
-                                    <?php if($loggedinuser->isUgandan() && isKenya() && (isAdmin() || isManagement())){ ?>
-                                        <?php if(!isEmptyString($request->country) && $countryreq == 'ke'){ ?>
-                                            <a class="btn btn-mini" style="margin-top: 10px; display:block;" href="<?php echo $this->baseUrl('location/list/country/ug'); ?>" title="Browse Uganda Directory"><i class="icon-list"></i> Browse Uganda</a>
+                                    <?php } ?>    
+                                    <?php if($loggedinuser->isUgandan() && isKenya() && $acl->checkPermission('Is UG Admin can Administer KE', ACTION_YESNO)){ ?>
+										<?php if(!isEmptyString($request->country) && $countryreq == 'ke'){ ?>
+                                            <a class="btn" href="<?php echo $this->baseUrl('location/list/country/ug'); ?>" title="Browse Uganda"><i class="icon-list"></i> Browse Uganda</a>
                                         <?php } ?>
                                     <?php } ?>
                                 </li>
@@ -325,9 +326,9 @@ $(document).ready(function() {
                         <?php if(!isEmptyString($session->getVar("custommessage")) ){ ?>
                             <div class="alert alert-success"><a class="close" data-dismiss="alert">×</a><?php echo $session->getVar("custommessage"); ?></div>
                         <?php } ?>
-                        <div class="makerelative">
-                            <div class="paginatecustom" style="position:relative; float:right; top:0;"><?php echo sprintf($this->translate("global_list_counter"), $paginate->getItemCounterText()); ?></div>
-                        </div>
+                        <!--<div class="makerelative">
+                            <div class="paginatecustom" style="position:relative; float:right; top:0;"><?php //echo sprintf($this->translate("global_list_counter"), $paginate->getItemCounterText()); ?></div>
+                        </div>-->
                         <?php if ($has_no_data) { ?>
                             <div style="clear:both;" class="alert alert-info margin5"><?php echo $this->translate("global_list_norecords"); ?></div>
                         <?php } else { ?>
@@ -405,15 +406,16 @@ $(document).ready(function() {
                                                 <div class="thumbwrapper" style="height:85px; width:110px;">
                                                     <div class="thumb">
                                                         <div id="thumbinfo"> 
-                                                            <a href="<?php echo $viewurl; ?>"><img class="ximagecontainer" src="<?php echo $this->baseUrl('uploads/farmgroups/default/medium_group.jpg'); ?>" /></a>
+                                                        	<!--<a href="<?php //echo $viewurl; ?>"></a>-->
+                                                            <img class="ximagecontainer" src="<?php echo $this->baseUrl('uploads/farmgroups/default/medium_group.jpg'); ?>" />
                                                         </div>
                                                     </div>
                                                 </div>
                                                 <div class="peopleinfo">
-                                                    <h4><a href="<?php echo $viewurl; ?>"><?php echo $name; ?></a></h4>
-                                                    <ul>
-                                                        <li>&nbsp;</li>
-                                                        <li><span class="bolded">Description:</span> <?php echo $description; ?></li>
+                                                    <h4><?php echo $line['Name']; ?></h4>
+                                                    <ul style="margin-top:15px;">
+                                                        <li><span class="bolded">Type:</span> <?php echo $typelabel; ?></li>
+                                                        <li><span class="bolded">Description:</span> <?php echo $line['Description']; ?></li>
                                                     </ul>
                                                 </div>
                                             </div>

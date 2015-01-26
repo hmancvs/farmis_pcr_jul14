@@ -29,7 +29,7 @@ class UserController extends IndexController  {
 		# check which field user is using to login. default is username
 		$credcolumn = "username";
     	$login = (string)$this->_getParam("email");
-    	debugMessage($this->_getAllParams());
+    	// debugMessage($this->_getAllParams());
     	
     	# check if credcolumn is phone 
     	if(is_numeric(substr($login, -6, 6)) || is_numeric($login)){
@@ -44,7 +44,7 @@ class UserController extends IndexController  {
            		$credcolumn = 'email';
             }
         }
-        debugMessage($credcolumn); // exit();
+        // debugMessage($credcolumn); // exit();
         
         if($credcolumn == 'email' || $credcolumn == 'username'){
 	        $authAdapter = new Zend_Auth_Adapter_DbTable(Zend_Registry::get("dbAdapter"));

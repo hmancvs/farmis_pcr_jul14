@@ -151,6 +151,9 @@ h3.well-legend {
                                 <?php } ?>
                             </td>
                         </tr>
+                        <?php if($user->hasProfileImage()){ ?>
+                            <tr><td><a href="<?php echo $this->baseUrl('profile/clearpic/id/'.$user->getID().'/successurl/'.encode($this->viewurl)); ?>" class="btn clearfix">Remove Current Image</a></td></tr>
+                        <?php } ?>
                     </table>
                 </td>
                 <td style="vertical-align:top;">

@@ -49,10 +49,12 @@
                                             <td><label class="control-label"><?php echo $this->translate("inventory_type_label"); ?>:</label></td>
                                             <td colspan="3"><?php $alltypes = getInventoryTypes(); echo $alltypes[$inventory->getType()]; ?></td>
                                         </tr>
+                                        <?php if(false){ ?>
                                         <tr>
                                             <td><label class="control-label"><?php echo $this->translate("inventory_categoryid_label"); ?>:</label></td>
                                             <td colspan="3"><?php echo $inventory->getCategory()->getName(); ?></td>
                                         </tr>
+                                        <?php } ?>
                             		</table>
                                 </td>
                                 <td style="vertical-align:top; padding-left:0; padding-top:20px;">
@@ -211,7 +213,7 @@
                                 <?php 
                                     $x = 1;
                                     foreach($notelines as $note){
-										$user = $note->getNotedBy()->getUser();
+										$user = $note->getUser();
                                 ?>
                                     <li>
                                         <table class="table noborder margin0">

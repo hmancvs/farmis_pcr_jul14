@@ -126,17 +126,48 @@ class UserAccount extends BaseEntity {
 		$this->hasColumn('enddate', 'date', null);
 		$this->hasColumn('paymentstatus', 'integer', null, array('default' => '0'));
 		
+		# intake assessment 
 		$this->hasColumn('services', 'string', 50);
 		$this->hasColumn('languages', 'string', 50, array('default' => '1'));
-		$this->hasColumn('hasmobilemoney', 'integer', null, array('default' => '1'));
-		$this->hasColumn('hasbankaccount', 'integer', null, array('default' => '0'));
+		$this->hasColumn('hasmobilemoney', 'string', 15);
+		$this->hasColumn('hasbankaccount', 'string', 15);
+		
+		$this->hasColumn('locations', 'string', 255);
+		$this->hasColumn('wheretosell', 'string', 255);
+		$this->hasColumn('willingtopay', null, array('default' => 'NULL'));
+		$this->hasColumn('preferredcommunication', 'string', 255);
+		$this->hasColumn('whentopay', 'string', 50);
+		$this->hasColumn('isorgpaying', 'string', 25);
+		$this->hasColumn('radiostations', 'string', 500);
+		$this->hasColumn('radioshows', 'string', 500);
+		$this->hasColumn('nameofbank', 'string', 255);
+		$this->hasColumn('budgettracking', 'string', 25);
+		$this->hasColumn('earnedlastwk', 'string', 50);
+		$this->hasColumn('spentlastwk', 'string', 50);
+		$this->hasColumn('earnedlastmonth', 'string', 50);
+		$this->hasColumn('spentlastmonth', 'string', 50);
+		$this->hasColumn('earnedlastyear', 'string', 50);
+		$this->hasColumn('spentlastyear', 'string', 50);
+		$this->hasColumn('moneybehavior', 'string', 50);
+		$this->hasColumn('moneyplace', 'string', 50);
+		$this->hasColumn('savingplan', 'string', 255);
+		$this->hasColumn('takenloan', 'string', 25);
+		$this->hasColumn('paybackperiod', 'string', 50);
+		$this->hasColumn('paydifficulty', 'string', 50);
+		$this->hasColumn('oldageplan', 'string', 255);
+		$this->hasColumn('eatless', 'string', 255);
+		$this->hasColumn('childlackoffunds', 'string', 255);
+		$this->hasColumn('seizedforloan', 'string', 255);
+		$this->hasColumn('unpaidbills', 'string', 255);
+		$this->hasColumn('selloutassets', 'string', 255);
+		$this->hasColumn('runoutrevenue', 'string', 255);
 	}
 	
 	# Contructor method for custom initialization
 	public function construct() {
 		parent::construct();
 		
-		$this->addDateFields(array("expirydate", "activationdate", "regdate"));
+		$this->addDateFields(array("expirydate", "activationdate", "regdate","whentopay"));
 		
 		# set the custom error messages
        	$this->addCustomErrorMessages(array(
@@ -840,14 +871,16 @@ class UserAccount extends BaseEntity {
 		if(!isArrayKeyAnEmptyString('crop_2', $formvalues)){
 			$formvalues['cropids'][] = $formvalues['crop_2'];
 		}
-		if(!isArrayKeyAnEmptyString('crop_2', $formvalues)){
+		if(!isArrayKeyAnEmptyString('crop_3', $formvalues)){
 			$formvalues['cropids'][] = $formvalues['crop_3'];
 		}
 		
 		if(!isArrayKeyAnEmptyString('cropids', $formvalues)){
 			$formvalues['cropids'] = array_unique($formvalues['cropids']);
+			$formvalues['cropids'] = array_remove_empty($formvalues['cropids']);
 			foreach ($formvalues['cropids'] as $key => $value){
 				// debugMessage($value);
+				
 				if(!isArrayKeyAnEmptyString('id', $formvalues)){
 					$existing_crops = $this->getCropsForUser($formvalues['id'], $value);
 					if(!isArrayKeyAnEmptyString('id', $existing_crops)){
@@ -863,11 +896,25 @@ class UserAccount extends BaseEntity {
 				} 
 			}
 		}
-		// debugMessage($crops);
+		// debugMessage($crops); exit();
 		if(count($crops) > 0){
 			$formvalues['crops'] = $crops;
 		}
-		 
+		
+		$markets = array();
+		if(!isArrayKeyAnEmptyString('market_1', $formvalues)){
+			$formvalues['marketids'][] = $formvalues['market_1'];
+		}
+		if(!isArrayKeyAnEmptyString('market_2', $formvalues)){
+			$formvalues['marketids'][] = $formvalues['market_2'];
+		}
+		if(!isArrayKeyAnEmptyString('market_3', $formvalues)){
+			$formvalues['marketids'][] = $formvalues['market_3'];
+		}
+		if(!isArrayKeyAnEmptyString('marketids', $formvalues)){
+			$formvalues['locations'] = implode(',', $formvalues['marketids']);
+		}
+		
 		if(!isArrayKeyAnEmptyString('isphoneinvited', $formvalues) && isArrayKeyAnEmptyString('phone', $formvalues)){
 			if($formvalues['isphoneinvited'] == 1){
 				unset($formvalues['isphoneinvited']);
@@ -993,6 +1040,31 @@ class UserAccount extends BaseEntity {
 		
 		if(!isArrayKeyAnEmptyString('languageids', $formvalues)) {
 			$formvalues['languages'] = $formvalues['languageids'];
+		}
+		
+		if(isArrayKeyAnEmptyString('hasmobilemoney', $formvalues)){
+			if(!isArrayKeyAnEmptyString('hasmobilemoney_old', $formvalues)){
+				$formvalues['hasmobilemoney'] = NULL;
+			} else {
+				unset($formvalues['hasmobilemoney']);
+			}
+		}
+		if(isArrayKeyAnEmptyString('hasbankaccount', $formvalues)){
+			if(!isArrayKeyAnEmptyString('hasbankaccount_old', $formvalues)){
+				$formvalues['hasbankaccount'] = NULL;
+			} else {
+				unset($formvalues['hasbankaccount']);
+			}
+		}
+		
+		if(isArrayKeyAnEmptyString('budgettracking', $formvalues)) {
+			unset($formvalues['budgettracking']);
+		}
+		if(isArrayKeyAnEmptyString('takenloan', $formvalues)) {
+			unset($formvalues['takenloan']);
+		}
+		if(isArrayKeyAnEmptyString('isorgpaying', $formvalues)) {
+			unset($formvalues['isorgpaying']);
 		}
 		
 		// debugMessage($formvalues); exit();
@@ -2132,7 +2204,8 @@ class UserAccount extends BaseEntity {
 	}
 	# farmer's crops
 	function getTheCrops() {
-		$q = Doctrine_Query::create()->from('FarmCrop fc')->innerJoin('fc.crop c')->where("fc.userid = '".$this->getID()."' AND c.categoryid <> '27' ")->orderby('c.name asc')->limit("3");
+		$q = Doctrine_Query::create()->from('FarmCrop fc')->innerJoin('fc.crop c')->where("fc.userid = '".$this->getID()."' AND c.categoryid <> '27' ")->limit("3");
+		// debugMessage($q->getSQLQuery());
 		$result = $q->execute();
 		return $result;
 	}
@@ -2178,6 +2251,12 @@ class UserAccount extends BaseEntity {
 	        }
         }
         return $names;
+	}
+	# determine the cropids
+	function getMarketIDs() {
+		$ids = array();
+		$ids = explode(',', str_replace(', ', ',', $this->getLocations()));
+		return $ids;
 	}
 	# return the formatted phone number of the form 07X
 	function getFormattedPhone($country = 'UG'){
@@ -2508,15 +2587,15 @@ class UserAccount extends BaseEntity {
 		$plan->populate($this->getMembershipPlanID());
 		# new subscription
 		$subscription = new Subscription();
-		$subscription->setUserID($this->getID());
-		$subscription->setPlanID($this->getMembershipPlanID());
+		// $subscription->setUserID($this->getID());
+		// $subscription->setPlanID($this->getMembershipPlanID());
 		$startdate = date("Y-m-d");	
 		$expirydate = date("Y-m-d", strtotime(date("Y-m-d", strtotime($startdate)) . " +".$plan->getUsageDays()." days "));
 		$subscription->setStartDate($startdate);
 		$subscription->setEndDate($expirydate);
-		$subscription->setIsTrial(1);
-		$subscription->setIsActive(1);
-		$subscription->save();
+		// $subscription->setIsTrial(1);
+		// $subscription->setIsActive(1);
+		// $subscription->save();
 		
 		return true;
 	}

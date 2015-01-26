@@ -57,6 +57,7 @@ define("ALL_RESULTS_QUERY", "arq");
 define("CURRENT_RESULTS_QUERY", "crq");
 # the page title for current list
 define("PAGE_TITLE", "ttl");
+define('DEFAULT_DATETIME', date("Y-m-d H:i:s"));
 
 define('COUNTRY_CODE_UG', '256');
 define('FARMER_REG_PREFIX', 'UGF');
@@ -113,6 +114,10 @@ function getSMSConnectionCBS(){
 function getFarmisConnection(){
 	$manager = Doctrine_Manager::getInstance();
 	return $manager->connection(FARMIS_CONNECT_STRING);
+}
+function getAgmisConnection(){
+	$manager = Doctrine_Manager::getInstance();
+	return $manager->connection(AGMIS_CONNECT_STRING);
 }
 function getAppName(){
 	$config = Zend_Registry::get("config");
@@ -415,6 +420,9 @@ function sendSMSMessage($to, $txt, $source = 'FARMIS') {
 	$phone = $to;
     $message = $txt;
 	$sendsms = true;
+	if(APPLICATION_ENV == 'development'){
+		$sendsms = false;
+	}
 	
 	if(isUganda()){
 		$server = SMS_SERVER;
@@ -970,11 +978,11 @@ function getCurrencySymbol() {
 }
 function getServiceAmountFormatted() {
 	$session = SessionWrapper::getInstance();
-	return $session->getVar('country') == 'ug' ? 'Ugx 20,000' : 'KShs 850';
+	return $session->getVar('country') == 'ug' ? 'Ugx 20,000' : 'KShs 500';
 }
 function getServiceAmount() {
 	$session = SessionWrapper::getInstance();
-	return $session->getVar('country') == 'ug' ? '20000' : '850';
+	return $session->getVar('country') == 'ug' ? '20000' : '500';
 }
 function getDefaultConfirmTextUG(){
 	$text = 'Dear %1$s, Your payment of Shs %2$s for FARMIS has been received. Services have been activated on your account untill %3$s';
@@ -1495,5 +1503,33 @@ function get_dirs($path = '.') {
 		}
 	}
 	return $dirs;
+}
+# array the data options
+function getDataArray($fieldvalues){
+	return isEmptyString($fieldvalues) ? array() : explode(',',preg_replace('!\s+!', '', trim($fieldvalues)));
+}
+# return list options for a field
+function getListofValues($fieldvalues, $dataarray, $alloptions){
+	$listarray = array(); $text = '';
+	if(isEmptyString($fieldvalues)){
+		return $text;
+	}
+	$allvalues = getDataArray($fieldvalues);
+	$thevalues = $dataarray;
+	if(count($thevalues) > 0){
+		foreach ($thevalues as $value) {
+			if(!isArrayKeyAnEmptyString($value, $allvalues)){
+				$listarray[] = $allvalues[$value];
+			}
+		}
+	}
+	if(count($listarray) > 0){
+		$text = createHTMLCommaListFromArray($listarray, ', ');
+	}
+	return $text;
+}
+# format url to strip leading forward slash
+function stripURL($url){
+	return rtrim($url,"/");
 }
 ?>

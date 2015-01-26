@@ -5,6 +5,7 @@
 	$user = new UserAccount(); 
 	$loggedinuser = new UserAccount();
 	$loggedinuser->populate($userid);
+	$isfarmer = false;
 	
 	# determine if create or update
 	if(isEmptyString($request->id)){
@@ -57,6 +58,10 @@
 		$birthday = abs(date('d', strtotime($dob)));  $birthmonth = abs(date('m', strtotime($dob))); $birthyear = date('Y', strtotime($dob));
 	}
 	
+	if($user->isFarmer()){
+		$isfarmer = true;
+	}
+	
 	$country = 'UG';
 	$location_label = 'District';
 	$locations_label = 'Districts';
@@ -80,6 +85,7 @@
 	
 	#in case of errors in session, populate the fields from session
 	if(!isEmptyString($session->getVar(ERROR_MESSAGE))){ 
+		$formvalues = $session->getVar(FORM_VALUES);
 		$user->processPost($session->getVar(FORM_VALUES));		
 	}
 	// debugMessage($controllername);
@@ -696,7 +702,7 @@ select#salutation {
                                     <?php if($user->getFarmGroup()->hasSubGroups()){ ?>
                                         <label class="control-label"><?php echo $this->translate("farmer_subgroup_label"); ?>:</label>
                                         <?php if(!isFarmer()){ ?>
-                                            <?php
+                                           <?php
                                                 $groupdropdown = new Zend_Form_Element_Select('subgroupid',
                                                                     array(
                                                                         'multiOptions' => array_merge_maintain_keys(array('' => '<Select One>'), getSubGroups($user->getFarmGroupID(), $session->getVar('country'))),								
@@ -720,24 +726,34 @@ select#salutation {
                                 </td>
                             </tr>
                         <?php } ?>
-                        <?php if($acl->checkPermission($resourcename, ACTION_CREATE)){ ?>
+                        
                         <tr>
-                        	<td><label class="control-label">Type: <?php echo $this->translate("global_required_field_marker"); ?></label>
-								<?php
-                                    $allvalues = getUserType('');
-                                    $dropdown = new Zend_Form_Element_Select('type',
-                                                        array(
-                                                            'multiOptions' => array_merge_maintain_keys(array('' => '<Select One>'), $allvalues),
-                                                            'view' => new Zend_View(),
-                                                            'decorators' => array('ViewHelper'),
-                                                            'class' => array('span3')
-                                                        )
-                                    );  
-                                    $dropdown->setValue($user->getType()); 
-                                    echo $dropdown->render();
-                                ?>
-                                <div id="type_error"></div>
-					            <input type="hidden" id="isfarmer" name="isfarmer" value="<?php echo $user->isFarmer() ? 0 : 1; ?>" />
+                        	<td>
+                            	<label class="control-label">Type: <?php echo $this->translate("global_required_field_marker"); ?></label>
+                            	<?php if($acl->checkPermission('Global Config', ACTION_VIEW) || $acl->checkPermission('Is KE Admin', ACTION_YESNO)){ ?>
+                                    <?php
+                                        $allvalues = getUserType('');
+										if($acl->checkPermission('Is KE Admin', ACTION_YESNO)){
+											unset($allvalues['1']);
+											unset($allvalues['8']);
+											unset($allvalues['6']);
+										}										
+                                        $dropdown = new Zend_Form_Element_Select('type',
+                                                            array(
+                                                                'multiOptions' => array_merge_maintain_keys(array('' => '<Select One>'), $allvalues),
+                                                                'view' => new Zend_View(),
+                                                                'decorators' => array('ViewHelper'),
+                                                                'class' => array('span3')
+                                                            )
+                                        );  
+                                        $dropdown->setValue($user->getType()); 
+                                        echo $dropdown->render();
+                                    ?>
+                                    <div id="type_error"></div>
+                                    <input type="hidden" id="isfarmer" name="isfarmer" value="<?php echo $user->isFarmer() ? 0 : 1; ?>" />
+                              	<?php } else { ?>
+                                	<input type="hidden" id="type" name="type" value="<?php echo $user->getType(); ?>" /><?php echo $user->getTypeLabel(); ?>
+                                <?php } ?>
                         	</td>
                             <td>
                             	<?php if($user->isPartner() && !$isme){ ?>
@@ -759,7 +775,6 @@ select#salutation {
                             	<?php } ?>
                             </td>
                        	</tr>
-                        <?php } ?>
                     </table>
                 </fieldset>
                	<?php if($user->isFarmer()){ ?>
@@ -939,6 +954,12 @@ select#salutation {
                     <form id="profileform-farm" class="form-horizontal farm" action="<?php echo $posturl; ?>" method="post">
                         <?php if($tab == 'farm'){ ?>
                             <div class="divider5"></div>
+                            <?php if(!isEmptyString($session->getVar(SUCCESS_MESSAGE)) ){ ?>
+                                <div class="alert alert-success"><a class="close" data-dismiss="alert">×</a><?php echo $session->getVar(SUCCESS_MESSAGE); ?></div>
+                            <?php } ?>	
+                            <?php if($sessionhaserror) { ?>
+                                <div class="alert alert-error"><?php echo $session->getVar(ERROR_MESSAGE); ?></div>
+                            <?php } ?>
                             <div class="row margin0 padding0">
                                  <a href="javascript:doNothing();" class="btn"><i class="icon-remove"></i> <?php echo $this->translate('global_button_cancel'); ?></a>
                                 <button type="submit" class="btn btn-primary savethenview"><i class="icon-ok icon-white"></i> <?php echo $this->translate('global_button_save_changes'); ?></button>
@@ -1045,32 +1066,34 @@ select#salutation {
                                                   <input type="hidden" id="farmingtoolsids_old" name="farmingtoolsids_old" value="<?php echo $user->getfarmingtools(); ?>" />
                                                 </td>
                                             </tr>
-                                            <tr>
-                                                <td><label class="control-label">Other Income Generating Activities</label>
-                                                    <?php
-                                                          $listdropdown = new Zend_Form_Element_Multiselect('activitytypeids',
-                                                                  array(
-                                                                          'multiOptions' => getOtherActivityTypes(),
-                                                                          'view' => new Zend_View(),
-                                                                          'decorators' => array(array('ViewHelper')),
-                                                                          'class' => array('chzn-select','multipleselect','span5','xhastooltip_custom'),
-                                                                          'title' => $this->translate("farmer_activitytypes_tooltip")
-                                                                  )
-                                                          );
-                                                          
-                                                          $listdropdown->setValue($user->getActivityTypeIDs());
-                                                          $listdropdown->setAttrib("data-placeholder", 'Select all in category');
-                                                          echo $listdropdown->render();
-                                                      ?><input type="hidden" id="activitytypeids_old" name="activitytypeids_old" value="<?php echo $user->getactivitytypes(); ?>" />
-                                                      <span id="tooltip_activitytypes"></span>
-                                                </td>
-                                            </tr>
+												<?php if(false){ ?>
+                                                    <tr>
+                                                        <td><label class="control-label">Other Income Generating Activities</label>
+                                                            <?php
+                                                                  $listdropdown = new Zend_Form_Element_Multiselect('activitytypeids',
+                                                                          array(
+                                                                                  'multiOptions' => getOtherActivityTypes(),
+                                                                                  'view' => new Zend_View(),
+                                                                                  'decorators' => array(array('ViewHelper')),
+                                                                                  'class' => array('chzn-select','multipleselect','span5','xhastooltip_custom'),
+                                                                                  'title' => $this->translate("farmer_activitytypes_tooltip")
+                                                                          )
+                                                                  );
+                                                                  
+                                                                  $listdropdown->setValue($user->getActivityTypeIDs());
+                                                                  $listdropdown->setAttrib("data-placeholder", 'Select all in category');
+                                                                  echo $listdropdown->render();
+                                                              ?><input type="hidden" id="activitytypeids_old" name="activitytypeids_old" value="<?php echo $user->getactivitytypes(); ?>" />
+                                                              <span id="tooltip_activitytypes"></span>
+                                                        </td>
+                                                    </tr>
+                                                <?php } ?>
                                             <?php } ?>
                                         </table>
                                     </div>
                                 </span>
                                 <span style="width:49%; float:right;">
-                                    <div class="well lighter row marginleft0" id="farmright" style="min-height:450px; width:100%">
+                                    <div class="well lighter row marginleft0" id="farmright" style="min-height:375px; width:100%">
                                         <h3 class="well-legend">Land Usage</h3>                       
                                         <table class="table higherpadding"> 
                                             <tr>

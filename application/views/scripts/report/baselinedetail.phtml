@@ -1,5 +1,6 @@
  <?php
 	require_once APPLICATION_PATH.'/includes/header.php';
+	require_once APPLICATION_PATH.'/includes/mpdf/mpdf.php';
 		
 	$title = "Farmis Baseline Detailed Report";
 	// meta data
@@ -64,28 +65,17 @@ $(document).ready(function() {
   <div id="centercolumn" class="reportpage">
   	<div class="printpage"></div>
     <div class="hideonprint" style="width:100%;">
-        <?php if((isAdmin() || isFarmGroupAdmin() || isManagement())){ ?>
+        <?php if($acl->checkPermission('Farmer', ACTION_LIST)){ ?>
         	<table class="table table-condensed noborder margin0" style="width:100%;">
             	<tr>
+                    <td style="width:70%;"></td>
                     <td>
-                        <span class="reportfilter pull-right 80width">
-                            <label class="reportlabel cal-font">Farmer: </label>
-                            <?php
-                                $userarray = getFarmers($farmgroupid, false, false, false, '', $session->getVar('country'));
-                                $userdropdown = new Zend_Form_Element_Select('id',
-                                                    array(
-                                                            'multiOptions' => array_merge_maintain_keys(array('' => '<Browse Farmer>'), $userarray),								
-                                                        'view' => new Zend_View(),
-                                                        'decorators' => array('ViewHelper'),
-                                                            'class' => array('chzn-select', 'width180', 'novalidate')
-                                                    )
-                                                );
-                                $userdropdown->setValue($request->getParam('id')); 
-                                echo $userdropdown->render(); 
-                              ?>&nbsp;&nbsp;
-                             <a id="generate" href="<?php echo $this->baseUrl('report/baselinedetail/id/'); ?>" class="btn btn-primary" title="Generate Report"><i class="icon-list-alt icon-white"></i> Generate</a>&nbsp;
-                        </span>
+                    	<div class="contentArea reportsearch">
+                            <input type="text" class="search reportsearch" id="inputSearch" url="<?php echo encode($this->baseUrl('report/baselinedetail/id/')); ?>" placeholder="Start Typing Name of Farmer to Search" />
+                            <ul id="divResult"></ul>
+                        </div>
                     </td>
+                    <td style="width:1%;"></td>
                 </tr>
             </table>
 		<?php } ?>
@@ -106,8 +96,9 @@ $(document).ready(function() {
 				<?php if($request->print != 1){ ?>
                 <span class="reportactions hideonprint">
                     <a href="<?php echo $this->baseUrl('report/baselinedetail/id/'.$user->getID().'/print/1'); ?>" target="_blank" class="btn btn-primary btn-mini" title="Print Report"><i class="icon-print icon-white"></i> Print</a>&nbsp;
-                    <a href="<?php echo $this->baseUrl('report/baselinedetail/id/'.$user->getID().'/pdf/1'); ?>" target="_blank" class="btn btn-primary btn-mini" title="View PDF Report"><i class="icon-list-alt icon-white"></i> PDF</a>&nbsp;
-                   
+                    <?php if(false){ ?>
+                    	<a href="<?php echo $this->baseUrl('report/baselinedetail/id/'.$user->getID().'/pdf/1'); ?>" target="_blank" class="btn btn-primary btn-mini" title="View PDF Report"><i class="icon-list-alt icon-white"></i> PDF</a>&nbsp;
+                   	<?php } ?>
                 </span>
                 <?php } ?>
             <?php 
@@ -145,8 +136,11 @@ $(document).ready(function() {
                 $nooflines = $preseasondetails->count();
 				
 				$farmis_logo = $this->serverUrl($this->baseUrl('images/logo_gray.png'));
-				$infotrade_logo = $this->serverUrl($this->baseUrl('images/logo_infotrade.png'));
 				$profile_image = $this->serverUrl($user->getMediumPicturePath());
+				$logopath = $this->serverUrl($this->baseUrl('images/logo_infotrade.png'));
+				if(isKenya()){
+					$logopath = $this->serverUrl($this->baseUrl('images/sokopepe.png'));
+				}
 			?>	
 				<div>
                   	<table style="margin-top:10px; height:auto; width:100%;">
@@ -155,7 +149,7 @@ $(document).ready(function() {
 								<table style="width:100%; height:190px; border-bottom:1px solid #e9e9e9;">
                                     <tr>
                                         <td style="vertical-align:top; padding-left:10px; padding-top:10px;"><span><img src="<?php echo $farmis_logo; ?>" /></span></td>
-                                        <td style="vertical-align:top; padding-left:10px; padding-top:10px;"><span><img src="<?php echo $infotrade_logo; ?>" /></span></td>
+                                        <td style="vertical-align:top; padding-left:10px; padding-top:10px;"><span><img src="<?php echo $logopath; ?>" /></span></td>
                                     </tr>
                                 </table>
 								<table id="summary" class="table table-condensed contenttable noborder" style="margin:10px 0 0 0; width:99%;">

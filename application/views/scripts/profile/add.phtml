@@ -31,6 +31,7 @@
 		$thecountry = strtoupper($session->getVar('country'));
 		if(!isEmptyString($type)){
 			$isfarmer = false;
+			$user->setType('');
 			$title = "New User";
 		}
 		if(!isEmptyString($request->companyid)){
@@ -91,7 +92,7 @@
 		$county_label = $this->translate("global_subcounty_label");
 		$subcounty_label = $this->translate("global_ward_label");
 	}
-	
+	// debugMessage($user->toArray());
 	$this->headTitle($title);
 ?>
 <script>
@@ -194,12 +195,6 @@
 			}
 			return true;        
 		}, "Please select full Date of Birth");
-		
-		var dateofregOpts = datepickerOpts;
-		dateofregOpts.yearRange = "-5";
-		dateofregOpts.maxDate = new Date();
-		$("#regdate").datepicker(dateofregOpts);
-		$('.ui-datepicker-trigger').hide();
 		
 		<?php if(isUganda()){ ?>
 			var refno = '<?php echo $user->getRefNo(); ?>';

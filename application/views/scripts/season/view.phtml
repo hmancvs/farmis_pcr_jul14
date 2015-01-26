@@ -90,6 +90,7 @@
                                                 <li><a href="<?php echo $this->baseUrl('season/activity/sid/'.encode($season->getID())); ?>"><i class="icon-plus"></i> Post Harvest</a></li>
                                                 <?php // } ?>
                                                 <li><a href="<?php echo $this->baseUrl('season/sale/sid/'.encode($season->getID())); ?>"><i class="icon-plus"></i> Season Sales</a></li>
+                                                <li><a href="<?php echo $this->baseUrl('report/statement/userid/'.$user->getID().'/seasonid/'.$season->getID()); ?>"><i class="icon-list"></i> Profit and Loss Statement</a></li>
                                             </ul>
                                         </div>
                                         <?php if($season->getUser()->getSeasons()->count() > 1){ ?>           

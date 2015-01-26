@@ -8,7 +8,7 @@ class FarmCrop extends BaseRecord {
 		
 		$this->setTableName('farmcrop');
 		$this->hasColumn('userid', 'integer', null);
-		$this->hasColumn('cropid', 'integer', null, array( 'notnull' => true, 'notblank' => true));
+		$this->hasColumn('cropid', 'integer', null);
 		$this->hasColumn('receiveprices', 'integer', null, array('default' => 1));
 		$this->hasColumn('receiveupdates', 'integer', null, array('default' => 1));
 	}
@@ -21,9 +21,7 @@ class FarmCrop extends BaseRecord {
 		$this->addDateFields(array("regdate"));
 		
 		// set the custom error messages
-       	$this->addCustomErrorMessages(array(
-       									"cropid.notblank" => "Please select a court"
-       	       						));
+       	//	$this->addCustomErrorMessages(array("cropid.notblank" => "Please select a Crop"));
 	}
 	/**
 	 * Model relationships

@@ -42,7 +42,7 @@ class MobileController extends IndexController  {
 		if(!isEmptyString($this->_getParam('password')) && $this->_getParam('adminactivate') == '1'){
 			$password = $formvalues['password'];
 		}
-		// debugMessage($formvalues); // exit();
+		// debugMessage($formvalues); exit();
 		
 		$user = new UserAccount();
 		if(!isArrayKeyAnEmptyString('id', $formvalues)){
@@ -281,6 +281,7 @@ class MobileController extends IndexController  {
 	}
 	
 	public function processpictureAction() {
+		// disable rendering of the view and layout so that we can just echo the AJAX output 
 	    $this->_helper->layout->disableLayout();
 		// $this->_helper->viewRenderer->setNoRender(TRUE);
 		
@@ -306,7 +307,7 @@ class MobileController extends IndexController  {
 		
 		// base path for profile pictures
  		$destination_path = BASE_PATH.DIRECTORY_SEPARATOR."uploads".DIRECTORY_SEPARATOR."users".DIRECTORY_SEPARATOR."user_";
-	
+ 		
 		// determine if user has destination avatar folder. Else user is editing there picture
 		if(!is_dir($destination_path.$user->getID())){
 			// no folder exits. Create the folder
@@ -315,12 +316,11 @@ class MobileController extends IndexController  {
 		
 		// set the destination path for the image
 		$profilefolder = $user->getID();
-		if($type == 'photo'){
+		$permcommand = BASE_PATH.DIRECTORY_SEPARATOR."uploads".DIRECTORY_SEPARATOR."users".DIRECTORY_SEPARATOR."user_".$user->getID(); // debugMessage($permcommand);
+		passthru("chmod -R 777 ".$permcommand);
+		passthru("chown -R vsftpd:www-data ".$permcommand);
+		
 			$destination_path = $destination_path.$profilefolder.DIRECTORY_SEPARATOR."avatar";
-		}
-		if($type == 'sign'){
-			$destination_path = $destination_path.$profilefolder.DIRECTORY_SEPARATOR."sign";
-		}
 		if(!is_dir($destination_path)){
 			mkdir($destination_path, 0777);
 		}
@@ -329,14 +329,12 @@ class MobileController extends IndexController  {
 		if(!is_dir($archivefolder)){
 			mkdir($archivefolder, 0777);
 		}
+		passthru("chmod -R 777 ".$archivefolder);
+		passthru("chown -R vsftpd:www-data ".$archivefolder);
 		
-		if($type == 'photo'){
 			$oldfilename = $user->getProfilePhoto();
-		}
-		if($type == 'sign'){
-			$oldfilename = $user->getSignature();
-		}
-		//debugMessage($destination_path); 
+		passthru("chmod -R 777 ".$destination_path);
+		passthru("chown -R vsftpd:www-data ".$destination_path);
 		$upload->setDestination($destination_path);
 		
 		// the profile image info before upload
@@ -372,30 +370,18 @@ class MobileController extends IndexController  {
 			$newlargefilename = "large_".$currenttime_file;
 			// generate and save thumbnails for sizes 250, 125 and 50 pixels
 			resizeImage($basefile, $destination_path.DIRECTORY_SEPARATOR.'large_'.$currenttime.'.jpg', 400);
-			if($type == 'photo'){
 				resizeImage($basefile, $destination_path.DIRECTORY_SEPARATOR.'medium_'.$currenttime.'.jpg', 165);
-			}
 			// unlink($thefilename);
 			unlink($destination_path.DIRECTORY_SEPARATOR.'base_'.$currenttime.'.jpg');
 			
 			// exit();
 			// update the useraccount with the new profile images
 			try {
-				if($type == 'photo'){
 					$user->setProfilePhoto($currenttime.'.jpg');
-				}
-				if($type == 'sign'){
-					$user->setSignature($currenttime.'.jpg');
-				}
 				$user->save();
 				
 				// check if user already has profile picture and archive it
-				if($type == 'photo'){
 					$ftimestamp = current(explode('.', $user->getProfilePhoto()));
-				}
-				if($type == 'sign'){
-					$ftimestamp = current(explode('.', $user->getSignature()));
-				}
 				
 				$allfiles = glob($destination_path.DIRECTORY_SEPARATOR.'*.*');
 				$currentfiles = glob($destination_path.DIRECTORY_SEPARATOR.'*'.$ftimestamp.'*.*');

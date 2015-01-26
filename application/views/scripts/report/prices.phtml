@@ -22,11 +22,36 @@
 	}
 	$countryreq = strtolower($request->country);
 	
-	$title = "Market Prices";
-	$this->headTitle($title); 
+	$viewtype = $request->show;
+	$viewtype == 'regionview';
+	$isregionview = true;	
+	if($viewtype == 'regionview'){
+		$isregionview = true;
+	}
+	
+	$tab = $request->tab;
+	if(isEmptyString($tab)){
+		$tab = 1;
+	}
+
+	if($isregionview){
+		$current = $tab;
+		if($tab == 'all'){
+			$current = '';
+		}
+		//$allmarkets = getAgmisMarkets($current);
+	} else {
+		//$allmarkets = getAgmisMarkets();
+	}
+	
+	$title = "Latest Market Prices from <a href='http://agmis.infotradeuganda.com' target='_blank'>Infotrade Uganda</a>";
+	$this->headTitle("Latest Market Report".$browserappend); 
 	
 ?>
 <script type="text/javascript" src="<?php echo $this->baseUrl('assets/js/custom/table2CSV.js'); ?>"></script>
+<script type="text/javascript" src="<?php echo $this->serverUrl($this->baseUrl('assets/js/custom/jquery.doubleScroll.js')); ?>"></script>
+<script type="text/javascript" src="<?php echo $this->serverUrl($this->baseUrl('assets/js/custom/jquery.slimscroll.min.js')); ?>"></script>
+<script type="text/javascript" src="<?php echo $this->serverUrl($this->baseUrl('assets/js/custom/jquery.slimscroll.horizontal.min.js')); ?>"></script>
 <script>
 $(document).ready(function() {
 	<?php if($request->print == 1){ ?>
@@ -43,18 +68,66 @@ $(document).ready(function() {
 		$("body.print a.sortlink").removeAttr('href').removeAttr('title');
 	<?php } ?>
 	
-	// auto populate contact details 
-	$("#marketprices").html('<div style="padding-top:100px;" class="centeralign blocked"><label class="centeralign blocked">loading...</label><br />'+$("#wait").html()+'</div>');
-	$.get("<?php echo $this->baseUrl('graph/allpricesexport/pgc/true'); ?>", 
-	   {			
-		cachebuster: new Date().getTime()}, 			   
-		function(data){			
-			// alert(data);			
-			$('#marketprices').html(data);
-			equalHeight($("#leftcolumn, #centercolumn"));
-			$('#centercolumn').css({'height':'1775px'});	
-		}
-	);
+	<?php if(false){ ?>
+		// auto populate contact details 
+		$("#marketprices").html('<div style="padding-top:100px;" class="centeralign blocked"><label class="centeralign blocked">loading...</label><br />'+$("#wait").html()+'</div>');
+		$.get("<?php echo $this->baseUrl('graph/allpricesexport/pgc/true'); ?>", 
+		   {			
+			cachebuster: new Date().getTime()}, 			   
+			function(data){			
+				// alert(data);			
+				$('#marketprices').html(data);
+				equalHeight($("#leftcolumn, #centercolumn"));
+				$('#centercolumn').css({'height':'1775px'});	
+			}
+		);
+	<?php } ?>
+	
+	$(".regionchange").click(function(){
+		url = $(this).attr('redirect');
+		$(location).attr('href', url);
+		var current = $(this).attr('current'); // alert(current);
+		$("#tab_1_"+current).html($("#loaderimage").html());
+	});
+	
+	// select or unselect all checkboxes on click all
+	$("#all").click(function(){		
+		if(this.checked == true) {
+			$(".pricechecker").trigger('click');
+		} else {			
+			$(".pricechecker").attr('checked', false);
+		} 
+	});
+	
+	$(".submitexcel").click(function(e){
+		e.preventDefault();
+		var csv_value = $('#datatable').table2CSV({delivery:'value'});
+		var decoded_value = base64_encode(csv_value);
+		$("#csv_text").val(decoded_value);
+		
+		$("#listform").attr('action', '<?php echo $this->baseUrl('download/excel'); ?>').attr('method', 'post').submit();
+		return true;
+	});
+	
+	$(".wrapper1").scroll(function(){
+        $(".wrapper2").scrollLeft($(".wrapper1").scrollLeft());
+    });
+    $(".wrapper2").scroll(function(){
+        $(".wrapper1").scrollLeft($(".wrapper2").scrollLeft());
+    });
+	
+	$(".wrapper2").slimScroll({
+		height: 'auto',
+		size: '15px',
+		position: 'right',
+		color: '#000',
+		alwaysVisible: true,
+		distance: '1px',
+		railVisible: true,
+		railColor: '#fff',
+		railOpacity: 0.8,
+		wheelStep: 10
+	});
 });
 </script>
 <style>
@@ -137,20 +210,6 @@ $(document).ready(function() {
 	margin-right:-10px;
 	width:100%;
 }
-.reportlinks {
-	margin-top:-10px;
-}
-#generate {
-	margin-top:-10px;
-}
-.printpage {
-	display:none;
-}
-pdfquicklinks {
-	position:absolute; 
-	left:10px; 
-	top:8px;
-}
 .widgetsection h3.reportpagetitle {
 	color:#282727;
 }
@@ -161,50 +220,198 @@ pdfquicklinks {
 	width:100%;
 	text-align:left;
 }
-.table#data tr td {
-	white-space:nowrap;
-}
-.paginatecustom {
-	position:absolute;
-	left:12px;
-	top:10px;
-	width:auto;
-	text-align:left;
-	float:left;
-}
-.pager {
-	text-align:right;
-}
-<?php if($request->print == 1) { ?> 
-#contentwrapper {
-	margin: 10px 0 5px;
-}
-#centercolumn {
-	float:left;
-	width:90%;
-}
-#maincontainer.container {
-	margin-left:20px;
-	margin-top:10px;
-}
-#printer_page_action_buttons {
-	margin:10px;
-}
-.hideonprint {
-	display:none;
-}
-.printpage {
-	margin:10px;
-	display:block;
-}
-<?php } ?>
 </style>
 <div id="centercolumn">
 	<div class="widgetsection" style="min-height:800px; height:auto;">
-        <h3 style="color:#282727;"><?php echo $title; ?></h3>
-        <div style="padding-left:10px;">
-           <span id="marketprices"></span>
-        </div>
+        <!--<h3 style="color:#282727;"><?php //echo $title; ?></h3>-->
+        <form class="form margin0 padding5" action="<?php echo $this->baseUrl("report/prices"); ?>" method="get" id="listform">
+            <input type="hidden" name="show" id="show" value="<?php echo $viewtype; ?>" />
+            <?php if ($sessionhaserror) { ?>
+                <div class="alert alert-danger fade in"><i class="icon-remove close" data-dismiss="alert"></i><?php echo $session->getVar(ERROR_MESSAGE); ?></div>
+            <?php } ?>
+            <?php if (!isEmptyString($session->getVar(SUCCESS_MESSAGE))) { ?>
+                <div class="alert alert-success fade in"><i class="icon-remove close" data-dismiss="alert"></i><?php echo $session->getVar(SUCCESS_MESSAGE); ?></div>
+            <?php } ?>
+            <?php if($isregionview){ ?>
+                <div class="hide page-header-after divider15"></div>           
+                <div class="row margin0 pricedetails">
+                    <div class="col-md-12">
+                        <div class="widget box">
+                            <div class="widget-header">
+                                <h4><i class="icon-reorder"></i> <?php echo $title; ?></h4>
+                            </div>
+                            <div class="tabbable tabbable-custom" style="margin:10px;">
+                                <?php if($request->fullscreen == 1){ ?>
+                                    <style>
+                                    #sidebar, .crumbs {
+                                        display:none;
+                                        width:0;
+                                        height:0;
+                                        margin:0;
+                                        padding:0;
+                                    }
+                                    #content {
+                                        margin-left:0;
+                                    }								
+                                    </style>
+                                    <script>
+                                    $(document).ready(function(){
+                                        $('.page-header').hide().remove();
+                                        $('.page-header-after').removeClass('hide').show();
+                                    });
+                                    </script>
+                                <?php } ?>
+                                <ul class="nav nav-tabs margin0">
+                                	<?php
+										$region = new Location();
+										$regions = $region->getRegions();
+										$counter = 1; 
+										foreach($regions as $key => $region){
+									?>
+										<li class="<?php echo $counter == $tab ? 'active':''; ?>" style="width:17%; text-align:center;"><a data-toggle="tab" href="#tab_1_<?php echo $counter; ?>" id="region_<?php echo $counter; ?>" current="<?php echo $counter; ?>" class="regionchange bolded" redirect="<?php echo $this->baseUrl('report/prices/show/regionview/tab/'.$counter); ?>" style="padding-top:10px; padding-bottom:10px; font-size:16px;"><?php echo $region->getName().' Region'; ?></a></li>
+									<?php $counter++; } ?>
+										<li class="<?php echo $tab == 'all' ? 'active':''; ?>" style="width:17%; text-align:center;"><a data-toggle="tab" href="#tab_1_all" id="region_all" class="regionchange bolded" redirect="<?php echo $this->baseUrl('report/prices/show/regionview/tab/all'); ?>" style="padding-top:10px; padding-bottom:10px; font-size:16px;">All Regions</a></li>
+                                </ul>
+                                <div class="tab-content">
+                                    <?php
+                                        $counter = 1;
+                                        foreach($regions as $key => $region){ 
+                                          	$prices = getLatestPrices('', '', $region->getID()); 
+                                    ?>
+                                    	<div id="tab_1_<?php echo $tab; ?>" class="tab-pane <?php echo ($counter == $tab) ? 'active':''; ?>" style="min-height:250px;">
+                                            <div class="wrapper1">
+                                                <div class="div1" style="width:1400px;"></div>
+                                            </div>
+                                            <div class="wrapper2">
+                                                <div class="div2" style="width:1400px;">
+                                                    <div class="divider10"></div>
+                                                    <table class="table table-hover table-bordered commodities" id="datatable" style="width:auto; margin-right:50px;">
+                                                        <thead>
+                                                            <tr>
+                                                                <th style="padding-left:20px; width:170px; font-size:14px;">Commodity</th>
+                                                                <th class="notbolded centeralign" style="width:50px; font-size:14px;">Unit</th>
+                                                                <th class="notbolded centeralign" style="width:50px; font-size:14px;">Type</th>
+                                                                <th class="notbolded centeralign" style="width:60px; font-size:14px;">Average</th>
+                                                                <?php
+                                                                    $allmarkets = getMarketsPriorityList($region->getID());
+                                                                    foreach($allmarkets as $key => $market){
+                                                                        $currentdate = changeMySQLDateToPageFormat(getLastApprovalDate($market['id']));
+                                                                        if(isEmptyString($currentdate)){
+                                                                            $currentdate = '&nbsp;';
+                                                                        }
+                                                                ?>
+                                                                    <th class="angle nowrapping bolded" id="market_<?php echo $market['name']; ?>" style="font-size:13px; min-width:60px;"><?php echo str_replace(' Market', '', $market['name']); ?>
+                                                                    <p class="blocked margin0 padding0" style="font-size:10px;"><?php echo $currentdate; ?></p>
+                                                                    </th>
+                                                                <?php } ?>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                        	<?php
+																foreach($prices as $result){
+															 ?>
+																<tr class="1">          
+																	<td class="bolded" style="padding-left:20px; font-size:13px;"><?php echo $result['name']; ?></td>
+																	<td class="centeralign nowrapping"><?php echo $result['units']; ?></td>
+																	<td class="centeralign nowrapping">R.P</td>
+																	<td class="rightalign bolded" style="font-size:12px;"><?php echo isEmptyString($result['overall_retail_avg']) ? '--' : formatNumber(round($result['overall_retail_avg']/50,0)*50); ?></td>
+																	<?php 		  	
+																		foreach($allmarkets as $thekey => $market){
+																	?>
+																		<td class="rightalign" style="font-size:12px;"><?php echo isEmptyString($result['retailprice_'.$market['id']]) ? '--' : formatNumber(round($result['retailprice_'.$market['id']]/50,0)*50); ?></td>
+																	<?php } ?>
+																</tr>
+																<tr class="2">          
+																	<td></td>
+																	<td></td>
+																	<td class="wholesale centeralign nowrapping">W.P</td>
+																	<td class="rightalign bolded" style="font-size:12px;"><?php echo isEmptyString($result['overall_wholesale_avg']) ? '--' : formatNumber(round($result['overall_wholesale_avg']/50,0)*50); ?></td>
+																	<?php 		  	
+																		foreach($allmarkets as $thekey => $market){	
+																	?>
+																		<td class="rightalign" style="font-size:12px;"><?php echo isEmptyString($result['wholesaleprice_'.$market['id']]) ? '--' : formatNumber(round($result['wholesaleprice_'.$market['id']]/50,0)*50); ?></td>
+																	<?php } ?>
+																</tr>
+															 <?php } ?>
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    <?php $counter++; } ?>
+                                    <div id="tab_1_all" class="tab-pane <?php echo ($tab == 'all') ? 'active':''; ?>" style="min-height:250px;">
+										<?php if($tab == 'all'){ 
+                                            $prices = getLatestPrices(); 
+                                        ?>
+                                        <div class="wrapper1">
+                                            <div class="div1" style="width:4000px;"></div>
+                                        </div>
+                                        <div class="wrapper2">
+                                            <div class="div2" style="width:4000px; overflow-x:scroll;">
+                                                <div class="divider10"></div>
+                                                <table class="table table-hover table-bordered commodities" id="datatable" style="width:100%; margin-right:50px;">
+                                                    <thead>
+                                                        <tr>
+                                                            <th style="padding-left:20px; width:170px; font-size:14px;">Commodity</th>
+                                                            <th class="notbolded centeralign" style="width:50px; font-size:14px;">Unit</th>
+                                                            <th class="notbolded centeralign" style="width:50px; font-size:14px;">Type</th>
+                                                            <th class="notbolded centeralign" style="width:60px; font-size:14px;">Average</th>
+                                                            <?php
+                                                                $allmarkets = getMarketsPriorityList();
+                                                                foreach($allmarkets as $key => $market){
+                                                                    $currentdate = changeMySQLDateToPageFormat(getLastApprovalDate($market['id']));
+                                                                    if(isEmptyString($currentdate)){
+                                                                        $currentdate = '&nbsp;';
+                                                                    }
+                                                            ?>
+                                                                <th class="angle nowrapping bolded" id="market_<?php echo $market['name']; ?>" style="font-size:13px; min-width:60px;"><?php echo str_replace(' Market', '', $market['name']); ?>
+                                                                <p class="blocked margin0 padding0" style="font-size:10px;"><?php echo $currentdate; ?></p>
+                                                                </th>
+                                                            <?php } ?>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+														<?php
+                                                            foreach($prices as $result){
+                                                         ?>
+                                                            <tr class="1">          
+                                                                <td class="bolded" style="padding-left:20px; font-size:13px;"><?php echo $result['name']; ?></td>
+                                                                <td class="centeralign nowrapping"><?php echo $result['units']; ?></td>
+                                                                <td class="centeralign nowrapping">R.P</td>
+                                                                <td class="rightalign bolded" style="font-size:12px;"><?php echo isEmptyString($result['overall_retail_avg']) ? '--' : formatNumber(round($result['overall_retail_avg']/50,0)*50); ?></td>
+                                                                <?php 		  	
+                                                                    foreach($allmarkets as $thekey => $market){
+                                                                ?>
+                                                                    <td class="rightalign" style="font-size:12px;"><?php echo isEmptyString($result['retailprice_'.$market['id']]) ? '--' : formatNumber(round($result['retailprice_'.$market['id']]/50,0)*50); ?></td>
+                                                                <?php } ?>
+                                                            </tr>
+                                                            <tr class="2">          
+                                                                <td></td>
+                                                                <td></td>
+                                                                <td class="wholesale centeralign nowrapping">W.P</td>
+                                                                <td class="rightalign bolded" style="font-size:12px;"><?php echo isEmptyString($result['overall_wholesale_avg']) ? '--' : formatNumber(round($result['overall_wholesale_avg']/50,0)*50); ?></td>
+                                                                <?php 		  	
+                                                                    foreach($allmarkets as $thekey => $market){	
+                                                                ?>
+                                                                    <td class="rightalign" style="font-size:12px;"><?php echo isEmptyString($result['wholesaleprice_'.$market['id']]) ? '--' : formatNumber(round($result['wholesaleprice_'.$market['id']]/50,0)*50); ?></td>
+                                                                <?php } ?>
+                                                            </tr>
+                                                         <?php } ?>
+                                                    </tbody>
+                                               	</table>
+                                          	</div>
+                                    	</div>
+                                        <?php } else { ?>
+                                            <span class="blocked maxwidth centeralign" style="margin-top:50px;"><img class="centeralign" src="<?php echo $this->baseUrl('images/ui-anim_basic_16x16.gif'); ?>" /> &nbsp;Please wait...</span>
+                                        <?php } ?>
+                                 	</div>
+                             	</div>
+                        	</div>
+                    	</div>
+                	</div>
+             	</div>
+        	<?php } ?>
+        </form>
     </div>
 </div>
 <?php

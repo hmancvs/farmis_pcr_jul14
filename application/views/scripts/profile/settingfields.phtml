@@ -1,25 +1,3 @@
-	<div class="control-group">
-      <label class="control-label" style="width:100%;"><?php echo $isme ? 'Do you have a Mobile Money Account? ' : 'Does Farmer have a Mobile Money Account?'; ?></label>
-      <div class="controls" style="margin-left:0;">
-         <div class="inline" style="margin-right:20px;">
-         	<input type="radio" name="hasmobilemoney" id="hasmobilemoney_1" class="<?php echo $user->gethasmobilemoney() == 1 ? 1 : 0; ?>" value="1" /> &nbsp;<label class="lineblocked">Yes</label>
-         </div>
-         <div class="inline">
-         	<input type="radio" name="hasmobilemoney" id="hasmobilemoney_0" class="<?php echo $user->gethasmobilemoney() == 0 ? 1 : 0; ?>" value="0" /> &nbsp;<label class="lineblocked">No</label>
-         </div>
-      </div>
-    </div>
-    <div class="control-group">
-      <label class="control-label" style="width:100%;"><?php echo $isme ? 'Do you have a Bank Account? ' : 'Does Farmer have a Bank Account?'; ?></label>
-      <div class="controls" style="margin-left:0;">
-         <div class="inline" style="margin-right:20px;">
-         	<input type="radio" name="hasbankaccount" id="hasbankaccount_1" class="<?php echo $user->gethasbankaccount() == 1 ? 1 : 0; ?>" value="1" /> &nbsp;<label class="lineblocked">Yes</label>
-         </div>
-         <div class="inline">
-         	<input type="radio" name="hasbankaccount" id="hasbankaccount_0" class="<?php echo $user->gethasbankaccount() == 0 ? 1 : 0; ?>" value="0" /> &nbsp;<label class="lineblocked">No</label>
-         </div>
-      </div>
-    </div>
     <div class="control-group">
         <label class="control-label" style="width:100%;">Services Profiled:</label>
         <div class="controls" style="margin-left:0;">
@@ -50,10 +28,11 @@
            <div id="serviceids_error"></div>
         </div>
     </div>
+    <?php if(isUganda()){ ?>
     <div class="control-group">
         <label class="control-label" style="width:100%;">Preferred Language:</label>
         <div class="controls" style="margin-left:0;">
-            <?php
+           <?php
                 $languagetypes = getAllLanguageTypes();
 				$languagearray = array_remove_empty(explode(',', $user->getLanguages()));
 				// debugMessage($contentarray);
@@ -71,6 +50,7 @@
            <div id="languageids_error"></div>
         </div>
     </div>
+    <?php } ?>
     <div class="control-group">
       <label class="control-label" style="width:100%;">Market Information Alert Settings:</label>
       <div class="controls" style="margin-left:0;">

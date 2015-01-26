@@ -203,8 +203,6 @@ class FarmerController extends ProfileController   {
 	
 		// base path for profile pictures
 		$destination_path = BASE_PATH.DIRECTORY_SEPARATOR."uploads".DIRECTORY_SEPARATOR."users".DIRECTORY_SEPARATOR."user_";
-		//shell_exec("chown -R vsftpd:www-data ".$destination_path);
-		//shell_exec("chmod -R 777 ".$destination_path);
 		
 		// determine if user has destination avatar folder. Else user is editing there picture
 		if(!is_dir($destination_path.$user->getID())){
@@ -214,24 +212,25 @@ class FarmerController extends ProfileController   {
 	
 		// set the destination path for the image
 		$profilefolder = $user->getID();
-		$destination_path = $destination_path.$profilefolder.DIRECTORY_SEPARATOR."avatar";
-		//shell_exec("chown -R vsftpd:www-data ".$destination_path);
-		//shell_exec("chmod -R 777 ".$destination_path);
+		$permcommand = BASE_PATH.DIRECTORY_SEPARATOR."uploads".DIRECTORY_SEPARATOR."users".DIRECTORY_SEPARATOR."user_".$user->getID(); // debugMessage($permcommand);
+		passthru("chmod -R 777 ".$permcommand);
+		passthru("chown -R vsftpd:www-data ".$permcommand);
 		
+		$destination_path = $destination_path.$profilefolder.DIRECTORY_SEPARATOR."avatar";
 		if(!is_dir($destination_path)){
-			mkdir($destination_path, 0775);
+			mkdir($destination_path, 0777);
 		}
 		// create archive folder for each user
 		$archivefolder = $destination_path.DIRECTORY_SEPARATOR."archive";
-		//shell_exec("chown -R vsftpd:www-data ".$archivefolder);
-		//shell_exec("chmod -R 777 ".$archivefolder);
-		
 		if(!is_dir($archivefolder)){
-			mkdir($archivefolder, 0775);
+			mkdir($archivefolder, 0777);
 		}
+		passthru("chmod -R 777 ".$archivefolder);
+		passthru("chown -R vsftpd:www-data ".$archivefolder);
 	
 		$oldfilename = $user->getProfilePhoto();
-		// debugMessage($destination_path); exit();
+		passthru("chmod -R 777 ".$destination_path);
+		passthru("chown -R vsftpd:www-data ".$destination_path);
 		$upload->setDestination($destination_path);
 	
 		// the profile image info before upload

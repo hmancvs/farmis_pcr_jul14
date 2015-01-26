@@ -14,8 +14,11 @@
 	 * 
 	 * @return Array of values for the query 
 	 */
-	function getOptionValuesFromDatabaseQuery($query) {
-		$conn = Doctrine_Manager::connection(); 
+	function getOptionValuesFromDatabaseQuery($query, $db = '') {
+		$conn = Doctrine_Manager::connection();
+		/* if($db == 'agmis'){
+			$conn = getAgmisConnection();
+		} */
 		$result = $conn->fetchAll($query);
 		$valuesarray = array();
 		foreach ($result as $value) {
@@ -1131,7 +1134,7 @@
 	}
 	# types of services for inventory
 	function getServiceTypes(){
-		$query = "SELECT l.lookuptypevalue as optionvalue, l.lookupvaluedescription as optiontext FROM lookuptypevalue AS l INNER JOIN lookuptype AS v ON l.lookuptypeid = v.id WHERE v.name =  'SERVICE_TYPES' ";
+		$query = "SELECT l.lookuptypevalue as optionvalue, l.lookupvaluedescription as optiontext FROM lookuptypevalue AS l INNER JOIN lookuptype AS v ON l.lookuptypeid = v.id WHERE v.name = 'SERVICE_TYPES' ";
 		return getOptionValuesFromDatabaseQuery($query);
 	}
 	# sources of loans for financing season activities
@@ -1643,12 +1646,211 @@
     }
     # determine the service content types
     function getAllContentTypes(){
-    	$query = "SELECT l.lookuptypevalue as optionvalue, l.lookupvaluedescription as optiontext FROM lookuptypevalue AS l INNER JOIN lookuptype AS v ON l.lookuptypeid = v.id WHERE v.name =  'SERVICE_TYPES'";
+    	$query = "SELECT l.lookuptypevalue as optionvalue, l.lookupvaluedescription as optiontext FROM lookuptypevalue AS l INNER JOIN lookuptype AS v ON l.lookuptypeid = v.id WHERE v.name =  'CONTENT_TYPES'";
     	return getOptionValuesFromDatabaseQuery($query);
     }
     # determine the service content types
     function getAllLanguageTypes(){
     	$query = "SELECT l.lookuptypevalue as optionvalue, l.lookupvaluedescription as optiontext FROM lookuptypevalue AS l INNER JOIN lookuptype AS v ON l.lookuptypeid = v.id WHERE v.name =  'LANGUAGE_TYPES'";
     	return getOptionValuesFromDatabaseQuery($query);
+    }
+    # where to sell options
+    function getDataOptionsAsArray($key){
+    	$query = "SELECT l.lookuptypevalue as optionvalue, l.lookupvaluedescription as optiontext FROM lookuptypevalue AS l INNER JOIN lookuptype AS v ON l.lookuptypeid = v.id WHERE v.name = '".$key."'";
+    	return getOptionValuesFromDatabaseQuery($query);
+    }
+    
+    function getMarkets($regionid = '', $marketlist = ''){
+    	$region_query = ""; $market_query = "";
+    	if(!isEmptyString($regionid)){
+    		$region_query = " AND l.regionid = '".$regionid."' ";
+    	}
+    	if(!isEmptyString($marketlist)){
+    		$mark_array = explode(',', str_replace(' ','',$marketlist));
+    		$mark_string = implode("','", $mark_array);
+    		$market_query = " AND p.id IN('".$mark_string."') ";
+    	}
+    	$query = "select p.id as optionvalue, p.name as optiontext from agmis.pricesource p inner join agmis.location l on (p.districtid = l.id) where (p.type = 2 ".$region_query.") ".$market_query." group by p.id order by p.name asc";
+    	// debugMessage($query);
+    	return getOptionValuesFromDatabaseQuery($query);
+    }
+    # the latest approved prices - Last approved submission for market commodities
+    function getLatestPrices($commodityid = '', $marketid='', $regionid = '', $queryallmarkets = true, $type = 2, $districtid=''){
+    	$commodity_query = ""; $commodity_query = ""; $grouby_columns = " d.commodityid ";
+    	if(!isEmptyString($commodityid)){
+    		$com_array = explode(',', str_replace(' ','',$commodityid));
+    		if(count($com_array) == 1){
+    			$commodity_query = " AND d.commodityid = '".$commodityid."' ";
+    		} else {
+    			$com_string = implode("','", $com_array);
+    			$commodity_query = " AND d.commodityid IN('".$com_string."') ";
+    		}
+    	}
+    	// debugMessage($commodity_query);
+    	$market_query = "";
+    	if(!isEmptyString($marketid)){
+    		$mark_array = explode(',', str_replace(' ','',$marketid));
+    		if(count($mark_array) == 1){
+    			$market_query = " AND d.sourceid = '".$marketid."' ";
+    		} else {
+    			$mark_string = implode("','", $mark_array);
+    			$market_query = " AND d.sourceid IN('".$mark_string."') ";
+    		}
+    	}
+    
+    	$dist_query = "";
+    	if(!isEmptyString($districtid)){
+    		$dist_array = explode(',', str_replace(' ','',$districtid));
+    		if(count($dist_array) == 1){
+    			$dist_query = " AND s.districtid = '".$districtid."' ";
+    		} else {
+    			$dist_string = implode("','", $dist_array);
+    			$dist_query = " AND s.districtid IN('".$dist_string."') ";
+    		}
+    	}
+    
+    	// debugMessage($market_query); // exit();
+    	$region_query = ""; $region_query2 = " ";
+    	if(!isEmptyString($regionid)){
+    		$region_query = " AND l.regionid = '".$regionid."' ";
+    		$region_query2 = " AND l2.regionid = '".$regionid."' ";
+    	}
+    
+    	$start = 1;
+    	$fields_select = '';
+    	$sum_wp_round = '';
+    	$sum_wp_round_add = '';
+    	$sum_rp_round = '';
+    	$sum_rp_round_add = '';
+    	$region_line = '';
+    	$average_query = '';
+    	// if quering for all markets
+    	if($queryallmarkets){
+    		$allmarkets = array();
+    		$themarkets = array_filter(explode(',', str_replace(' ','', trim($marketid))));
+    		$noofmarkets = count($themarkets);
+    		// debugMessage('no is '.$noofmarkets.' and type is '.$typeq);
+    		if(isEmptyString($noofmarkets) || $noofmarkets == 0){
+    			$allmarkets = getMarkets($regionid);
+    		}
+    		if($noofmarkets > 0){
+    			$data_array = array();
+    			foreach ($themarkets as $k => $id){
+    				$data_array[$id] = $id;
+    			}
+    			$allmarkets = $data_array;
+    		}
+    
+    		// debugMessage($allmarkets); // exit();
+    		$count = count($allmarkets);
+    		if($count > 0){
+    			// loop through markets if any
+    			foreach($allmarkets as $key => $location){
+    				$fields_select .= '
+    				ROUND(AVG(IF(d.sourceid = '.$key.', NULLIF(d.wholesaleprice ,0),NULL))) AS wholesaleprice_'.$key.',
+    				ROUND(AVG(IF(d.sourceid = '.$key.', NULLIF(d.retailprice ,0),NULL ))) AS retailprice_'.$key.',';
+    				$sum_wp_round .= ' IF(ISNULL(ROUND(AVG(IF(d.sourceid = '.$key.',NULLIF(d.wholesaleprice ,0),NULL)))),0, ROUND(AVG(IF(d.sourceid = '.$key.',NULLIF(d.wholesaleprice ,0),NULL)))) + ';
+    				$sum_wp_round_add .= ' IF(ISNULL(ROUND(AVG(IF(d.sourceid = '.$key.',NULLIF(d.wholesaleprice ,0),NULL)))),0, 1) + ';
+    					
+    				$sum_rp_round .= ' IF(ISNULL(ROUND(AVG(IF(d.sourceid = '.$key.', NULLIF(d.retailprice ,0),NULL)))),0, ROUND(AVG(IF(d.sourceid = '.$key.',NULLIF(d.retailprice ,0),NULL)))) + ';
+    				$sum_rp_round_add .= ' IF(ISNULL(ROUND(AVG(IF(d.sourceid = '.$key.', NULLIF(d.retailprice ,0),NULL)))),0, 1) + ';
+    				$start++;
+    			}
+    
+    			$sum_wp_round .= ' 0 ';
+    			$sum_wp_round_add .= ' 0 ';
+    			$sum_rp_round .= ' 0 ';
+    			$sum_rp_round_add .= ' 0 ';
+    
+    			$average_query = "
+    			".$fields_select."
+    			ROUND((
+    			".$sum_wp_round."
+    			) / (
+    			".$sum_wp_round_add."
+    			)) as overall_wholesale_avg,
+    			ROUND((
+    			".$sum_rp_round."
+    			) / (
+    			".$sum_rp_round_add."
+    			)) as overall_retail_avg,
+    			";
+    		}
+    		// debugMessage($average_query); exit();
+    	}
+    
+    	$all_results_query = "SELECT
+    	l.regionid as regionid,
+    	s.districtid as districtid,
+    	l.name as district,
+    	d.sourceid as sourceid,
+    	s.name as market,
+    	d.datecollected AS datecollected,
+    	d2.datecollected AS datecollected,
+    	d.commodityid as commodityid,
+    	d.commodityid as id,
+    	cd.`name` as commodity,
+    	cd.`name` as name,
+    	cd.categoryid as categoryid,
+    	cc.name AS `category`,
+    	u.name AS `units`,
+    	".$average_query."
+    	ROUND(AVG(NULLIF(d.wholesaleprice,0))) AS wholesaleprice,
+    	ROUND(AVG(NULLIF(d.retailprice ,0))) AS retailprice
+    	FROM agmis.price_details AS d
+    	INNER JOIN agmis.commodity cd ON d.`commodityid` = cd.`id`
+    	Inner Join agmis.commodity_category AS cc ON (cd.categoryid = cc.id)
+    	Inner Join agmis.commodity_unit AS u ON (cd.unitid = u.id)
+    	INNER JOIN agmis.pricesource AS s ON (d.sourceid = s.id)
+    	Inner Join agmis.location l on (s.districtid = l.id AND l.locationtype = 2)
+    	INNER JOIN (SELECT
+    	cp.sourceid,
+    	cp.commodityid,
+    	MAX(cp.datecollected) AS datecollected
+    	FROM agmis.price_details cp
+    	INNER JOIN agmis.price_submission AS cs1
+    	ON (cp.`submissionid` = cs1.`id` AND cp.pricecategoryid = ".$type." AND cs1.`status` = 3 AND cp.retailprice > 0 AND TO_DAYS(cs1.datecollected) >= TO_DAYS(DATE_SUB(NOW(), INTERVAL 1 MONTH)))
+    	INNER JOIN agmis.pricesource AS s2 ON (cp.sourceid = s2.id)
+    	Inner Join agmis.location l2 on (s2.districtid = l2.id AND l2.locationtype = 2 ".$region_query2.")
+    	where cs1.`status` = 3 AND TO_DAYS(cs1.datecollected) >= TO_DAYS(DATE_SUB(NOW(), INTERVAL 2 MONTH)) ".$region_query2." group by cp.sourceid, cp.commodityid) AS d2
+    	ON (d2.datecollected = d.`datecollected` AND d2.commodityid = d.commodityid AND d2.sourceid = d.sourceid)
+    	WHERE d.pricecategoryid = ".$type." ".$commodity_query.$market_query.$dist_query.$region_query." GROUP BY ".$grouby_columns."
+    	ORDER BY cd.name ";
+    	// .$dist_query
+    	// debugMessage($all_results_query); return true; exit();
+    	// $conn = Doctrine_Manager::connection();
+    	$conn = Doctrine_Manager::connection();
+    	return $conn->fetchAll($all_results_query);
+    }
+    
+    function getMarketsPriorityList($regionid = '', $market_list = '') {
+    	$region_query = ""; $market_query = "";
+    	if(!isEmptyString($regionid)){
+    		$region_query = " AND l.regionid = '".$regionid."' ";
+    	}
+    	if(!isEmptyString($market_list)){
+    		$mark_array = explode(',', str_replace(' ','',$market_list));
+    		$mark_string = implode("','", $mark_array);
+    		$market_query = " AND p.id IN('".$mark_string."') ";
+    	}
+    	$conn = Doctrine_Manager::connection();
+    	$query = "select p.id as id, p.name as name, l.districtid, l.regionid as regionid, l.name as district, r.name as region from agmis.pricesource p inner join agmis.location l on (p.districtid = l.id) inner join agmis.location r on (l.regionid = r.id) where (p.type = 2 ".$region_query.$market_query.") group by p.id order by l.regionid asc, (case when p.priority is null then 10 else 1 end) asc";
+    	//  debugMessage($query); 
+    	 $all_lists = $conn->fetchAll($query); // debugMessage($all_lists); // exit;
+    	return $all_lists;
+    	// return true;
+    }
+    
+    # determine latest approval date for market
+    function getLastApprovalDate($marketid = '', $duration = 2){
+    	$conn = Doctrine_Manager::connection();
+    	$market_query = "";
+    	if(!isEmptyString($marketid)){
+    		$market_query = " AND cs1.sourceid = '".$marketid."' ";
+    	}
+    	$query = "SELECT
+    	MAX(cs1.datecollected) AS datecollected
+    	FROM agmis.price_submission AS cs1 where cs1.`status` = 3 ".$market_query." AND TO_DAYS(cs1.datecollected) >= TO_DAYS(DATE_SUB(NOW(), INTERVAL ".$duration." MONTH)) ";
+    	return $conn->fetchOne($query);
     }
 ?>

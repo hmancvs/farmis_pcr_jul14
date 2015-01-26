@@ -24,12 +24,14 @@ set_include_path(implode(PATH_SEPARATOR, array(
 // public folder directory
 if(APPLICATION_ENV == 'production'){
 	define("PRICES_SERVER", "http://agmis.infotradeuganda.com/");
+	define('AGMIS_CONNECT_STRING', 'mysql://admin:1nf0trade@localhost/agmis');
 } 
 if(APPLICATION_ENV == 'staging'){
 	define("PRICES_SERVER", "http://agmis.infotradeuganda.com/");
 }
 if(APPLICATION_ENV == 'development'){
-	define("PRICES_SERVER", "http://127.0.0.1/agmis/public/");
+	define("PRICES_SERVER", "http://127.0.0.1/agmis");
+	define('AGMIS_CONNECT_STRING', 'mysql://dev:dev@localhost/agmis');
 }
 
 require_once APPLICATION_PATH.'/includes/commonfunctions.php';

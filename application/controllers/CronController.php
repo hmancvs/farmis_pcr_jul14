@@ -95,7 +95,7 @@ class CronController extends IndexController   {
 		}
 		
 		$backupcommand = "mysqldump -R --add-drop-table --complete-insert --add-locks --quote-names --lock-tables -h ".$dbhost." -P ".$dbport." -u ".$dbuser." -p".$dbpass." ".$dbname.' -q > "'.$sqlscriptpath.'"'; debugMessage($backupcommand); // exit();
-		exec($backupcommand);
+		passthru($backupcommand);
 		
 		if($showverbose){
 			debugMessage("FARMIS Database backup completed to ".$sqlscriptpath);	

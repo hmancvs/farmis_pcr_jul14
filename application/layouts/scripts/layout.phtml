@@ -84,7 +84,11 @@ $(document).ready(function() {
 	$(".expanding").trigger('update');
 	
 	// make the datefields readonly
-	$(".datefield").attr('readOnly', 'true');
+	
+	var dateOpts = datepickerOpts;
+	dateOpts.yearRange = "-<?php echo date('Y')-2010; ?>:-0"; 
+	$(".datefield").attr('readOnly', 'true').datepicker(dateOpts);
+	
 	$(".readonly, .readonlyfield").each(function(){
 		$(this).attr('readonly', true);
 	});
@@ -194,12 +198,6 @@ $(document).ready(function() {
 			$("#birthday").val(d.getDate());
 		}
 	});
-
-	$("img.ui-datepicker-trigger").each(function(){
-    	var theid = $(this).attr('id');
-	    var thepath = '<?php echo $this->baseUrl('images/questionmark.png'); ?>';
-	    $('<a href="javascript: void(0);" class="qcontainer"><img src="'+thepath+'" /></a>').insertAfter(this);
-    });
 
 	$(".hastooltip").each(function(){		
 	    var theid = $(this).attr('id');
@@ -762,7 +760,6 @@ $(document).ready(function() {
     });
 	
 	$(function(){
-		
 		$(".search").keyup(function(e){
 			var keyCode = e.keyCode || e.which;
 			if(keyCode !== 38 && keyCode !== 40 && keyCode !== 13){
@@ -770,9 +767,18 @@ $(document).ready(function() {
 				var type = '<?php echo $usertype; ?>';
 				var grp = '<?php echo $groupid; ?>';
 				var country = '<?php echo $session->getVar('country'); ?>';
+				var isreport = 0;
+				if($(this).hasClass('reportsearch')){
+					var isreport = 1;
+				}
 				// alert(grp);
 				// var dataString = 'searchword='+ inputSearch;
 				var searchurl = '<?php echo $this->baseUrl('resource/search'); ?>/searchword/'+inputSearch+'/type/'+type+'/grp/'+grp+'/country/'+country;
+				var gotourl = '';
+				if(isreport == '1'){
+					var gotourl = $(this).attr('url');
+					var searchurl = '<?php echo $this->baseUrl('resource/search'); ?>/searchword/'+inputSearch+'/type/'+type+'/grp/'+grp+'/country/'+country+'/reporturl/'+gotourl;
+				}
 				if(!isEmptyString(inputSearch) && inputSearch.length > 2){
 					$.ajax({
 						type: "POST",
@@ -841,6 +847,11 @@ $(document).ready(function() {
 		});
 		$(".display_box").live("click",function(e){ 
 			 var url = $(this).attr('url');
+			 var isreport = $(this).attr('isreport');
+			 var reporturl = $(this).attr('reporturl');
+			 if(isreport == '1'){
+				 url = reporturl;
+			 }
 			 // alert(url);
 			 window.location.href = url;
 		});
@@ -1071,7 +1082,7 @@ $(window).load(function() {
 <div class="hidden" id="printer_page_action_buttons"><a title="Close Window" onClick="window.close()" > <img src="<?php echo $this->baseUrl('images/close.png'); ?>" width="16" height="16" alt="Close Window"> </a> &nbsp;&nbsp; <a title="Print" onClick="window.print()" > <img src="<?php echo $this->baseUrl('images/printer.png'); ?>" width="16" height="16" alt="Print"> </a> </div>
 </body>
 </html>
-<?php if(false){ ?>
+<?php //if(false){ ?>
 <!-- Start of StatCounter Code for Default Guide -->
 <script type="text/javascript">
 var sc_project=9269846; 
@@ -1118,4 +1129,4 @@ class="statcounter"
 src="http://c.statcounter.com/9269846/0/5ab010d0/1/"
 alt="web analytics"></a></div></noscript>
 <!-- End of StatCounter Code for Default Guide -->
-<?php } ?>
+<?php //} ?>

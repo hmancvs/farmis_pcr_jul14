@@ -1,5 +1,6 @@
 <?php
 	require_once APPLICATION_PATH.'/includes/header.php';
+	require_once APPLICATION_PATH.'/includes/mpdf/mpdf.php';
 		
 	$title = "Farmer Membership Certificate";
 	$this->headTitle($title); 
@@ -206,24 +207,10 @@ pdfquicklinks {
                     <tr>
                         <td style="width:60%;"></td>
                         <td>
-                            <span class="reportfilter pull-left">
-                                <label class="reportlabel cal-font" style="vertical-align:top;">Farmer: </label>
-                                <?php
-                                    // $farmgroupid = 65;
-                                    $userarray = getFarmers($farmgroupid, false, false, false, '', $session->getVar('country'));
-                                    $userdropdown = new Zend_Form_Element_Select('id',
-                                                        array(
-                                                                'multiOptions' => array_merge_maintain_keys(array('' => '<Browse Farmer>'), $userarray),								
-                                                            'view' => new Zend_View(),
-                                                            'decorators' => array('ViewHelper'),
-                                                                'class' => array('chzn-select', 'width180', 'novalidate')
-                                                        )
-                                                    );
-                                    $userdropdown->setValue($request->getParam('id')); 
-                                    echo $userdropdown->render(); 
-                                  ?>&nbsp;&nbsp;
-                                 <a id="generate" style="vertical-align:top;" href="<?php echo $this->baseUrl('report/certificate/id/'); ?>" class="btn btn-primary" title="Generate Report"><i class="icon-list-alt icon-white"></i> Generate</a>&nbsp;
-                            </span>
+                        	<div class="contentArea reportsearch">
+                                <input type="text" class="search reportsearch" id="inputSearch" url="<?php echo encode($this->baseUrl('report/certificate/id/')); ?>" placeholder="Start Typing Name of Farmer to Search" />
+                                <ul id="divResult"></ul>
+                            </div>
                         </td>
                     </tr>
                 </table>
@@ -291,7 +278,7 @@ pdfquicklinks {
                                 <span style="border-bottom:1px dashed #333333; width:80px; color:#000; display:inline-block; margin:0 auto; ">&nbsp; <?php echo $startyear; ?></span> 
                                 been accorded <!--provisional -->membership to 
                             </div>               
-                            <div style="color:#27843e; font-size:18px; height:50px; text-align:center; display:block;"><span style="color:#8f1b1b;">Farmer Record Management Information Services</span></div>              
+                            <div style="color:#27843e; font-size:18px; height:50px; text-align:center; display:block;"><span style="color:#8f1b1b;">Farmer Record Management Information System</span></div>              
                             <div style="color:#27843e; font-size:18px; height:75px; text-align:center; display:block;"> under <span style="border-bottom:1px dashed #333333; color:#000; padding:0 10px; width:450px; display:inline-block; margin:0 auto;">&nbsp; <?php echo $farmgrpname; ?></span> managed by <?php echo $companyname; ?></div>               
                             <div style="color:#27843e; font-size:18px; height:50px; border-top:1px dashed #333333; width:35%; margin:0 auto; text-align:center; padding-top:15px;">DNA / Farm Group Representative</div>               
                         </div>
@@ -299,11 +286,11 @@ pdfquicklinks {
                     <?php if(isKenya()){ ?>
                     	<div style="height:655px; overflow:hidden; margin-bottom:10px; display:block; background-image: url(<?php echo $certbg; ?>); background-repeat:no-repeat; background-position:2px 3px; background-size: 975px; border:solid 1px #016c5c;">
                             <div style="height:290px; width:100%;"></div>
-                            <div style="color:#000; font-weight:bold; font-size:13px; height:auto; width:50%; margin:0 auto; text-align:center;">&nbsp; <?php echo $username.$fin; ?></div>  
+                            <div style="color:#000; font-weight:bold; font-size:13px; height:auto; width:50%; margin:0 auto; margin-top:5px; text-align:center;">&nbsp; <?php echo $username.$fin; ?></div>  
                             <div style="height:43px; display:block;"></div>
                             <div style="color:#27843e; font-size:14px; height:25px;; text-align:center; display:block; font-weight:bold;"><span style="color:#000; padding:0 10px; width:450px; display:inline-block; margin:0 auto;">&nbsp;<?php echo $farmgrpname; ?></span>
                             <div style="height:190px; display:block;"></div>
-                            <div style="color:#27843e; font-size:14px; height:40px; text-align:center; display:block;"><span style="color:#000; display:inline-block; margin:0 auto; font-weight:bold;">&nbsp; <?php echo $thedate; ?></span> </div>
+                            <div style="color:#27843e; font-size:14px; height:40px; text-align:center; display:block;"><span style="color:#000; display:inline-block; margin:0 auto;margin-top:6px; font-weight:bold;">&nbsp; <?php echo $thedate; ?></span> </div>
                         </div>
                     <?php } ?>
                     

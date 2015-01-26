@@ -52,13 +52,13 @@
                            </tr>
                            <tr>		                    
                           		<td colspan="2">
-									<?php if($acl->checkPermission($resourcename, ACTION_DELETE) && !$isme && $user->isUserInActive()){ ?>
+									<?php if($acl->checkPermission('User Account', ACTION_DELETE) && !$isme && !$user->isUserActive()){ ?>
                                         <a class="btn btn-danger deleteline gonowhere" action="<?php echo $this->baseUrl($controllername.'/delete/id/'.encode($user->getID())."/entityname/UserAccount/successurl/".encode($this->baseUrl($controllername.'/list'))); ?>" message="<?php echo $this->translate('global_delete_confirm_message'); ?>"><i class="icon-trash icon-white"></i> Delete Profile</a>
                                     <?php } ?> 
-									<?php if($acl->checkPermission($resourcename, ACTION_DELETE) && !$isme && $user->isUserActive()){ ?>
+									<?php if($acl->checkPermission('User Account', ACTION_DELETE) && !$isme && $user->isUserActive()){ ?>
                                         <a class="btn btn-warning deactivate noimgbutton confirm-dialog" href="<?php echo $this->baseUrl($controllername.'/deactivate/id/'.$user->getID()."/status/2/entityname/UserAccount/successurl/".encode($this->viewurl).'/successmessage/Profile successfully Deactivated'); ?>" message="Are you sure you want to Deactivate this profile? Please note that user will not be able to login after this."><i class="icon-arrow-down icon-white"></i> Deactivate</a>
                                     <?php } ?>
-                                    <?php if($acl->checkPermission($resourcename, ACTION_DELETE) && $user->isDeactivated() && !$isme){ ?>
+                                    <?php if($acl->checkPermission('User Account', ACTION_DELETE) && $user->isDeactivated() /*&& !$isme*/){ ?>
                                         <a class="btn btn-primary reactivate noimgbutton confirm-dialog" href="<?php echo $this->baseUrl($controllername.'/deactivate/id/'.$user->getID()."/status/1/entityname/UserAccount/successurl/".encode($this->viewurl).'/successmessage/Profile successfully Re-Aactivated'); ?>" message="Are you sure you want to Re-Activate this profile?"><i class="icon-arrow-up icon-white"></i> Re-Activate</a>
                                     <?php } ?>
                             	</td>
@@ -73,14 +73,16 @@
                             <legend>Settings</legend>
                             <table class="table nohover noborder margin10" style="width:700px;">
                                 <?php if($user->isFarmer()){ ?>
-                                <tr>
-                                    <td style="width:25%;"><label class="control-label" style="width:100%;">Mobile Money Account?</label></td>
-                                    <td><?php echo $user->gethasmobilemoney() == 1 ? 'Yes' : 'No'; ?></td>
-                                </tr>
-                                <tr>
-                                    <td><label class="control-label" style="width:100%;">Bank Account?</label></td>
-                                    <td><?php echo $user->gethasbankaccount() == 1 ? 'Yes' : 'No'; ?></td>
-                                </tr>
+                                	<?php if(false){ ?>
+                                        <tr>
+                                            <td style="width:25%;"><label class="control-label" style="width:100%;">Mobile Money Account?</label></td>
+                                            <td><?php echo $user->gethasmobilemoney() == 1 ? 'Yes' : 'No'; ?></td>
+                                        </tr>
+                                        <tr>
+                                            <td><label class="control-label" style="width:100%;">Bank Account?</label></td>
+                                            <td><?php echo $user->gethasbankaccount() == 1 ? 'Yes' : 'No'; ?></td>
+                                        </tr>
+                                  	<?php } ?>
                                 <tr>
                                     <td style="width:20%;"><label class="control-label">Services Profiled:</label></td>
                                     <td><label class="lineblocked"><?php echo $user->getListOfServices(); ?></label></td>

@@ -136,7 +136,7 @@ class Inventory extends BaseEntity  {
 		$baseUrl = Zend_Controller_Front::getInstance()->getBaseUrl();
 		$path = $baseUrl.'/images/defaultupload.png';
 		if($this->hasProfileImage()){
-			$path = $baseUrl.'/uploads/farms/farm_'.$this->getID().'/inventory_'.$this->getID().'/thumbnail_'.$this->getPhoto();
+			$path = $baseUrl.'/uploads/users/user_'.$this->getUserID().'/inventory/inventory_'.$this->getID().'/thumbnail_'.$this->getPhoto();
 		}
 		return $path;
 	}
@@ -145,7 +145,7 @@ class Inventory extends BaseEntity  {
 		$baseUrl = Zend_Controller_Front::getInstance()->getBaseUrl();
 		$path = $baseUrl.'/images/defaultupload.png';
 		if($this->hasProfileImage()){
-			$path = $baseUrl.'/uploads/farms/farm_'.$this->getID().'/inventory_'.$this->getID().'/large_'.$this->getPhoto(); 
+			$path = $baseUrl.'/uploads/users/user_'.$this->getUserID().'/inventory/inventory_'.$this->getID().'/large_'.$this->getPhoto(); 
 		}
 		// debugMessage($path);
 		return $path;

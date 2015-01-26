@@ -55,7 +55,7 @@
 		$metxt = 'My ';
 	}
 	
-	$loadgps = true;
+	$loadgps = false;
 	$title = $user->getName();
 	$this->headTitle($title);
 	
@@ -861,8 +861,8 @@ $(window).load(function() {
                                                                         </td>
                                                                     </tr>
                                                                     <tr>
-                                                                        <td style="width:25%;"><label class="control-label">Category: </label></td>
-                                                                        <td class="nowrapping"><span><?php echo $inventory->getCategory()->getName(); ?></span></td>
+                                                                        <td style="width:25%;"><label class="control-label">Type: </label></td>
+                                                                        <td class="nowrapping"><span><?php $alltypes = getInventoryTypes(); echo isEmptyString($inventory->getType()) ? '' : $alltypes[$inventory->getType()]; ?></span></td>
                                                                     </tr>
                                                                     <tr>
                                                                         <td><label class="control-label">Description: </label></td>

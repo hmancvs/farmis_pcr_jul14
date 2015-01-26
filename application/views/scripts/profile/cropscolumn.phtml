@@ -41,6 +41,28 @@
 			<?php } ?>
 		</ul>
 	</span>
+    <?php if(isUganda()){ ?>
+        <h2>Market Locations</h2>
+        <span class="marginleft0 span9" style="width:99%;">
+            <ul class="nav">
+                <?php
+                    $allmarkets = getMarkets();
+                    $markets = $user->getMarketIDs();
+                    $countmarkets = count($markets);
+                    //debugMessage($others->toArray());
+                    if($countmarkets == 0) { ?>
+                    None
+                <?php } else { ?>                
+                    <label class="labeldescription">Viewing <?php echo $countmarkets; ?> Markets</label>
+                    <?php foreach($markets as $market){ ?>
+                        <li style="margin-right:20px; margin-bottom:5px;">
+                            <label style="color:#55A411; margin:5px 0; font-weight:bold;"><?php echo $allmarkets[$market]; ?></label>
+                        </li>
+                    <?php } ?>
+                <?php } ?>
+            </ul>
+        </span>
+    <?php } ?>
     <h2>Other Enterprises</h2>
     <span class="marginleft0 span9" style="width:99%;">
     	<ul class="nav">
@@ -65,6 +87,8 @@
 	<div class="row margin0 padding0" style="width:100%;">
 		<div class="well lighter row marginleft0">
  			<h3 class="well-legend">Enterprise Crops:</h3>
+            <div class="divider10"></div>
+            <span class="pagedescription blocked">Select your current priority Crop(s) or the Crops for which you would like too receive regular Market Information via SMS and Email</span>
             <div class="controls blocked" style="margin-left:5px; margin-top:10px;">
                 <?php 
                     $commodities = getFarmisCommodities();
@@ -132,6 +156,79 @@
             </div>
         </div>
 	</div>
+    <?php if(isUganda()){ ?>
+    <div class="row margin0 padding0" style="width:100%;">
+		<div class="well lighter row marginleft0">
+ 			<h3 class="well-legend">Market Locations:</h3>
+            <div class="divider10"></div>
+            <span class="pagedescription blocked">Select the Market(s) that you are Interested in or those Markets from which we shall send you weekly Prices and any other Market Information.</span>
+            <?php 
+				$markets = getMarkets();
+				$preselectarray = $user->getMarketIDs();
+				if(!isEmptyString($session->getVar(ERROR_MESSAGE))){
+					if(!isArrayKeyAnEmptyString('market_1', $formvalues)){
+						$formvalues['marketids'][0] = $formvalues['market_1'];
+						$formvalues['marketids'][1] = $formvalues['market_2'];
+						$formvalues['marketids'][2] = $formvalues['market_3'];
+					}
+					$preselectarray = $formvalues['marketids'];
+				}
+				$market1 = ''; $market2 = ''; $market3 = '';
+				if(!isArrayKeyAnEmptyString(0, $preselectarray)){
+					$market1 = $preselectarray[0];
+				}
+				if(!isArrayKeyAnEmptyString(1, $preselectarray)){
+					$market2 = $preselectarray[1];
+				}
+				if(!isArrayKeyAnEmptyString(2, $preselectarray)){
+					$market3 = $preselectarray[2];
+				}
+			?>
+            <div class="controls blocked" style="margin-left:5px; margin-top:10px;">
+                1. <?php
+                    $dropdown1 = new Zend_Form_Element_Select('market_1',
+                                        array(
+                                            'multiOptions' => array_merge_maintain_keys(array('' => '<Select>'), $markets),								
+                                            'view' => new Zend_View(),
+                                            'decorators' => array('ViewHelper'),
+                                            'class' => array('span2')
+                                        )
+                                    );
+                    $dropdown1->setValue($market1); 
+                    echo $dropdown1->render(); 
+               ?>
+            </div>
+            <div class="controls blocked" style="margin-left:5px; margin-top:10px;">
+                2. <?php
+                    $dropdown2 = new Zend_Form_Element_Select('market_2',
+                                        array(
+                                            'multiOptions' => array_merge_maintain_keys(array('' => '<Select>'), $markets),								
+                                            'view' => new Zend_View(),
+                                            'decorators' => array('ViewHelper'),
+                                            'class' => array('span2')
+                                        )
+                                    );
+                    $dropdown2->setValue($market2); 
+                    echo $dropdown2->render(); 
+               ?>
+            </div>
+            <div class="controls blocked" style="margin-left:5px; margin-top:10px;">
+                3. <?php
+                    $dropdown3 = new Zend_Form_Element_Select('market_3',
+                                        array(
+                                            'multiOptions' => array_merge_maintain_keys(array('' => '<Select>'), $markets),								
+                                            'view' => new Zend_View(),
+                                            'decorators' => array('ViewHelper'),
+                                            'class' => array('span2')
+                                        )
+                                    );
+                    $dropdown3->setValue($market3); 
+                    echo $dropdown3->render(); 
+               ?>
+            </div>
+      	</div>
+    </div>
+    <?php } ?>
 	<div class="row margin0 padding0" style="width:100%;">
 		<div class="well lighter row marginleft0">
  			<h3 class="well-legend">Other Enterprises:</h3>

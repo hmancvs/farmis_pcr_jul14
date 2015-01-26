@@ -489,7 +489,7 @@
                         if($countcrops == 0) { ?>
                         None
                     <?php } else { ?>                
-                        <label class="labeldescription"><?php echo $countcrops; ?> currently profiled</label>
+                        <label class="labeldescription">(<?php echo $countcrops; ?> <?php echo $countcrops == 1 ? 'Crop' : 'Crops'; ?> profiled)</label>
                         <?php foreach($crops as $crop){ ?>
                             <li style="margin-right:20px; margin-bottom:5px;">
                                 <label style="color:#55A411; margin:5px 0; font-weight:bold;"><?php echo $crop->getCrop()->getName(); ?></label>
@@ -499,6 +499,28 @@
                     <?php } ?>
                 </ul>
             </div>
+            <?php if(isUganda()){ ?>
+                <div class="control-group">
+                    <label class="control-label">Market Locations</label>
+                    <ul class="nav">
+                        <?php
+                            $allmarkets = getMarkets();
+                            $markets = $user->getMarketIDs();
+                            $countmarkets = count($markets);
+                            //debugMessage($others->toArray());
+                            if($countmarkets == 0) { ?>
+                            None
+                        <?php } else { ?>                
+                            <label class="labeldescription">(<?php echo $countmarkets; ?> <?php echo $countmarkets == 1 ? 'Market' : 'Markets'; ?> profiled)</label>
+                            <?php foreach($markets as $market){ ?>
+                                <li style="margin-right:20px; margin-bottom:5px;">
+                                    <label style="color:#55A411; margin:5px 0; font-weight:bold;"><?php echo $allmarkets[$market]; ?></label>
+                                </li>
+                            <?php } ?>
+                        <?php } ?>
+                    </ul>
+                </div>
+                <?php } ?>
             <div class="control-group">
                 <label class="control-label" for="enterprises"><?php echo $this->translate("farm_otherenteprises_label"); ?>:</label>
                 <ul class="nav">
@@ -509,7 +531,7 @@
                         if($countothers == 0) { ?>
                         None
                     <?php } else { ?>                
-                        <label class="labeldescription"><?php echo $countothers; ?> currently profiled</label>
+                        <label class="labeldescription">(<?php echo $countothers; ?> currently profiled)</label>
                         <?php foreach($others as $enterprise){ ?>
                             <li style="margin-right:20px; margin-bottom:5px;">
                                 <label style="color:#55A411; margin:5px 0; font-weight:bold;"><?php echo $enterprise->getCrop()->getName(); ?></label>
@@ -522,14 +544,16 @@
         <fieldset class="fieldsetcontainer well hideonsuper">
             <legend>Profile Settings</legend>            
             <?php if($user->isFarmer()){ ?>
-                <div class="control-group">
-                    <label class="control-label">Mobile Money Account?</label>
-                    <div class="controls"><?php echo $user->gethasmobilemoney() == 1 ? 'Yes' : 'No'; ?></div>
-                </div>
-                <div class="control-group">
-                    <label class="control-label">Bank Account?</label>
-                    <div class="controls"><?php echo $user->gethasbankaccount() == 1 ? 'Yes' : 'No'; ?></div>
-                </div>
+            	<?php if(false){ ?>
+                    <div class="control-group">
+                        <label class="control-label">Mobile Money Account?</label>
+                        <div class="controls"><?php echo $user->gethasmobilemoney() == 1 ? 'Yes' : 'No'; ?></div>
+                    </div>
+                    <div class="control-group">
+                        <label class="control-label">Bank Account?</label>
+                        <div class="controls"><?php echo $user->gethasbankaccount() == 1 ? 'Yes' : 'No'; ?></div>
+                    </div>
+                <?php } ?>
                 <div class="control-group">
                     <label class="control-label">Services Profiled:</label>
                     <div class="controls"><?php echo $user->getListOfServices(); ?></div>

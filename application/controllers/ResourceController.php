@@ -277,7 +277,7 @@ class ResourceController extends SecureController   {
 		// debugMessage($formvalues);
 		
     	# search seasons. available for farmers and farm groups
-		if($type == 2 || $type == 3){
+		if(($type == 2 || $type == 3) && isEmptyString($this->_getParam('reporturl'))){
 			# seasons
 			$user_filter = "s.userid = '".$user->getID()."' ";
 			if($user->isFarmGroupAdmin()){
@@ -583,9 +583,14 @@ class ResourceController extends SecureController   {
 					if(!isEmptyString($user->hasFarmGroup())){
 						$group = '<span class="blocked"><b>DNA</b> '.$user->getFarmGroup()->getName().'</span>';
 					}
+					
+					$isreport = 0;
+					if(!isEmptyString($this->_getParam('reporturl'))){
+						$isreport = 1;
+					}
 					$viewurl = $this->view->baseUrl('farmer/view/id/'.encode($user->getID()));
 					$html .= '
-					<li class="display_box" align="left" url="'.$viewurl.'" theid="'.$user->getID().'">
+					<li class="display_box" align="left" url="'.$viewurl.'" reporturl="'.stripURL(decode($this->_getParam('reporturl'))).'/'.$user->getID().'" theid="'.$user->getID().'" isreport="'.$isreport.'">
 						<img src="'.$media.'" style="width:60px; height:60px; float:left; margin-right:6px;" />
 						<span class="name blocked">'.$final_username.'</span>
 						'.$contacts.'
@@ -597,7 +602,7 @@ class ResourceController extends SecureController   {
 		}
 		
 		# search groups
-		if($type == 1){
+		if($type == 1 && isEmptyString($this->_getParam('reporturl'))){
 			$query_groups = "SELECT g.* FROM farmgroup as g 
 				WHERE g.country = UPPER('".$country."') AND
 				g.orgname like '%".$q."%' 
@@ -649,7 +654,7 @@ class ResourceController extends SecureController   {
 			}
 		}
 		# crops search. Admin only
-		if($type == 1){
+		if($type == 1 && isEmptyString($this->_getParam('reporturl'))){
 			$query_crops = "SELECT c.* FROM commodity as c 
 				WHERE 
 				c.name like '%".$q."%' AND allowfarmer = 1
@@ -678,7 +683,7 @@ class ResourceController extends SecureController   {
 			}
 		}
 		# business directory search. All users. If profile/farmgroup search only public contacts
-		if($type == 1 || $type == 2 || $type == 3){	
+		if(($type == 1 || $type == 2 || $type == 3) && isEmptyString($this->_getParam('reporturl'))){	
 			$query_contacts = "SELECT c.* FROM contact as c 
 				WHERE
 				(c.visibility = 3 OR (c.visibility = 1 AND c.createdby = $userid)) AND  

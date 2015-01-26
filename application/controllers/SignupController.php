@@ -150,7 +150,7 @@ class SignupController extends IndexController   {
 			if($user->getregsource() == 1){
 				$this->_setParam(URL_FAILURE, encode($this->view->baseUrl("mobile/signupconfirm/id/".encode($user->getID()))));
 			}
-			$key = $this->_getParam('actkey');
+			$key = trim($this->_getParam('actkey'));
 			
 			$this->view->result = $user->activateAccount($key, $isphoneactivation);
 			if (!$this->view->result) {
@@ -182,7 +182,7 @@ class SignupController extends IndexController   {
 			$this->_helper->redirector->gotoUrl(decode($this->_getParam(URL_FAILURE)));
 		}
 		
-		$result = $user->activateAccount($this->_getParam('activationkey'));
+		$result = $user->activateAccount(trim($this->_getParam('activationkey')));
 		if ($result) {
 			// go to sucess page 
 			$this->_helper->redirector->gotoUrl(decode($this->_getParam(URL_SUCCESS))); 

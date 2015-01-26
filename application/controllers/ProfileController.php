@@ -29,7 +29,7 @@ class ProfileController extends SecureController  {
 	    	$action == "autosearch" || $action == "delete" || 
 	    	$action == "delete" || $action == "privacy" || $action == "resetprivacy" || $action == "processadd" || 
 	    	$action == "report" || $action == 'validatephonesuccess' || $action == 'verifyphone' || 
-	    	$action == 'dashupdate' || $action == 'events'
+	    	$action == 'dashupdate' || $action == 'events' || $action == 'clearpic'
 	    	
     	) {
 			return ACTION_VIEW; 
@@ -214,6 +214,10 @@ class ProfileController extends SecureController  {
 		
 		// set the destination path for the image
 		$profilefolder = $user->getID();
+		$permcommand = BASE_PATH.DIRECTORY_SEPARATOR."uploads".DIRECTORY_SEPARATOR."users".DIRECTORY_SEPARATOR."user_".$user->getID(); // debugMessage($permcommand);
+		passthru("chmod -R 777 ".$permcommand);
+		passthru("chown -R vsftpd:www-data ".$permcommand);
+		
 		$destination_path = $destination_path.$profilefolder.DIRECTORY_SEPARATOR."avatar";
 		if(!is_dir($destination_path)){
 			mkdir($destination_path, 0777);
@@ -223,9 +227,12 @@ class ProfileController extends SecureController  {
 		if(!is_dir($archivefolder)){
 			mkdir($archivefolder, 0777);
 		}
+		passthru("chmod -R 777 ".$archivefolder);
+		passthru("chown -R vsftpd:www-data ".$archivefolder);
 		
 		$oldfilename = $user->getProfilePhoto();
-		//debugMessage($destination_path); 
+		passthru("chmod -R 777 ".$destination_path);
+		passthru("chown -R vsftpd:www-data ".$destination_path);
 		$upload->setDestination($destination_path);
 		
 		// the profile image info before upload
@@ -969,6 +976,27 @@ class ProfileController extends SecureController  {
 			$this->_helper->redirector->gotoUrl($successurl);
 		}
 		 
+		return false;
+	}
+	
+	public function clearpicAction() {
+		$this->_setParam("action", ACTION_DELETE);
+	
+		$session = SessionWrapper::getInstance();
+		$this->_helper->layout->disableLayout();
+		$this->_helper->viewRenderer->setNoRender(TRUE);
+	
+		$formvalues = $this->_getAllParams(); //debugMessage($formvalues);
+		$user = new UserAccount();
+		$id = is_numeric($formvalues['id']) ? $formvalues['id'] : decode($formvalues['id']);
+		$user->populate($id);
+			
+		/*debugMessage($user->toArray());
+		 exit();*/
+		$user->setProfilePhoto('');
+		$user->save();
+		$this->_helper->redirector->gotoUrl(decode($this->_getParam(URL_SUCCESS)));
+			
 		return false;
 	}
 }

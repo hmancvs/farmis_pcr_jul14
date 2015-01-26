@@ -18,7 +18,7 @@ class ReportController extends SecureController   {
 	 */
 	function getResourceForACL() {
 		$resource = strtolower($this->getRequest()->getActionName()); 
-		if ($resource == "dashboard") {
+		if ($resource == "dashboard" || $resource == "reportsearch") {
 			return "Report Dashboard";
 		}
 		if ($resource == "certificate" || $resource == "certificatesearch") {
@@ -161,7 +161,7 @@ class ReportController extends SecureController   {
 	}
 	
 	function pricesAction(){
-	
+		
 	}
 	
 	public function statementAction() {
@@ -171,5 +171,20 @@ class ReportController extends SecureController   {
 		$this->_helper->redirector->gotoSimple('statement', 'finance',
 				$this->getRequest()->getModuleName(),
 				array_remove_empty(array_merge_maintain_keys($this->_getAllParams(), $this->getRequest()->getQuery())));
+	}
+	
+	/**
+	 * Redirect list searches to maintain the urls as per zend format
+	 */
+	public function reportsearchAction() {
+		// debugMessage($this->getRequest()->getQuery());
+		// debugMessage($this->_getAllParams());
+		$action = $this->_getParam('page');
+		// exit();
+		if(!isEmptyString($action)){
+			$this->_helper->redirector->gotoSimple($action, $this->getRequest()->getControllerName(),
+					$this->getRequest()->getModuleName(),
+					array_remove_empty(array_merge_maintain_keys($this->_getAllParams(), $this->getRequest()->getQuery())));
+		}
 	}
 }

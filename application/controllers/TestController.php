@@ -58,8 +58,7 @@ class TestController extends IndexController  {
 	    		$phone = SMS_TEST_NUMBER_KENYA;
 	    	}
 	    }
-	    
-	    sendSMS($phone, $message, $this->_getParam('source'));
+	    // sendSMS($phone, $message, $this->_getParam('source'));
     }
     
     function testmailAction(){
@@ -83,6 +82,18 @@ class TestController extends IndexController  {
     	 
     	$path = APPLICATION_PATH.DIRECTORY_SEPARATOR.'views'.DIRECTORY_SEPARATOR.'scripts';
     	$files = get_dirs($path); debugMessage($files);
+    }
+	
+    function agmisAction(){
+    	// disable rendering of the view and layout so that we can just echo the AJAX output
+    	$this->_helper->layout->disableLayout();
+    	$this->_helper->viewRenderer->setNoRender(TRUE);
+    	 
+    	$session = SessionWrapper::getInstance();
+    	$formvalues = $this->_getAllParams();
+    	/* $prices = getLatestPrices('', '', 1);
+    	debugMessage($prices); */
+    	
     }
 }
 

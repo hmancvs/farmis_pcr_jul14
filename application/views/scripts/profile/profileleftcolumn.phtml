@@ -71,14 +71,14 @@ $(document).ready(function() {
 </script>
 <div class="span3 marginleft0" id="left">    
     <div class="well" id="profiletop">
-        <div id="profileinfo"> 
+        <div id="xprofileinfo"> 
 			<?php if(($isme || $acl->checkPermission($resourcename, ACTION_EDIT)) && !isEmptyString($user->getID())){ ?>
-                <a href="<?php echo $this->baseUrl($controller.'/picture/id/'.encode($user->getID()).'/type/photo'); ?>" class="editpic" title="Update Profile Photo"><img id="profileimage" src="<?php echo $user->getMediumPicturePath(); ?>" /><pre id="uploadlink" class="hide absoluteupload"><i class="icon-pencil"></i> Upload Photo</pre></a>
+                <a href="<?php echo $this->baseUrl($controller.'/picture/id/'.encode($user->getID()).'/type/photo'); ?>" class="blocked centeralign automargin" title="Update Profile Photo"><img id="profileimage" src="<?php echo $user->getMediumPicturePath(); ?>" class="imagecontainer noboxshadow" style="max-height:180px;" /><pre id="uploadlink" class="hide absoluteupload"><i class="icon-pencil"></i> Upload Photo</pre></a>
             <?php } else { ?>
-                <img id="profileimage" src="<?php echo $user->getMediumPicturePath(); ?>" alt="Update Profile Photo" />
+                <img id="profileimage" class="imagecontainer noboxshadow" src="<?php echo $user->getMediumPicturePath(); ?>" alt="Update Profile Photo" style="max-height:180px;" />
             <?php } ?>
             <?php if(($isme || $acl->checkPermission($resourcename, ACTION_EDIT)) && !isEmptyString($user->getID())){ ?>
-                <a style="display:block; width:155px; text-align:center;" href="<?php echo $this->baseUrl($controller.'/picture/id/'.encode($user->getID()).'/type/photo'); ?>" class="btn btn-mini noround">Upload Photo</a>
+                <a style="display:block; max-width:160px; text-align:center; margin-top:3px;" href="<?php echo $this->baseUrl($controller.'/picture/id/'.encode($user->getID()).'/type/photo'); ?>" class="btn btn-mini noround blocked centeralign automargin">Upload Photo</a>
             <?php } ?>
         </div>
     </div>

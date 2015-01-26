@@ -119,7 +119,13 @@ class Location extends BaseEntity {
 		$conn = Doctrine_Manager::connection();
 		
 		// query for check if location exists
-		$unique_query = "SELECT id FROM location WHERE name = '".$this->getName()."' AND locationtype = '".$this->getLocationType()."' AND id <> '".$this->getID()."' ";
+		$unique_query = "SELECT id FROM location WHERE name = '".$this->getName()."' 
+			AND districtid = '".$this->getDistrictID()."'
+			AND countyid = '".$this->getCountyID()."'
+			AND subcountyid = '".$this->getSubCountyID()."'
+			AND parishid = '".$this->getParishID()."' 
+			AND locationtype = '".$this->getLocationType()."' 
+			AND id <> '".$this->getID()."' ";
 		$result = $conn->fetchOne($unique_query);
 		//debugMessage($unique_query);
 		//debugMessage($result);
@@ -130,114 +136,6 @@ class Location extends BaseEntity {
 		return true;
 	}
 	
-	/**
-     * The current market prices for a district 
-     * @param int $this->getID()
-     * @return Array of lattest commodity prices 
-     */
-	function getMarketCurrentPrices() {
-		$conn = Doctrine_Manager::connection();
-		
-		$all_results_query = "SELECT 
-			  d.datecollected AS datecollected,
-			  cd.`name`,
-			  ROUND(AVG(d.retailprice), -2) AS `Retail Price`,
-			  ROUND(AVG(d.wholesaleprice), -2) AS `Wholesale Price`
-			FROM
-			  price_details AS d 
-			  INNER JOIN commodity cd ON d.`commodityid` = cd.`id`
-			  INNER JOIN 
-			    (SELECT 
-			      cp.sourceid,
-			      MAX(cp.datecollected) AS datecollected,
-			      p.name 
-			    FROM
-			      price_details cp 
-			      INNER JOIN price_submission AS cs1 
-			        ON (
-			          cp.`submissionid` = cs1.`id` 
-			          AND cs1.`status` = 'Approved'
-			        ) 
-			      INNER JOIN pricesource AS p 
-			        ON (
-			          cp.sourceid = p.id 
-			          AND p.`applicationtype` = 0 AND p.locationid = '".$this->getID()."'
-			        ) 
-			    WHERE cp.`pricecategoryid` = 2  
-			    GROUP BY cp.sourceid) AS d2 
-			    ON (
-			      d.`sourceid` = d2.sourceid 
-			      AND d.`datecollected` = d2.datecollected
-			    ) 
-			WHERE d.`pricecategoryid` = 2  
-			GROUP BY d.`commodityid`
-			ORDER BY cd.name ";
-		
-		// debugMessage($all_results_query);
-		return $conn->fetchAll($all_results_query);
-	}
-	/**
-     * The current fuel prices for a district 
-     * @param int $this->getID(), int $commodityid
-     * @return The lattest fuel prices in a district
-     * 
-     * TODO: Change this method to return an array of the latest fuel prices for all commodities in the fuel price category instead of running a
-     * query for each commodity 
-     */
-	function getCurrentFuelPrices($commodityid) {
-		$conn = Doctrine_Manager::connection();
-		$all_results_query = "SELECT 
-				ROUND(AVG(d.retailprice), -2) AS `Retail Price`, 		
-				d.datecollected as datecollected, 
-				d.sourceid as sourceid, 
-				d2.name as `Market`, 
-				d2.locationid as `districtid`, 
-				d2.districtname as `District Name` 
-				FROM price_details AS d 
-				INNER JOIN ( SELECT cp.sourceid, 
-								MAX(cp.datecollected) AS datecollected, 
-								p.name, 
-								p.locationid, 
-								l.name as districtname 
-								FROM price_details cp 
-								INNER JOIN price_submission AS cs1 
-								ON (cp.`submissionid` = cs1.`id` AND cs1.`status` = 'Approved') 
-								INNER JOIN pricesource AS p ON (cp.sourceid = p.id AND p.`applicationtype` = 0 ) 
-								INNER JOIN location AS l on (p.locationid = l.id AND l.locationtype = 2) 
-								WHERE cp.`commodityid` = '".$commodityid."' AND cp.`pricecategoryid` = 4 GROUP BY cp.sourceid) AS d2 
-				ON (d.`sourceid` = d2.sourceid AND d.`datecollected` = d2.datecollected) 
-				WHERE d.`commodityid` = '".$commodityid."' AND d2.locationid = '".$this->getID()."' AND d.`pricecategoryid` = 4 
-				GROUP BY d2.locationid ORDER BY d2.districtname";
-		// debugMessage($all_results_query);
-		return $conn->fetchOne($all_results_query);;
-	}
-	/**
-     * The open selling offers
-     * @param int $this->getID()
-     * @return The lattest fuel prices in a district
-     */
-	function getOpenSellOffers() {
-		$conn = Doctrine_Manager::connection();
-		$all_results_query = "SELECT 
-					o.id as `id`, 
-					o.createdby as `createdby`, 
-					c.name as `Commodity`, 
-					 if(ISNULL(cu.name), o.quantity,concat(o.quantity,' ',cu.name)) as `Quantity`, 
-					 FORMAT(price,0) as `Price`, 
-					 DATE_FORMAT(o.datecreated, '%b %d, %Y') as `Date Posted`, 
-					 DATE_FORMAT(o.expirydate, '%b %d, %Y') as `Expiry Date`, 
-					 o.contact as `Contact`, 
-					 o.telephone as `Telephone`, 
-					 l.name as `District` 
-					 FROM offer o 
-					 INNER JOIN commodity c ON o.commodityid = c.id 
-					 LEFT JOIN commodityunit cu ON c.unitid = cu.id 
-					 INNER JOIN location l
-					 WHERE o.locationid = l.id AND o.locationid = '".$this->getID()."' AND o.offertype = '1' AND TO_DAYS(NOW()) > TO_DAYS(o.expirydate)  
-					 ORDER BY o.expirydate DESC ";
-		// debugMessage($all_results_query);
-		return $conn->fetchAll($all_results_query);;
-	}
 	# determine commodityid from searchable name
     function findByName($name, $type) {
     	$str_len = strlen($name);
@@ -298,6 +196,18 @@ class Location extends BaseEntity {
 		// debugMessage($result->toArray());
 		//return $result->getName();
 		return '';
+	}
+    function getRegions() {
+		$q = Doctrine_Query::create()->from('Location l')->where("l.country = 'UG' AND l.locationtype = 1 ")->orderby("l.locationtype");
+		$result = $q->execute();
+		// debugMessage($result->toArray());
+		return $result;
+	}
+	function getDistrictsForRegion() {
+		$q = Doctrine_Query::create()->from('Location l')->where("l.regionid = '".$this->getID()."' AND l.locationtype = 2 ")->orderby("l.name asc");
+		$result = $q->execute();
+		// debugMessage($result->toArray());
+		return $result;
 	}
 	function getTypeName() {
 		$session = SessionWrapper::getInstance();

@@ -146,7 +146,7 @@ body {
 	color:#498D0F;
 }
 .maxwidth, td.maxwidth, select.maxwidth, .form-horizontal input.maxwidth {
-	width:100%;
+	width:100% !important;
 }
 .maxheight, td.maxheight, select.maxheight, .form-horizontal input.maxheight {
 	height:100%;
@@ -324,6 +324,9 @@ input.error, textarea.error, select.error {
 }
 .bolded {
 	font-weight:bold;
+}
+.notbolded {
+	font-weight:normal;
 }
 .table td.amountcell, td.amountcell {
 	text-align:right;
@@ -689,6 +692,9 @@ span.phone_before, .phone_after {
 	-moz-border-radius: 3px;
 	border-radius: 3px;
 	padding:1px;
+}
+.imagecontainer.noboxshadow {
+	box-shadow:none;
 }
 .absoluteupload {
 	position:absolute; 
@@ -2565,7 +2571,9 @@ fieldset p {margin:0} /* Remove margins from p elements inside fieldsets */
 }
 .peoplelist .thumb img {
     display: block;
-    width: 80px;
+	width:70px;
+	height:auto !important;
+	max-height:80px;
 }
 .peoplelist .peopleinfo {
     margin-left: 85px;
@@ -3164,6 +3172,8 @@ table.table tbody.monitorbody tr td.last label {
     float: left;
     padding: 5px;
     width: 85px;
+	height:auto !important;
+	max-height:100px !important;
 }
 .header .userloggedinfo .userinfo {
     margin-left: 0;
@@ -3388,4 +3398,26 @@ a.removeline {
 	width:3200px;
 	height: auto; 
 	overflow: auto;
+}
+.subheadcontainer {
+	border-bottom: 1px solid #55A411;
+	width: 98%;
+	margin:0 auto;
+	display:block;
+}
+.subheading {
+    margin: 0px;
+    padding: 2px 0;
+	padding-left:10px;
+    display: block;
+    color: #55A411;
+    font-size: 14px;
+	font-weight:bold;
+}
+.contentArea.reportsearch #divResult {
+	width: 395px;
+	margin-top:0;
+}
+.contentArea.reportsearch #inputSearch {
+	width: 100%;
 }

@@ -52,10 +52,7 @@
 				$payment->setStem(2);	
 				$payment->setItem(2);
 				$payment->setPaymentType(1);
-				$amount = $payment->getDefaultFarmerAmount();
-				if(strtolower($country) == 'ke'){
-					$amount = $payment->getDefaultFarmerAmountKe();
-				}
+				$amount = getServiceAmount();
 				$payment->setAmount($amount);
 			}
 			if(isEmptyString($payment->getUserID())){

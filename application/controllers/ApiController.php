@@ -5,223 +5,256 @@ class ApiController extends IndexController  {
     function indexAction() {
     	$this->_helper->layout->disableLayout();
 	    $this->_helper->viewRenderer->setNoRender(TRUE);
+	    echo 'NULL_PARAMETER_LIST';
     }
     
-    function farmerAction() {
+    function subscriberAction() {
     	$this->_helper->layout->disableLayout();
 	    $this->_helper->viewRenderer->setNoRender(TRUE);
 	    $conn = Doctrine_Manager::connection(); 
     	$session = SessionWrapper::getInstance();
     	$formvalues = $this->_getAllParams();
     	
-    	$feed = '';
-    	$hasall = true;
-    	$issearch = false;
-    	$iscount = false;
-    	$ispaged = false;
-    	$iscolumn = false;
-    	$where_query = " ";
-    	$type_query = " ";
-    	$group_query = " GROUP BY f.id ";
-    	$limit_query = "";
-    	$select_query = " f.id, f.firstname, f.lastname, f.othernames, u.email, t.phone, t2.phone as altphone,
-    	l.name as district, fg.orgname as farmgroup, u.dateofbirth, f.regdate, u.isactive, s.startdate, 
-    	s.enddate, s.planid as paymentplan, s.id as sid, group_concat(c.name separator ',') as crops
-    	";
-    	
-    	if(isArrayKeyAnEmptyString('filter', $formvalues)){
-    		echo "NO_FILTER_SPECIFIED";
-    		exit();
+    	$country = 'UG'; $location = 'district';
+    	if(isKenya() || strtolower($this->_getParam('country' == 'ke'))){
+    		$country = 'KE';
+    		$session->setVar('country', 'ke');
+    		$location = 'county';
     	}
     	
-    	// global search
+    	$feed = '';
+    	$issearch = false;
+    	$iscolumn = false;
+    	$where_query = " "; $having_query = " ";
+    	$group_query = " GROUP BY u.id ";
+    	$limit_query = "";
+    	$now = DEFAULT_DATETIME;
+    	
+    	# search by column attribute
+    	if($this->_getParam('filter') == 'attr'){
+    		$iscolumn = true;
+    		# fetch subscribers by type
+    		if(!isEmptyString($this->_getParam('type'))){
+    			$where_query .= " AND u.type = '".$this->_getParam('type')."' ";
+    		}
+    		# fetch subscribers by login status
+    		if(!isEmptyString($this->_getParam('loginstatus'))){
+    			$where_query .= " AND u.isactive = '".$this->_getParam('loginstatus')."' ";
+    		}
+    		# fetch subscribers by payment status
+    		if(!isEmptyString($this->_getParam('paymentstatus'))){
+    			# check for paid up farmers
+    			if($this->_getParam('paymentstatus') == 1){
+    				$where_query .= " AND u.paymentstatus = '".$this->_getParam('paymentstatus')."' AND TO_DAYS(NOW()) BETWEEN TO_DAYS(u.startdate) AND TO_DAYS(u.enddate) ";
+    			}
+    			# check for farmers currrently still on trial
+    			if($this->_getParam('paymentstatus') == 2){
+    				$where_query .= " AND u.paymentstatus <> 1 AND TO_DAYS(CURDATE()) BETWEEN TO_DAYS(u.datecreated) AND TO_DAYS(DATE_ADD(u.datecreated, INTERVAL 7 DAY)) ";
+    			}	
+    			# check for expired farmers
+    			if($this->_getParam('paymentstatus') == 0){
+    				$where_query .= " AND ((TO_DAYS(NOW()) NOT BETWEEN TO_DAYS(u.startdate) AND TO_DAYS(u.enddate)) OR (TO_DAYS(CURDATE()) NOT BETWEEN TO_DAYS(u.datecreated) AND TO_DAYS(DATE_ADD(u.datecreated, INTERVAL 7 DAY))) )";
+    			}
+    		}
+    			 
+    		# fetch subscribers by phone
+    		if(!isEmptyString($this->_getParam('phone'))){
+    			if(!is_numeric($this->_getParam('phone')) || strlen($this->_getParam('phone')) != 12){
+    				echo 'PHONE_INVALID'; 
+    				exit();
+    			}
+    			$where_query .= " AND u.phone = '".$this->_getParam('phone')."' ";
+    		}
+    		# fetch by email
+    		if(!isEmptyString($this->_getParam('email'))){
+    			$where_query .= " AND u.email = '".$this->_getParam('email')."' ";
+    		}
+    		# fetch by username
+    		if(!isEmptyString($this->_getParam('username'))){
+    			$where_query .= " AND u.username = '".$this->_getParam('username')."' ";
+    		}
+    		# fetch by service
+    		if(!isEmptyString($this->_getParam('serviceid'))){
+    			$where_query .= " AND FIND_IN_SET('".$this->_getParam('serviceid')."', u.services) > 0 ";
+    		}
+    		# fetch by district
+    		if(!isEmptyString($this->_getParam('districtid'))){
+    			$where_query .= " AND u.locationid = '".$this->_getParam('districtid')."' ";
+    		}
+    		# fetch by dna
+    		if(!isEmptyString($this->_getParam('dnaid'))){
+    			$where_query .= " AND u.farmgroupid = '".$this->_getParam('dnaid')."' ";
+    		}
+    		# fetch by gender
+    		if(!isEmptyString($this->_getParam('gender'))){
+    			$where_query .= " AND u.gender = '".$this->_getParam('gender')."' ";
+    		}
+    		# fetch by cropid
+    		if(!isEmptyString($this->_getParam('cropid'))){
+    			$where_query .= " AND fc.cropid = '".$this->_getParam('cropid')."' ";
+    		}
+    		# fetch by profiler
+    		if(!isEmptyString($this->_getParam('profiledby'))){
+    			$where_query .= " AND u.createdby = '".$this->_getParam('profiledby')."' ";
+    		}
+    		# fetch by reg period
+    		if(!isEmptyString($this->_getParam('regstart')) && !isEmptyString($this->_getParam('regend'))){
+    			$where_query .= " AND TO_DAYS(u.datecreated) BETWEEN TO_DAYS('".$this->_getParam('regstart')."') AND TO_DAYS('".$this->_getParam('regend')."') ";
+    		}
+    		# fetch by payment in period
+    		if(!isEmptyString($this->_getParam('paystart')) && !isEmptyString($this->_getParam('payend'))){
+    			$where_query .= " AND TO_DAYS(p.trxdate) BETWEEN TO_DAYS('".$this->_getParam('paystart')."') AND TO_DAYS('".$this->_getParam('payend')."') ";
+    		}
+    		# fetch by mobile access
+    		if(!isEmptyString($this->_getParam('hasphone'))){
+    			if($this->_getParam('hasphone') == 1){
+    				$where_query .= " AND u.phone <> '' ";
+    			}
+    			if($this->_getParam('hasphone') == 0){
+    				$where_query .= " AND (u.phone = '' OR u.phone is null) ";
+    			}
+    		}
+    		# fetch by crops
+    		if(!isEmptyString($this->_getParam('hascrops'))){
+    			if($this->_getParam('hascrops') == 1){
+    				$having_query .= " HAVING COUNT(fc.cropid) > 0 ";
+    			}
+    		}
+    		# fetch by dna status
+    		if(!isEmptyString($this->_getParam('hasdna'))){
+    			if($this->_getParam('hasdna') == 1){
+    				$where_query .= " AND u.farmgroupid <> '' ";
+    			}
+    			if($this->_getParam('hasdna') == 0){
+    				$where_query .= " AND (u.farmgroupid = '' OR u.farmgroupidis null) ";
+    			}
+    		}
+    		# fetch by locationid status
+    		if(!isEmptyString($this->_getParam('haslocation'))){
+    			if($this->_getParam('haslocation') == 1){
+    				$where_query .= " AND u.locationid <> '' ";
+    			}
+    			if($this->_getParam('haslocation') == 0){
+    				$where_query .= " AND (u.locationid = '' OR u.locationid null) ";
+    			}
+    		}
+    	}
+
+    	# search general
     	if($this->_getParam('filter') == 'search'){
+    		$issearch = true;
     		if(isEmptyString($this->_getParam('searchterm'))){
     			echo "NO_SEARCHTERM_SPECIFIED";
     			exit();
     		}
+    		$searchterm = $this->_getParam('searchterm');
+    		$where_query .= " AND (u.phone LIKE '%".$searchterm."%' OR u.firstname LIKE '%".$searchterm."%'
+    		OR u.lastname LIKE '%".$searchterm."%' OR u.email LIKE '%".$searchterm."%' OR u.username LIKE '%".$searchterm."%'
+    		)";
+    	}
+	    
+    	if(!isEmptyString($this->_getParam('limit'))){
+    		$limit_query .= " LIMIT ".$this->_getParam('limit');
     	}
     	
-    	// search by column
-    	if($this->_getParam('filter') == 'column' || $this->_getParam('filter') == 'search'){
-    		if($this->_getParam('filter') == 'column'){
-    			$iscolumn = true;
-    		}
-    		if($this->_getParam('filter') == 'search' && !isEmptyString($this->_getParam('searchterm'))){
-    			$issearch = true;
-    		}
-    		// fetch by phone
-    		if($this->_getParam('getphone') == 'Y'){
-    			$phone = $this->_getParam('phone');
-    			if(isEmptyString($phone)){
-    				echo "PHONE_NULL";
-	    			exit();
-    			}
-    			if(!isEmptyString($phone) && !isUgNumber($phone)){
-    				echo "PHONE_INVALID";
-	    			exit();
-    			}
-    			$formated_phone = substr($phone, -9);
-    			// debugMessage($formated_phone);
-    			$where_query .= " AND t.phone LIKE '%".$formated_phone."%' ";
-    		}
-    		// fetch by firstname
-    		if($this->_getParam('getfirstname') == 'Y'){
-    			$firstname = $this->_getParam('firstname');
-    			if(isEmptyString($firstname)){
-    				echo "FIRSTNAME_NULL";
-	    			exit();
-    			}
-    			// debugMessage($formated_phone);
-    			$where_query .= " AND u.firstname LIKE '%".$firstname."%' ";
-    		}
-    		// fetch by lastname
-    		if($this->_getParam('getlastname') == 'Y'){
-    			$lastname = $this->_getParam('lastname');
-    			if(isEmptyString($lastname)){
-    				echo "LASTNAME_NULL";
-	    			exit();
-    			}
-    			$where_query .= " AND u.lastname LIKE '%".$lastname."%' ";
-    		}
-    		// fetch by email
-    		if($this->_getParam('getemail') == 'Y'){
-    			$email = $this->_getParam('email');
-    			if(isEmptyString($email)){
-    				echo "EMAIL_NULL";
-	    			exit();
-    			}
-    			// TODO add check for invalid email
-    			$where_query .= " AND u.email LIKE '%".$email."%' ";
-    		}
-    		// fetch my username
-    		if($this->_getParam('getusername') == 'Y'){
-    			$username = $this->_getParam('username');
-    			if(isEmptyString($username)){
-    				echo "USERNAME_NULL";
-	    			exit();
-    			}
-    			$where_query .= " AND u.username LIKE '%".$username."%' ";
-    		}
-    		if($issearch){
-    			$searchterm = $this->_getParam('searchterm');
-    			$where_query .= " AND (t.phone LIKE '%".$searchterm."%' OR u.firstname LIKE '%".$searchterm."%'  
-    				OR u.lastname LIKE '%".$searchterm."%' OR u.email LIKE '%".$searchterm."%' OR u.username LIKE '%".$searchterm."%'
-    			)";
-    			// debugMessage($where_query);
-    		}
-    	}
-    	
-   	 	// when fetching total results
-    	if(!isEmptyString($this->_getParam('fetch')) && $this->_getParam('fetch') == 'total'){
-    		$select_query = " count(f.id) as records ";
-    		$group_query = "";
-    		$iscount = true;
-    		
-    	}
-    	// when fetching limited results via pagination 
-    	if(!isEmptyString($this->_getParam('paged')) && $this->_getParam('paged') == 'Y'){
-    		$ispaged = true;
-    		$hasall = false;
-    		$start = $this->_getParam('start');
-    		$limit = $this->_getParam('limit');
-    		if(isEmptyString($start)){
-    			echo "RANGE_START_NULL";
-	    		exit();
-    		}
-    		if(!is_numeric($start)){
-    			echo "INVALID_RANGE_START";
-	    		exit();
-    		}
-    		if(isEmptyString($limit)){
-    			echo "RANGE_LIMIT_NULL";
-	    		exit();
-    		}
-    		if(!is_numeric($limit)){
-    			echo "INVALID_RANGE_LIMIT";
-	    		exit();
-    		}
-    		$limit_query = " limit ".$start.",".$limit." ";
-    	}
-    	
-   	 	$mak_query = "SELECT ".$select_query." FROM farmer f 
-   	 	INNER JOIN useraccount u ON (f.userid = u.id) 
-   	 	INNER JOIN location l ON (u.locationid = l.id AND l.locationtype = 2) 
-   	 	LEFT JOIN userphone t ON (t.userid = u.id AND t.isprimary = 1) 
-   	 	LEFT JOIN userphone t2 ON (t2.userid = u.id AND t.isprimary = 0) 
-   	 	LEFT JOIN subscription as s ON (s.userid = u.id AND s.isactive = 1)
-   	 	LEFT JOIN farmgroup fg ON (f.farmgroupid = fg.id)  
-   	 	LEFT JOIN farmcrop as fc ON (fc.userid = u.id)
-   	 	LEFT JOIN commodity as c ON (fc.cropid = c.id)
-   	 	WHERE f.id <> '' ".$type_query.$where_query."  
-    	".$group_query." ORDER BY f.firstname ASC ".$limit_query;
-    	// debugMessage($mak_query);
-    	
-    	$result = $conn->fetchAll($mak_query);
-    	$makcount = count($result);
-    	// debugMessage($result); // exit();
-    	
-    	if($makcount == 0){
-    		echo "RESULT_NULL";
-    		exit();
+    	if(isEmptyString($where_query)){
+    		echo "NULL_PARAMETER_LIST";
     	} else {
-    		if($iscount){
-    			$feed .= '<item>';
-	    		$feed .= '<total>'.$result[0]['records'].'</total>';
-			    $feed .= '</item>';
-    		}
-    		if(!$iscount){
+	   	 	$query = "SELECT 
+	   	 	u.id,
+    		u.refno,
+    		concat(u.firstname,' ',u.lastname,' ',u.othernames) as `name`,
+    		fg.orgname as dna,
+    		u.farmgroupid as dnaid,    		
+    		l.name as district,
+    		u.locationid as districtid,
+    		u.phone,
+    		u.email,
+    		u.dateofbirth,
+    		u.isactive, 
+    		u.paymentstatus, 
+    		u.datecreated as regdate, 
+    		u.startdate, 
+    		u.enddate,
+    		p.trxdate as paymentdate,
+    		u.services as serviceids,
+    		u.languages as languageid,
+    		u.lat as lat,
+    		u.lng as lng,
+    		group_concat(fc.cropid SEPARATOR ',') as cropidlist
+	   	 	FROM useraccount u 
+	   	 	INNER JOIN location l ON (u.locationid = l.id AND l.locationtype = 2) 
+	   	 	LEFT JOIN farmgroup fg ON (u.farmgroupid = fg.id)  
+	   	 	LEFT JOIN payment p ON (u.paymentid = p.id)  
+	   	 	LEFT JOIN farmcrop fc ON (fc.userid = u.id) 
+	   	 	WHERE UPPER(u.country) = UPPER('".$country."') ".$where_query." ".$group_query.$having_query." ORDER BY u.datecreated DESC ".$limit_query;
+	    	// debugMessage($query); // exit();
+	    	
+	    	$result = $conn->fetchAll($query);
+	    	$count = count($result);
+	    	/* debugMessage($result); 
+	    	exit(); */
+	    	
+	    	if($count == 0){
+	    		echo "RESULT_NULL";
+	    		exit();
+	    	} else {
 	    		foreach ($result as $line){
-	    			# determine if current subscription has a valid payment assigned to it
-	    			$subscriptionexists = false;
-	    			if(!isEmptyString($line['paymentplan']) && !isEmptyString($line['startdate']) && !isEmptyString($line['enddate'])){
-	    				$subscriptionexists = true;
+	    			$user = new UserAccount();
+	    			$user->populate($line['id']);
+	    			$croplist = '';
+	    			$cropids = '';
+	    			
+	    			$ids = array(); $names = array();
+	    			$crops = $user->getTheCrops();
+	    			if($crops){
+	    				//debugMessage($groups->toArray());
+	    				foreach($crops as $crop) {
+	    					if($crop->getCrop()->getCategoryID() != 27){
+	    						$ids[] = $crop->getCropID();
+	    						$names[] = $crop->getCrop()->getName();
+	    					}
+	    				}
 	    			}
-	    			$paid = 0;
-	    			if($subscriptionexists && $line['paymentplan'] == 2){
-	    				$subscription = new Subscription();
-	    				$subscription->populate($line['sid']);
-	    				// debugMessage($subscription->toArray());
-	    				$payment = $subscription->getPayment();
-	    				$haspayment = false;
-	    				
-	    				if($payment->get(0)){
-		    				if(!isEmptyString($payment->get(0)->getID())){
-		    					$haspayment = true;
-		    					$paid = 1;
-		    				}
-	    				}
-	    				
-	    				$start_stamp = Strtotime($line['startdate']);
-	    				$now_stamp = strtotime(date('Y-m-d'));
-	    				$end_stamp = strtotime($line['enddate']);
-	    				if($now_stamp >= $start_stamp && $now_stamp <= $end_stamp && $haspayment){
-	    					$haspaid = 1;
-	    				}
+	    			if(count($ids) > 0){
+	    				$cropids = implode(',', $ids);
+	    				$croplist = implode(',', $names);
+	    			}
+	    			exit();
+	    			$start = $line['startdate']; $end = $line['enddate'];
+	    			if(isEmptyString($line['startdate'])){
+	    				$start = date('Y-m-d', strtotime($line['regdate']));
+	    				$expiredays = '30';
+	    				$end = date("Y-m-d", strtotime(date("Y-m-d", strtotime($start)). " +".$expiredays." days "));
 	    			}
 	    			
-			    	$feed .= '<item>';
+	    			
+			    	$feed .= '<subscriber>';
 		    		$feed .= '<id>'.$line['id'].'</id>';
-		    		$feed .= '<firstname>'.$line['firstname'].'</firstname>';
-		    		$feed .= '<lastname>'.$line['lastname'].'</lastname>';
-		    		$feed .= '<othernames>'.$line['othernames'].'</othernames>';
+		    		$feed .= '<refno>'.$line['refno'].'</refno>';
+		    		$feed .= '<name>'.$line['name'].'</name>';
+		    		$feed .= '<phone>'.$line['phone'].'</phone>';
 			    	$feed .= '<email>'.$line['email'].'</email>';
-			    	$feed .= '<phone>'.$line['phone'].'</phone>';
-			    	$feed .= '<altphone>'.$line['altphone'].'</altphone>';
-			    	$feed .= '<country>UG</country>';
-			    	$feed .= '<district>'.$line['district'].'</district>';
-			    	$feed .= '<farmgroup>'.$line['farmgroup'].'</farmgroup>';
+			    	$feed .= '<dna>'.$line['dna'].'</dna>';
+			    	$feed .= '<dnaid>'.$line['dnaid'].'</dnaid>';
+			    	$feed .= '<'.$location.'>'.$line['district'].'</'.$location.'>';
+			    	$feed .= '<'.$location.'id>'.$line['districtid'].'</'.$location.'id>';
+			    	$feed .= '<gpslat>'.$line['lat'].'</gpslat>';
+			    	$feed .= '<gpslng>'.$line['lat'].'</gpslng>';
 			    	$feed .= '<dateofbirth>'.$line['dateofbirth'].'</dateofbirth>';
-			    	$feed .= '<regdate>'.$line['regdate'].'</regdate>';
-			    	$feed .= '<isactive>'.$line['isactive'].'</isactive>';
-			    	$feed .= '<paymentplan>'.$line['paymentplan'].'</paymentplan>';
-			    	$feed .= '<startdate>'.$line['startdate'].'</startdate>';
-			    	$feed .= '<enddate>'.$line['enddate'].'</enddate>';
-			    	$feed .= '<hasaccess>'.$paid.'</hasaccess>';
-			    	$feed .= '<crops>'.$line['crops'].'</crops>';
-				    $feed .= '</item>';
+			    	$feed .= '<regdate>'.date('Y-m-d', strtotime($line['regdate'])).'</regdate>';
+			    	$feed .= '<paymentdate>'.$line['paymentdate'].'</paymentdate>';
+			    	$feed .= '<subscriptionstart>'.$start.'</subscriptionstart>';
+			    	$feed .= '<subscriptionend>'.$end.'</subscriptionend>';
+			    	$feed .= '<paymentstatus>'.$line['paymentstatus'].'</paymentstatus>';
+			    	$feed .= '<loginstatus>'.$line['isactive'].'</loginstatus>';
+			    	$feed .= '<serviceids>'.$line['serviceids'].'</serviceids>';
+			    	$feed .= '<languageid>'.$line['languageid'].'</languageid>';
+			    	$feed .= '<cropids>'.$cropids.'</cropids>';
+			    	$feed .= '<crops>'.$croplist.'</crops>';
+				    $feed .= '</subscriber>';
 		    	}
-    		}
+	    	}
     	}
     	
     	# output the xml returned
@@ -229,9 +262,9 @@ class ApiController extends IndexController  {
     		echo "EXCEPTION_ERROR";
     		exit();
     	} else {
-    		echo '<?xml version="1.0" encoding="UTF-8"?><items>'.$feed.'</items>';
+    		// header("Content-type: text/xml");
+    		echo '<?xml version="1.0" encoding="UTF-8"?><subscribers>'.$feed.'</subscribers>';
     	}
-    	
     }
 }
 

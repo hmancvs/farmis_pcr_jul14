@@ -76,7 +76,7 @@
 		$formvalues = $session->getVar(FORM_VALUES);
 		// debugMessage($formvalues);
 		$firstname = $formvalues['firstname']; $lastname = $formvalues['lastname']; $gender = $formvalues['gender']; $email = $formvalues['email']; $username = $formvalues['username']; $userid = $formvalues['userid'];
-		$dateofbirth = date('M d, Y', strtotime($formvalues['dateofbirth'])); $birthday = $formvalues['birthday']; $birthmonth = $formvalues['birthmonth']; $birthyear = $formvalues['birthyear']; $country = $formvalues['country']; $type = $formvalues['type']; $agreedtoterms = $formvalues['agreedtoterms']; $locationid = $formvalues['locationid']; $farmgroupid = $formvalues['farmgroupid']; $createdby = $formvalues['createdby']; $membershipplanid = $formvalues['membershipplanid'];
+		$dateofbirth = date('M d, Y', strtotime($formvalues['dateofbirth'])); $birthday = $formvalues['birthday']; $birthmonth = $formvalues['birthmonth']; $birthyear = $formvalues['birthyear']; $country = $formvalues['country']; $type = $formvalues['type']; $agreedtoterms = 1; $locationid = $formvalues['locationid']; $farmgroupid = $formvalues['farmgroupid']; $createdby = $formvalues['createdby']; $membershipplanid = $formvalues['membershipplanid'];
 		
 		$phone = $formvalues['phone'];
 		if(!isArrayKeyAnEmptyString('id', $formvalues)){
@@ -189,6 +189,12 @@
 				},
 				birthyear: {
 					validbirth: true
+				},
+				crop_1: {
+					onecroprequired: true
+				},
+				market_1: {
+					onemarketrequired: true
 				}
 			}, 
 			// the messages for each of the fields being validated
@@ -267,6 +273,22 @@
 			}
 			return true;        
 		}, "Please select full Date of Birth");
+		
+		$.validator.addMethod("onecroprequired", function(value, element, params) { 
+			var crop1 = $("#crop_1").val(); var crop2 = $("#crop_2").val(); var crop3 = $("#crop_3").val();
+			if (isEmptyString(crop1) && isEmptyString(crop2) && isEmptyString(crop3)){
+				return false; 
+			}
+			return true;        
+		}, "Please select at-least one Crop");
+		
+		$.validator.addMethod("onemarketrequired", function(value, element, params) { 
+			var market1 = $("#market_1").val(); var market2 = $("#market_2").val(); var market3 = $("#market_3").val();
+			if (isEmptyString(market1) && isEmptyString(market2) && isEmptyString(market2)){
+				return false; 
+			}
+			return true;        
+		}, "Please select at-least one Market Location");
 		
 		$(".hastooltip").change();
 		$("#dateofbirth").change();
@@ -438,7 +460,7 @@ body.publicbody #contentcolumn {
 	width:98%;
 }
 .contentright {
-	min-height:675px;
+	min-height:915px;
 	height:auto;
 }
 .radio input[type="radio"], .checkbox input[type="checkbox"] {
@@ -673,9 +695,186 @@ ul#plans li {
                        <td><label class="control-label confirmpassword"><?php echo $this->translate("useraccount_password_confirm_label"); ?>: <?php echo $this->translate("global_required_field_marker"); ?></label>
                        <input name="confirmpassword" id="confirmpassword" autocomplete="off" type="password" class="span2 password hastooltip" value="" title="<?php echo $this->translate("farmer_confirmpassword_tooltip"); ?>" />
                        <div id="confirmpassword_error"></div></td>
-                   </tr>
-                   
-                   <tr id="terms">
+                   	</tr>
+                    <tr>
+                    	<td colspan="2">
+                        	<label class="control-label">Enterprise Crops <?php echo $this->translate("global_required_field_marker"); ?></label>
+                        	<div class="row margin0 padding0" style="width:100%;">
+                                <div class="row marginleft0">
+                                    <span class="pagedescription blocked">Select your priority Farm Crop(s) or the Crops for which you would like too receive regular Market Information via SMS and Email.</span>
+                                    <?php 
+										$commodities = getFarmisCommodities();
+										$preselectarray = $user->getCropIDs();
+										if(!isEmptyString($session->getVar(ERROR_MESSAGE))){
+											if(!isArrayKeyAnEmptyString('crop_1', $formvalues)){
+												$formvalues['cropids'][0] = $formvalues['crop_1'];
+												$formvalues['cropids'][1] = $formvalues['crop_2'];
+												$formvalues['cropids'][2] = $formvalues['crop_3'];
+												$preselectarray = $formvalues['cropids'];
+											}
+											
+										}
+										
+										$crop1 = ''; $crop2 = ''; $crop3 = '';
+										if(!isArrayKeyAnEmptyString(0, $preselectarray)){
+											$crop1 = $preselectarray[0];
+										}
+										if(!isArrayKeyAnEmptyString(1, $preselectarray)){
+											$crop2 = $preselectarray[1];
+										}
+										if(!isArrayKeyAnEmptyString(2, $preselectarray)){
+											$crop3 = $preselectarray[2];
+										}
+										
+									?>
+									<table class="table noborder">
+										<tr>
+											<td style="width:100px;">
+												<div class="controls blocked" style="margin-left:0px; margin-top:2px;">
+													1. <?php
+														$dropdown1 = new Zend_Form_Element_Select('crop_1',
+																			array(
+																				'multiOptions' => array_merge_maintain_keys(array('' => '<Select>'), $commodities),								
+																				'view' => new Zend_View(),
+																				'decorators' => array('ViewHelper'),
+																				'class' => array('span2')
+																			)
+																		);
+														$dropdown1->setValue($crop1); 
+														echo $dropdown1->render(); 
+												   ?>
+												</div>
+                                                <div id="crop_1_error"></div>
+											</td>
+											<td style="width:100px;">
+												<div class="controls blocked" style="margin-left:0px; margin-top:2px;">
+													2. <?php
+														$dropdown2 = new Zend_Form_Element_Select('crop_2',
+																			array(
+																				'multiOptions' => array_merge_maintain_keys(array('' => '<Select>'), $commodities),								
+																				'view' => new Zend_View(),
+																				'decorators' => array('ViewHelper'),
+																				'class' => array('span2')
+																			)
+																		);
+														$dropdown2->setValue($crop2); 
+														echo $dropdown2->render(); 
+												   ?>
+												</div>
+											</td>
+											<td style="width:100px;">
+												<div class="controls blocked" style="margin-left:0px; margin-top:2px;">
+													3. <?php
+														$dropdown3 = new Zend_Form_Element_Select('crop_3',
+																			array(
+																				'multiOptions' => array_merge_maintain_keys(array('' => '<Select>'), $commodities),								
+																				'view' => new Zend_View(),
+																				'decorators' => array('ViewHelper'),
+																				'class' => array('span2')
+																			)
+																		);
+														$dropdown3->setValue($crop3); 
+														echo $dropdown3->render(); 
+												   ?>
+												</div>
+											</td>
+										</tr>
+									</table>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    <?php if(isUganda()){ ?>
+                    <tr>
+                    	<td colspan="2">
+                        	<label class="control-label">Market Locations <?php echo $this->translate("global_required_field_marker"); ?></label>
+                        	<div class="row margin0 padding0" style="width:100%;">
+                                <div class="row marginleft0">
+                                    <span class="pagedescription blocked">Select the Market(s) that you are Interested in or the Markets from which we shall send you weekly Prices and any other Market Information</span>
+                                    <?php 
+										$markets = getMarkets();
+										$preselectarray = $user->getMarketIDs();
+										if(!isEmptyString($session->getVar(ERROR_MESSAGE))){
+											if(!isArrayKeyAnEmptyString('market_1', $formvalues)){
+												$formvalues['marketids'][0] = $formvalues['market_1'];
+												$formvalues['marketids'][1] = $formvalues['market_2'];
+												$formvalues['marketids'][2] = $formvalues['market_3'];
+												$preselectarray = $formvalues['marketids'];
+											}
+											
+										}
+										$market1 = ''; $market2 = ''; $market3 = '';
+										if(!isArrayKeyAnEmptyString(0, $preselectarray)){
+											$market1 = $preselectarray[0];
+										}
+										if(!isArrayKeyAnEmptyString(1, $preselectarray)){
+											$market2 = $preselectarray[1];
+										}
+										if(!isArrayKeyAnEmptyString(2, $preselectarray)){
+											$market3 = $preselectarray[2];
+										}
+										
+									?>
+                                    <table class="table noborder">
+										<tr>
+											<td style="width:100px;">
+												<div class="controls blocked" style="margin-left:0px; margin-top:2px;">
+                                                    1. <?php
+                                                       
+                                                        $dropdown1 = new Zend_Form_Element_Select('market_1',
+                                                                            array(
+                                                                                'multiOptions' => array_merge_maintain_keys(array('' => '<Select>'), $markets),								
+                                                                                'view' => new Zend_View(),
+                                                                                'decorators' => array('ViewHelper'),
+                                                                                'class' => array('span2')
+                                                                            )
+                                                                        );
+                                                        $dropdown1->setValue($market1); 
+                                                        echo $dropdown1->render(); 
+                                                   ?>
+                                                </div>
+                                                <div id="market_1_error"></div>
+											</td>
+											<td style="width:100px;">
+												<div class="controls blocked" style="margin-left:0px; margin-top:2px;">
+                                                    2. <?php
+                                                        $dropdown2 = new Zend_Form_Element_Select('market_2',
+                                                                            array(
+                                                                                'multiOptions' => array_merge_maintain_keys(array('' => '<Select>'), $markets),								
+                                                                                'view' => new Zend_View(),
+                                                                                'decorators' => array('ViewHelper'),
+                                                                                'class' => array('span2')
+                                                                            )
+                                                                        );
+                                                        $dropdown2->setValue($market2); 
+                                                        echo $dropdown2->render(); 
+                                                   ?>
+                                                </div>
+											</td>
+											<td style="width:100px;">
+												<div class="controls blocked" style="margin-left:0px; margin-top:2px;">
+                                                    3. <?php
+                                                        $dropdown3 = new Zend_Form_Element_Select('market_3',
+                                                                            array(
+                                                                                'multiOptions' => array_merge_maintain_keys(array('' => '<Select>'), $markets),								
+                                                                                'view' => new Zend_View(),
+                                                                                'decorators' => array('ViewHelper'),
+                                                                                'class' => array('span2')
+                                                                            )
+                                                                        );
+                                                        $dropdown3->setValue($market3); 
+                                                        echo $dropdown3->render(); 
+                                                   ?>
+                                                </div>
+											</td>
+										</tr>
+									</table>
+                           		</div>
+                           </div>
+                        </td>
+                    </tr>
+                    <?php } ?>        
+                    <tr id="terms">
                         <td colspan="2" style="padding-bottom:30px;"><input type="checkbox" name="agreedtoterms" id="agreedtoterms" value="1" class="<?php echo $agreedtoterms; ?>" title="<?php echo $this->translate("person_agreedtoterms_tooltip"); ?>" />
                         <?php echo sprintf($this->translate("useraccount_terms_accept_label"), '#', '#'); ?><?php echo $this->translate("global_required_field_marker"); ?><div id="agreedtoterms_error"></div></td>
                     </tr>
