@@ -51,17 +51,6 @@
 		$where_query .= " AND (TO_DAYS(u.datecreated) <= TO_DAYS('".$enddate."')) ";
 	}
 	
-	// filter by dna
-	$groupid = $request->getParam('farmgroupid');
-	if(!isEmptyString($request->getParam('farmgroupid'))){
-		$where_query .= " AND u.`farmgroupid` = '".$groupid."' ";
-	}
-	// filter by location
-	$locationid = $request->getParam('locationid');
-	if(!isEmptyString($request->getParam('locationid'))){
-		$where_query .= " AND u.`locationid` = '".$locationid."' ";
-	}
-	
 	// age group filter 
 	$range = $request->getParam('range');
 	if(!isEmptyString($range)){
@@ -144,7 +133,7 @@
 	}
 	
 	$partner_query = ""; $partner_details = array(); $indtype = ''; 
-	if($loggedinuser->isPartner()){
+	/*if($loggedinuser->isPartner()){
 		$allowedlist = $loggedinuser->getCompany()->getAllocationDetails(true);
 		$partnertype = $loggedinuser->getCompany()->getFarmisType();
 		$indtype = $loggedinuser->getCompany()->getShowInd();
@@ -178,38 +167,40 @@
 				break;
 		}
 	}
-	
+	*/
 	$paginate->processPost($request->getParams());
 	$all_results_query = "
-			SELECT c.id as id,
-			IF(c.farmisalias <> '', c.farmisalias, c.name) as crop, 
+			SELECT l.id as id,
+			l.name as district, 
 			count(u.id) as totalfarmers, 
-			SUM(IF(u.gender =1,1,0)) as male, 
-			SUM(IF(u.gender =2,1,0)) as female, 
-			SUM(IF(u.phone <> '',1,0)) as withphone, 
-			SUM(IF(u.phone = '' || u.phone is null ,1,0)) as nophone 
-			from farmcrop f 
-			inner join ".AGMIS_DB.".commodity c on(f.cropid = c.id AND c.allowfarmer = 1) 
-			inner join useraccount u on(f.userid = u.id AND u.type = 2) 
+			SUM(u.landsize) as totalacreage,
+			SUM(IF(u.landsize BETWEEN 0 and 2,u.landsize,0)) as lessthantwo, 
+			SUM(IF(u.landsize BETWEEN 0 and 2,1,0)) as lessthantwo_count, 
+			SUM(IF(u.landsize BETWEEN 3 and 5,u.landsize,0)) as btn3and5, 
+			SUM(IF(u.landsize BETWEEN 3 and 5,1,0)) as btn3and5_count, 
+			SUM(IF(u.landsize BETWEEN 6 and 10,u.landsize,0)) as btn6and10, 
+			SUM(IF(u.landsize BETWEEN 6 and 10,1,0)) as btn6and10_count, 
+			SUM(IF(u.landsize BETWEEN 11 and 20,u.landsize,0)) as btn11and20, 
+			SUM(IF(u.landsize BETWEEN 11 and 20,1,0)) as btn11and20_count, 
+			SUM(IF(u.landsize BETWEEN 21 and 30,u.landsize,0)) as btn21and30, 
+			SUM(IF(u.landsize BETWEEN 21 and 30,1,0)) as btn21and30_count, 
+			SUM(IF(u.landsize > 31,u.landsize,0)) as greaterthan30,	
+			SUM(IF(u.landsize > 31,1,0)) as greaterthan30_count			 
+			from useraccount u
 			left join location l on (u.locationid = l.id and l.locationtype = 2)
-			where LOWER(u.country) = LOWER('".$session->getVar('country')."') AND c.allowfarmer = 1 ".$where_query.$partner_query."
-			GROUP BY f.cropid 
+			where LOWER(u.country) = LOWER('".$session->getVar('country')."') ".$where_query.$partner_query."
+			GROUP BY u.locationid 
 			HAVING count(u.id) > 0 
 			order by totalfarmers desc";
 	
-	// debugMessage($all_results_query);
+	// debugMessage($all_results_query); // exit;
 	$conn = Doctrine_Manager::connection(); 
 	$result = $conn->fetchAll($all_results_query);
 	$has_no_data = (count($result) == 0) ? true : false; 
 	// debugMessage($result);
+	$total = count($result); // debugMessage($croptotal);
 	
-	$count_query = "SELECT 
-	count(DISTINCT(u.id)) 
-	from useraccount u 
-	where u.country = UPPER('".$session->getVar('country')."') AND u.type = 2 ".$where_query;
-	$croptotal = $conn->fetchOne($count_query); // debugMessage($croptotal);
-	
-	$title = "Crop/Enterprise Utilisation Report";
+	$title = "Acreage and Land Utilization Report";
 	$this->headTitle($title); 
 	
 ?>
@@ -231,7 +222,9 @@ $(document).ready(function() {
 	<?php } ?>
 	
 	$("#searchbutton").click(function(e){
-		$("#listform").attr('action', '<?php echo $this->baseUrl('report/cropsearch'); ?>').attr('method', 'get').submit();
+		e.preventDefault();
+		alert('clicked');
+		//$("#reportform").attr('action', '<?php //echo $this->baseUrl('report/acreagesearch'); ?>').attr('method', 'get').submit();
 	});
 	$(".submitexcel").click(function(e){
 		e.preventDefault();
@@ -239,7 +232,7 @@ $(document).ready(function() {
 		var decoded_value = base64_encode(csv_value);	// alert(decoded_value);
 		$("#csv_text").val(decoded_value);	/**/
 		
-		$("#listform").attr('action', '<?php echo $this->baseUrl('download/excel'); ?>').attr('method', 'post').submit();
+		$("#reportform").attr('action', '<?php echo $this->baseUrl('download/excel'); ?>').attr('method', 'post').submit();
 		return true;
 	});
 });
@@ -279,12 +272,6 @@ $(document).ready(function() {
 	-webkit-border-radius: 4px;
 	-moz-border-radius: 4px;
 	border-radius: 4px;
-}
-.contenttable .control-label {
-	width:auto;
-	white-space:normal;
-	text-align:left;
-	display:block;
 }
 .contenttable h2 {
 	margin: 0;
@@ -348,6 +335,15 @@ pdfquicklinks {
 	width:100%;
 	text-align:left;
 }
+.contenttable .control-label {
+	width:auto;
+	white-space:normal;
+	text-align:left;
+	display:block;
+}
+.control-label.notbolded {
+	font-size:11px !important;
+}
 .table#data tr td {
 	white-space:nowrap;
 }
@@ -386,7 +382,7 @@ pdfquicklinks {
 }
 <?php } ?>
 </style>
-<form action="<?php echo $this->baseUrl("report/cropsearch"); ?>" method="get" id="listform" class="form-search margin0" style="margin-top:5px;">
+<form action="<?php echo $this->baseUrl("report/acreagesearch"); ?>" method="get" id="reportform" class="form-search margin0" style="margin-top:5px;">
 
 <div>
   <div id="centercolumn">
@@ -412,41 +408,6 @@ pdfquicklinks {
                     </td>
                     <td style="width:120px;"><label class="control-label inline" style="font-size:12px;">Added To:</label>
                         <input name="enddate" id="enddate" type="text" class="datefield input-width-small width110"  value="<?php echo $request->enddate; ?>" />
-                    </td>
-                    <td style="width:120px;">
-                    	<label class="control-label">DNA:</label>
-                        <?php
-							$preparray = array('' => 'All DNAs');
-							if($indtype != '0'){
-								$preparray['0'] = 'All Individual Farmers';
-							}
-							$groupdropdown = new Zend_Form_Element_Select('farmgroupid',
-												array(
-													'multiOptions' => array_merge_maintain_keys($preparray, getAllFarmGroups('', $session->getVar('country'), $partner_details)),								
-													'view' => new Zend_View(),
-													'decorators' => array('ViewHelper'),
-													'class' => array('width125'),
-												)
-											);
-							$groupdropdown->setValue($request->getParam('farmgroupid')); 
-							echo $groupdropdown->render(); 
-					   ?>
-                    </td>
-                    <td style="width:100px;">
-                    	<label class="control-label"><?php echo $location_label; ?>:</label>
-						<?php
-                            $districts = getDistricts($session->getVar('country'));
-                            $districtdropdown = new Zend_Form_Element_Select('locationid',
-                                                array(
-                                                    'multiOptions' => array_merge_maintain_keys(array('' => 'All'), $districts),								
-													'view' => new Zend_View(),
-                                                    'decorators' => array('ViewHelper'),
-                                                    'class' => array('width100')
-                                                )
-                                            );
-                            $districtdropdown->setValue($request->getParam('locationid')); 
-                            echo $districtdropdown->render(); 
-                          ?>
                     </td>
                     <td style="width:100px;">
                             <label class="control-label">Age Group:</label>
@@ -482,23 +443,6 @@ pdfquicklinks {
                             echo $dropdown->render();
                         ?>
                     </td>
-                    <td style="width:100px;">
-                    	<label class="control-label">Average Land Size:</label>
-						<?php
-                            $allgenders = array('' => 'All Ranges','1'=>'Less than 3Acres','2'=>'3-5Acres','3'=>'6-10Acres','4'=>'11-20Acres','5'=>'21-30Acres','6'=>'More than 30Acres');
-                            $dropdown = new Zend_Form_Element_Select('landusage',
-                                                array(
-                                                    'multiOptions' => $allgenders,
-                                                    'view' => new Zend_View(),
-                                                    'decorators' => array('ViewHelper'),
-                                                    'class' => array('gender','width100'),
-                                                    'title' => 'Filter By Land Usage'		
-                                                )
-                            );  
-                            $dropdown->setValue($request->getParam('landusage')); 
-                            echo $dropdown->render();
-                        ?>
-                    </td>
                     <td style="width:100px; vertical-align:bottom;">
                         <button type="submit" id="searchbutton" class="btn btn-primary" style="padding:6px 10px;"><i class="icon-white icon-search"></i> Generate</button>
                         <input type="hidden" name="country" id="country" value="<?php echo $country; ?>" />
@@ -512,20 +456,20 @@ pdfquicklinks {
                         <?php } ?>
                     </td>
                     <?php } ?>
-                    <td><label class="control-label">&nbsp;</label><a href="<?php echo $this->baseUrl('report/crop');; ?>" id="reset" class="btn" title="Reset Report">Reset</a></td>
+                    <td><label class="control-label">&nbsp;</label><a href="<?php echo $this->baseUrl('report/acreage');; ?>" id="reset" class="btn" title="Reset Report">Reset</a></td>
                 </tr>
                 <tr>
                     <?php if($loggedinuser->isUgandan() && isUganda() && $acl->checkPermission('Is UG Admin can Administer KE', ACTION_YESNO)){ ?>
 						<td colspan="2">
 							<?php if(isEmptyString($request->country) || $countryreq == 'ug'){ ?>
-                                <a class="btn" href="<?php echo $this->baseUrl('report/crop/country/ke'); ?>" title="Browse Kenya"><i class="icon-list"></i> Browse Kenya</a>
+                                <a class="btn" href="<?php echo $this->baseUrl('report/acreage/country/ke'); ?>" title="Browse Kenya"><i class="icon-list"></i> Browse Kenya</a>
                             <?php } ?>
                         </td>
                     <?php } ?>    
                     <?php if($loggedinuser->isUgandan() && isKenya() && $acl->checkPermission('Is UG Admin can Administer KE', ACTION_YESNO)){ ?>
                     	<td colspan="2">
 							<?php if(!isEmptyString($request->country) && $countryreq == 'ke'){ ?>
-                                <a class="btn" href="<?php echo $this->baseUrl('report/crop/country/ug'); ?>" title="Browse Uganda"><i class="icon-list"></i> Browse Uganda</a>
+                                <a class="btn" href="<?php echo $this->baseUrl('report/acreage/country/ug'); ?>" title="Browse Uganda"><i class="icon-list"></i> Browse Uganda</a>
                             <?php } ?>
                         </td>
                     <?php } ?>
@@ -540,21 +484,52 @@ pdfquicklinks {
                 <div style="clear:both;" class="alert alert-info margin5">There are no records for this report</div>
             <?php } else { ?>
                 <div style="width:100%; display:block; height:30px;; position:relative;">
-                    <div class="paginatecustom"><?php echo "Viewing records for ".count($result).' enterprises'; ?></div>
+                    <div class="paginatecustom"><?php echo "Viewing records for ".count($result).' Locations'; ?></div>
                 </div>
                 <div style="width:100%; height:auto; overflow:auto; margin-bottom:10px; display:block;">
                     
                     <table id="data" class="table table-bordered" style="margin:10px 0 10px 0; width:auto;">
                         <thead>
                             <tr>
-                                <td style="width:25px;"><label class="control-label">ID#</label></td>
-                                <td style="width:150px;"><label class="control-label">Name of Enterprise</label></td>
-                                <td style="width:60px;"><label class="control-label bolded">Total Farmers</label></td>
-                                <td style="width:75px;"><label class="control-label bolded">%age out of <?php echo $croptotal; ?> </label></td>
-                                <td style="width:100px; text-align:center;" colspan="2"><label class="control-label centeralign">Male %</label></td>
-                                <td style="width:100px; text-align:center;" colspan="2"><label class="control-label centeralign">Female %</label></td>
-                                <td style="width:120px; text-align:center;" colspan="2"><label class="control-label centeralign">With Phone %</label></td>
-                                <td style="width:120px; text-align:center;" colspan="2"><label class="control-label centeralign">No Phone %</label></td>
+                                <td style="width:25px;" rowspan="2"><label class="control-label">#</label></td>
+                                <td style="width:150px;" rowspan="2"><label class="control-label">Location</label></td>
+                                <td style="width:90px;"><label class="control-label bolded">Total Farmers</label></td>
+                                <td style="width:90px;"><label class="control-label bolded">Total Acreage</label></td>
+                                <td style="width:130px; text-align:center;" colspan="3"><label class="control-label centeralign"><= 2 Acres</label></td>
+                                <td style="width:130px; text-align:center;" colspan="3"><label class="control-label centeralign">Btn 3-5 Acres</label></td>
+                                <td style="width:130px; text-align:center;" colspan="3"><label class="control-label centeralign">Btn 6-10 Acres</label></td>
+                                <td style="width:130px; text-align:center;" colspan="3"><label class="control-label centeralign">Btn 11-20 Acres</label></td>
+                                <td style="width:130px; text-align:center;" colspan="3"><label class="control-label centeralign">Btn 21-30 Acres</label></td>
+                                <td style="width:130px; text-align:center;" colspan="3"><label class="control-label centeralign">>=31 Acres</label></td>
+                            </tr>
+                            <tr>
+                                <td><label class="control-label notbolded">No of Farmers (NOF)</label></td>
+                                <td><label class="control-label notbolded">No of Acres (NOA)</label></td>
+                                
+                                <td><label class="control-label notbolded">NOF</label></td>
+                                <td><label class="control-label bolded">%age</label></td>
+                                <td><label class="control-label notbolded">NOA</label></td>
+                                
+                                <td><label class="control-label notbolded">NOF</label></td>
+                                <td><label class="control-label notbolded">%age</label></td>
+                                <td><label class="control-label notbolded">NOA</label></td>
+                                
+                                <td><label class="control-label notbolded">NOF</label></td>
+                                <td><label class="control-label notbolded">%age</label></td>
+                                <td><label class="control-label notbolded">NOA</label></td>
+                                
+                                <td><label class="control-label notbolded">NOF</label></td>
+                                <td><label class="control-label notbolded">%age</label></td>
+                                <td><label class="control-label notbolded">NOA</label></td>
+                                
+                                <td><label class="control-label notbolded">NOF</label></td>
+                                <td><label class="control-label notbolded">%age</label></td>
+                                <td><label class="control-label notbolded">NOA</label></td>
+                                
+                                <td><label class="control-label notbolded">NOF</label></td>
+                                <td><label class="control-label notbolded">%age</label></td>
+                                <td><label class="control-label notbolded">NOA</label></td>
+                                
                             </tr>
                         </thead>
                         <tbody>
@@ -563,31 +538,38 @@ pdfquicklinks {
 								 $total = 0;
 								 $maletotal = 0; $femaletotal = 0; $phonetotal = 0; $nophonetotal = 0;
                                  foreach($result as $line){
-									 $total += $line['totalfarmers'];
-									 $totalpctg = round(($line['totalfarmers']/$croptotal)*100,1);
-									 $maletotal += $line['male']; 
-									 $femaletotal += $line['female'];
-									 $phonetotal += $line['withphone'];
-									 $nophonetotal += $line['nophone'];
-									 $malepctg = round(($line['male']/$line['totalfarmers'])*100,1);
+									 /*$malepctg = round(($line['male']/$line['totalfarmers'])*100,1);
 									 $femalepctg = round(($line['female']/$line['totalfarmers'])*100,1);
 									 $phonepctg = round(($line['withphone']/$line['totalfarmers'])*100,1);
-									 $nophonepctg = round(($line['nophone']/$line['totalfarmers'])*100, 1);
+									 $nophonepctg = round(($line['nophone']/$line['totalfarmers'])*100, 1);*/
                             ?>
                             <tr>
-                                <td><span class="nullifempty"><?php echo $counter; ?></span></td>
-                                <td><span class="nullifempty"><?php echo $line['crop']; ?></span></td>
-                                <td class="bolded centeralign"><span class="nullifempty"><?php echo $line['totalfarmers']; ?></span></td>
-                                <td class="bolded centeralign"><span class="nullifempty"><?php echo $totalpctg.'%'; ?></span></td>
-                                <td><span class="nullifempty"><?php echo $line['male']; ?></span></td>
-                                <td><span class="nullifempty"><?php echo $malepctg.'%'; ?></span></td>
-                                <td><span class="nullifempty"><?php echo $line['female']; ?></span></td>
-                                <td><span class="nullifempty"><?php echo $femalepctg.'%'; ?></span></td>
-                                <td><span class="nullifempty"><?php echo $line['withphone']; ?></span></td>
-                                <td><span class="nullifempty"><?php echo $phonepctg.'%'; ?></span></td>
-                                <td><span class="nullifempty"><?php echo $line['nophone']; ?></span></td>
-                                <td><span class="nullifempty"><?php echo $nophonepctg.'%'; ?></span></td>
-                            </tr>
+                            	<td><span class="nullifempty"><?php echo $counter; ?></span></td>
+                                <td><span class="nullifempty bolded"><?php echo $line['district']; ?></span></td>
+                                <td class="rightalign"><span class="nullifempty"><?php echo formatNumber($line['totalfarmers'],0); ?></span></td>
+                                <td class="rightalign"><span class="xnullifempty"><?php echo $line['totalacreage'] == '' ? '0' : formatNumber($line['totalacreage'],0); ?></span></td>
+                                <td class="rightalign"><span class="nullifempty"><?php echo formatNumber($line['lessthantwo_count']); ?></span></td>
+                                <td class="rightalign bolded"><span class="nullifempty"><?php echo formatNumber($line['lessthantwo_count']/$line['totalfarmers']*100) ;?></span></td>
+                                <td class="rightalign"><span class="nullifempty"><?php echo formatNumber($line['lessthantwo']); ?></span></td>
+                                
+                                <td class="rightalign"><span class="nullifempty"><?php echo formatNumber($line['btn3and5_count']); ?></span></td>
+                                <td class="rightalign bolded"><span class="nullifempty"><?php echo formatNumber($line['btn3and5_count']/$line['totalfarmers']*100) ;?></span></td>
+                                <td class="rightalign"><span class="nullifempty"><?php echo formatNumber($line['btn3and5']); ?></span></td>
+                                
+                                <td class="rightalign"><span class="nullifempty"><?php echo formatNumber($line['btn6and10_count']); ?></span></td>
+                                <td class="rightalign bolded"><span class="nullifempty"><?php echo formatNumber($line['btn6and10_count']/$line['totalfarmers']*100) ;?></span></td>
+                                <td class="rightalign"><span class="nullifempty"><?php echo formatNumber($line['btn6and10']); ?></span></td>
+                                
+                                <td class="rightalign"><span class="nullifempty"><?php echo formatNumber($line['btn11and20_count']); ?></span></td>
+                                <td class="rightalign bolded"><span class="nullifempty"><?php echo formatNumber($line['btn11and20_count']/$line['totalfarmers']*100) ;?></span></td>
+                                <td class="rightalign"><span class="nullifempty"><?php echo formatNumber($line['btn11and20']); ?></span></td>
+                                <td class="rightalign"><span class="nullifempty"><?php echo formatNumber($line['btn21and30_count']); ?></span></td>
+                                <td class="rightalign bolded"><span class="nullifempty"><?php echo formatNumber($line['btn21and30_count']/$line['totalfarmers']*100) ;?></span></td>
+                                <td class="rightalign"><span class="nullifempty"><?php echo formatNumber($line['btn21and30']); ?></span></td>
+                                <td class="rightalign"><span class="nullifempty"><?php echo formatNumber($line['greaterthan30_count']); ?></span></td>
+                                <td class="rightalign bolded"><span class="nullifempty"><?php echo formatNumber($line['greaterthan30_count']/$line['totalfarmers']*100) ;?></span></td>
+                                <td class="rightalign"><span class="nullifempty"><?php echo formatNumber($line['greaterthan30']); ?></span></td>
+                             </tr>
                             <?php $counter++; } ?>
                         </tbody>
                     </table>

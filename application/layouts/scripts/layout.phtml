@@ -766,7 +766,8 @@ $(document).ready(function() {
 				var inputSearch = $(this).val();
 				var type = '<?php echo $usertype; ?>';
 				var grp = '<?php echo $groupid; ?>';
-				var country = '<?php echo $session->getVar('country'); ?>';
+				var country = $(this).attr('country');
+				// alert('country is '+country);
 				var isreport = 0;
 				if($(this).hasClass('reportsearch')){
 					var isreport = 1;
@@ -785,6 +786,7 @@ $(document).ready(function() {
 						url: searchurl,
 						cache: false,
 						success: function(data) {
+							// alert(data);
 							$("#divResult").html(data).show().css({'display':'block','padding':'0'});
 							$('li.display_box:first').addClass('selected');
 							
@@ -1129,4 +1131,4 @@ class="statcounter"
 src="http://c.statcounter.com/9269846/0/5ab010d0/1/"
 alt="web analytics"></a></div></noscript>
 <!-- End of StatCounter Code for Default Guide -->
-<?php //} ?>
+<?php // } ?>

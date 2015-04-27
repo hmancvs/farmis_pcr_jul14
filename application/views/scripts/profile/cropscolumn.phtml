@@ -19,24 +19,20 @@
 				background:none;
 			}
 		</style>
-		<ul class="sectionitems">
+		<ul class="nav">
 			<?php 
-				$crops = $user->getTheCrops();
-				$countcrops = $crops->count();
-				//debugMessage($crops->toArray());
-				if($countcrops == 0) { ?>
-				<div class="alert alert-info">No Crops have been Setup yet. Click on 'Add Crops' to get started</div>
-			<?php } else { ?>                
+				$commodities = getFarmisCommoditiesDetails(); //debugMessage($commodities); exit;
+				$crops = $user->getCropIDs(); //debugMessage($crops);
+				$countcrops = count($crops);
+				if($countcrops == 0) { 
+			?>
+				<div class="alert alert-info">No Crops currently available</div>
+            <?php } else { ?>                
 				<label class="labeldescription">Viewing <?php echo $countcrops; ?> <?php echo $countcrops == 1 ? ' Farm Crop' : 'Farm Crops'; ?></label>
-				<?php foreach($crops as $crop){ ?>
-					<li>
-						<div class="imagecontainer" style="width:22%; min-height:90px; padding:2px; position:absolute; top:10px; left:5px;">
-							<img style="width:100%; max-height:175px;" src="<?php echo $crop->getCrop()->getImagePath(); ?>" />
-						</div>
-						<div style="float:right; width:74%; margin-top:0;">
-							<h2><?php echo $crop->getCrop()->getName(); ?></h2>
-						</div>
-					</li>
+                <?php foreach($crops as $cropid){ ?>
+                	<li style="margin-right:20px; margin-bottom:5px;">
+                        <label style="color:#55A411; margin:5px 0; font-weight:bold;"><?php echo $commodities[$cropid]['name']; ?></label>
+                    </li>
 				<?php } ?>
 			<?php } ?>
 		</ul>
@@ -67,16 +63,17 @@
     <span class="marginleft0 span9" style="width:99%;">
     	<ul class="nav">
 			<?php 
-                $others = $user->getTheEnterprises();
-                $countothers = $others->count();
-                //debugMessage($others->toArray());
-                if($countothers == 0) { ?>
-                None
+                $others = getOtherEnterprisesDetails(); //debugMessage($commodities); exit;
+                $enterprises = $user->getEnterpriseIDs(); //debugMessage($crops);
+                $countothers = count($enterprises);
+                if($countothers == 0) { 
+            ?>
+                <div class="alert alert-info">None</div>
             <?php } else { ?>                
                 <label class="labeldescription"><?php echo $countothers; ?> currently profiled</label>
-                <?php foreach($others as $enterprise){ ?>
+                <?php foreach($enterprises as $cropid){ ?>
                     <li style="margin-right:20px; margin-bottom:5px;">
-                        <label style="color:#55A411; margin:5px 0; font-weight:bold;"><?php echo $enterprise->getCrop()->getName(); ?></label>
+                        <label style="color:#55A411; margin:5px 0; font-weight:bold;"><?php echo $others[$cropid]['name']; ?></label>
                     </li>
                 <?php } ?>
             <?php } ?>

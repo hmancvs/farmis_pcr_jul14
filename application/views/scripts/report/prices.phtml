@@ -39,12 +39,16 @@
 		if($tab == 'all'){
 			$current = '';
 		}
-		//$allmarkets = getAgmisMarkets($current);
 	} else {
 		//$allmarkets = getAgmisMarkets();
 	}
 	
+	$units = getCommunityUnits();
+	
 	$title = "Latest Market Prices from <a href='http://agmis.infotradeuganda.com' target='_blank'>Infotrade Uganda</a>";
+	if(isKenya()){
+		$title = "Latest Market Prices from <a href='http://sokopepe.co.ke' target='_blank'>Sokopepe</a>";
+	}
 	$this->headTitle("Latest Market Report".$browserappend); 
 	
 ?>
@@ -66,21 +70,6 @@ $(document).ready(function() {
 		$("body").addClass('print');
 		$("body.print .hideonprint").html('').remove();
 		$("body.print a.sortlink").removeAttr('href').removeAttr('title');
-	<?php } ?>
-	
-	<?php if(false){ ?>
-		// auto populate contact details 
-		$("#marketprices").html('<div style="padding-top:100px;" class="centeralign blocked"><label class="centeralign blocked">loading...</label><br />'+$("#wait").html()+'</div>');
-		$.get("<?php echo $this->baseUrl('graph/allpricesexport/pgc/true'); ?>", 
-		   {			
-			cachebuster: new Date().getTime()}, 			   
-			function(data){			
-				// alert(data);			
-				$('#marketprices').html(data);
-				equalHeight($("#leftcolumn, #centercolumn"));
-				$('#centercolumn').css({'height':'1775px'});	
-			}
-		);
 	<?php } ?>
 	
 	$(".regionchange").click(function(){
@@ -117,7 +106,7 @@ $(document).ready(function() {
     });
 	
 	$(".wrapper2").slimScroll({
-		height: 'auto',
+		height: '800px',
 		size: '15px',
 		position: 'right',
 		color: '#000',
@@ -131,7 +120,8 @@ $(document).ready(function() {
 });
 </script>
 <style>
-#contentcolumn {
+
+/*#contentcolumn {
 	min-height:600px;
 }
 #centercolumn {
@@ -143,6 +133,7 @@ $(document).ready(function() {
 #centercolumn h1, #centercolumn h2 {
 	font-family:calibri, Telex, sans-serif;
 }
+*/
 #pageleft {
 	margin:0 5px 0 0;
 	width:100%;
@@ -220,7 +211,33 @@ $(document).ready(function() {
 	width:100%;
 	text-align:left;
 }
+
+.wrapper1, .wrapper2 {
+	width: 100%; 
+	border: none 0px #cccccc;
+	overflow-x: scroll; 
+	overflow-y:scroll;
+}
+.wrapper1 {
+	height: 20px; 
+}
+.wrapper2 {
+	height: 500px; 
+}
+.div1 {
+	width:3200px; 
+	height: 20px; 
+}
+.div2 {
+	width:3200px; 
+	/*height: 500px; */
+	background:none;
+	/*overflow: auto;*/
+}
 </style>
+<?php //if(isKenya()){ ?>
+	<?php require APPLICATION_PATH."/views/scripts/index/leftcolumn.phtml"; ?>
+<?php //} ?>
 <div id="centercolumn">
 	<div class="widgetsection" style="min-height:800px; height:auto;">
         <!--<h3 style="color:#282727;"><?php //echo $title; ?></h3>-->
@@ -241,66 +258,47 @@ $(document).ready(function() {
                                 <h4><i class="icon-reorder"></i> <?php echo $title; ?></h4>
                             </div>
                             <div class="tabbable tabbable-custom" style="margin:10px;">
-                                <?php if($request->fullscreen == 1){ ?>
-                                    <style>
-                                    #sidebar, .crumbs {
-                                        display:none;
-                                        width:0;
-                                        height:0;
-                                        margin:0;
-                                        padding:0;
-                                    }
-                                    #content {
-                                        margin-left:0;
-                                    }								
-                                    </style>
-                                    <script>
-                                    $(document).ready(function(){
-                                        $('.page-header').hide().remove();
-                                        $('.page-header-after').removeClass('hide').show();
-                                    });
-                                    </script>
-                                <?php } ?>
-                                <ul class="nav nav-tabs margin0">
-                                	<?php
-										$region = new Location();
-										$regions = $region->getRegions();
-										$counter = 1; 
-										foreach($regions as $key => $region){
-									?>
-										<li class="<?php echo $counter == $tab ? 'active':''; ?>" style="width:17%; text-align:center;"><a data-toggle="tab" href="#tab_1_<?php echo $counter; ?>" id="region_<?php echo $counter; ?>" current="<?php echo $counter; ?>" class="regionchange bolded" redirect="<?php echo $this->baseUrl('report/prices/show/regionview/tab/'.$counter); ?>" style="padding-top:10px; padding-bottom:10px; font-size:16px;"><?php echo $region->getName().' Region'; ?></a></li>
-									<?php $counter++; } ?>
-										<li class="<?php echo $tab == 'all' ? 'active':''; ?>" style="width:17%; text-align:center;"><a data-toggle="tab" href="#tab_1_all" id="region_all" class="regionchange bolded" redirect="<?php echo $this->baseUrl('report/prices/show/regionview/tab/all'); ?>" style="padding-top:10px; padding-bottom:10px; font-size:16px;">All Regions</a></li>
-                                </ul>
-                                <div class="tab-content">
+                            	<?php if(isUganda()){ ?>
+                                    <ul class="nav nav-tabs margin0">
+                                        <?php
+                                            $region = new Location();
+                                            $regions = $region->getRegions($country);
+                                            $counter = 1; 
+                                            foreach($regions as $key => $region){
+                                        ?>
+                                            <li class="<?php echo $counter == $tab ? 'active':''; ?>" style="width:17%; text-align:center;"><a data-toggle="tab" href="#tab_1_<?php echo $counter; ?>" id="region_<?php echo $counter; ?>" current="<?php echo $counter; ?>" class="regionchange bolded" redirect="<?php echo $this->baseUrl('report/prices/show/regionview/tab/'.$counter); ?>" style="padding-top:10px; padding-bottom:10px; font-size:16px;"><?php echo $region->getName().' Region'; ?></a></li>
+                                        <?php $counter++; } ?>
+                                            <li class="<?php echo $tab == 'all' ? 'active':''; ?>" style="width:17%; text-align:center;"><a data-toggle="tab" href="#tab_1_all" id="region_all" class="regionchange bolded" redirect="<?php echo $this->baseUrl('report/prices/show/regionview/tab/all'); ?>" style="padding-top:10px; padding-bottom:10px; font-size:16px;">All Regions</a></li>
+                                    </ul>
+                                	<div class="tab-content" style="display:inline-block;">
                                     <?php
                                         $counter = 1;
                                         foreach($regions as $key => $region){ 
-                                          	$prices = getLatestPrices('', '', $region->getID()); 
+                                          	$prices = getLatestPrices('', '', $region->getID(), true, 2, '', $country); 
                                     ?>
                                     	<div id="tab_1_<?php echo $tab; ?>" class="tab-pane <?php echo ($counter == $tab) ? 'active':''; ?>" style="min-height:250px;">
                                             <div class="wrapper1">
-                                                <div class="div1" style="width:1400px;"></div>
+                                                <div class="div1" style="width:4000px;"></div>
                                             </div>
                                             <div class="wrapper2">
-                                                <div class="div2" style="width:1400px;">
+                                                <div class="div2" style="width:4000px;">
                                                     <div class="divider10"></div>
                                                     <table class="table table-hover table-bordered commodities" id="datatable" style="width:auto; margin-right:50px;">
                                                         <thead>
                                                             <tr>
-                                                                <th style="padding-left:20px; width:170px; font-size:14px;">Commodity</th>
-                                                                <th class="notbolded centeralign" style="width:50px; font-size:14px;">Unit</th>
-                                                                <th class="notbolded centeralign" style="width:50px; font-size:14px;">Type</th>
-                                                                <th class="notbolded centeralign" style="width:60px; font-size:14px;">Average</th>
+                                                                <th style="padding-left:20px; width:170px; font-size:14px; vertical-align:top;">Commodity</th>
+                                                                <th class="notbolded centeralign" style="width:50px; font-size:14px; vertical-align:top;">Unit</th>
+                                                                <th class="notbolded centeralign" style="width:50px; font-size:14px; vertical-align:top;">Type</th>
+                                                                <th class="notbolded centeralign" style="width:60px; font-size:14px; vertical-align:top;">Average</th>
                                                                 <?php
-                                                                    $allmarkets = getMarketsPriorityList($region->getID());
+                                                                    $allmarkets = getMarketsPriorityList($region->getID(), '', $country);
                                                                     foreach($allmarkets as $key => $market){
                                                                         $currentdate = changeMySQLDateToPageFormat(getLastApprovalDate($market['id']));
                                                                         if(isEmptyString($currentdate)){
                                                                             $currentdate = '&nbsp;';
                                                                         }
                                                                 ?>
-                                                                    <th class="angle nowrapping bolded" id="market_<?php echo $market['name']; ?>" style="font-size:13px; min-width:60px;"><?php echo str_replace(' Market', '', $market['name']); ?>
+                                                                    <th class="angle nowrapping bolded" id="market_<?php echo $market['name']; ?>" style="font-size:13px; min-width:60px; vertical-align:top;"><?php echo str_replace(' Market', '', $market['name']); ?>
                                                                     <p class="blocked margin0 padding0" style="font-size:10px;"><?php echo $currentdate; ?></p>
                                                                     </th>
                                                                 <?php } ?>
@@ -339,17 +337,17 @@ $(document).ready(function() {
                                             </div>
                                         </div>
                                     <?php $counter++; } ?>
-                                    <div id="tab_1_all" class="tab-pane <?php echo ($tab == 'all') ? 'active':''; ?>" style="min-height:250px;">
+                                    <div id="tab_1_all" class="tab-pane <?php echo ($tab == 'all') ? 'active':''; ?>" style="min-height:250px; display:block;">
 										<?php if($tab == 'all'){ 
                                             $prices = getLatestPrices(); 
                                         ?>
                                         <div class="wrapper1">
-                                            <div class="div1" style="width:4000px;"></div>
+                                            <div class="div1" style="width:7000px;"></div>
                                         </div>
                                         <div class="wrapper2">
-                                            <div class="div2" style="width:4000px; overflow-x:scroll;">
+                                            <div class="div2" style="width:7000px;">
                                                 <div class="divider10"></div>
-                                                <table class="table table-hover table-bordered commodities" id="datatable" style="width:100%; margin-right:50px;">
+                                                <table class="table table-hover table-bordered commodities" id="datatable" style="width:auto; margin-right:50px;">
                                                     <thead>
                                                         <tr>
                                                             <th style="padding-left:20px; width:170px; font-size:14px;">Commodity</th>
@@ -406,6 +404,90 @@ $(document).ready(function() {
                                         <?php } ?>
                                  	</div>
                              	</div>
+                                <?php } ?>
+                                <?php if(isKenya()){ 
+									 $prices = getLatestPrices('', '', '', true, 2, '', $country);
+								?>
+                                	<div class="wrapper1">
+                                        <div class="div1"></div>
+                                    </div>
+                                    <div class="wrapper2">
+                                        <div class="div2">
+                                            <div class="divider10"></div>
+                                            <table class="table table-hover table-bordered commodities" id="datatable" style="width:auto; margin-right:50px;">
+                                                <thead>
+                                                    <tr>
+                                                        <th style="padding-left:20px; width:170px; font-size:14px; vertical-align:top;">Commodity</th>
+                                                        <th class="notbolded centeralign" style="width:120px; font-size:14px; vertical-align:top;">Unit</th>
+                                                        <th class="notbolded centeralign" style="width:60px; font-size:14px; vertical-align:top;">Average</th>
+                                                        <?php
+                                                            $allmarkets = getMarketsPriorityList('','',$country);
+                                                            foreach($allmarkets as $key => $market){
+                                                                $currentdate = changeMySQLDateToPageFormat(getLastApprovalDate($market['id']));
+                                                                if(isEmptyString($currentdate)){
+                                                                    $currentdate = '&nbsp;';
+                                                                }
+                                                        ?>
+                                                            <th class="angle nowrapping bolded" id="market_<?php echo $market['name']; ?>" style="font-size:13px; min-width:60px;"><?php echo str_replace(' Market', '', $market['name']); ?>
+                                                            <p class="blocked margin0 padding0" style="font-size:10px;"><?php echo $currentdate; ?></p>
+                                                            </th>
+                                                        <?php } ?>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <?php
+                                                        foreach($prices as $result){
+														   $unitlabel = "";
+														   if(!isEmptyString($result['unitid'])){
+															   $unitlabel .= $units[$result['unitid']];
+															   //$unitlabel .= $result['unitid'];
+														   }
+														   if($result['weight'] > 0 && $result['commodityid'] != '18'){
+															   $unitlabel .= " (@".$result['weight']."kg)";
+														   }
+                                                     ?>
+                                                        <tr>          
+                                                            <td class="bolded" style="padding-left:20px; font-size:13px;" rowspan="2"><?php echo $result['name']; ?></td>
+                                                            <td class="nowrapping" style="text-align:left;">&nbsp;<?php echo $unitlabel; ?></td>
+                                                            <td class="rightalign bolded" style="font-size:12px;"><?php echo isEmptyString($result['overall_wholesale_avg']) ? '--' : formatNumber($result['overall_wholesale_avg']); ?></td>
+                                                            <?php
+																$countwithvalue = 0;		  	
+                                                                foreach($allmarkets as $thekey => $market){
+																	if($result['wholesaleprice_'.$market['id']] > 0){
+																		$countwithvalue++;
+																	}
+                                                            ?>
+                                                                <td class="rightalign" style="font-size:12px;"><?php echo isEmptyString($result['wholesaleprice_'.$market['id']]) ? '--' : formatNumber($result['wholesaleprice_'.$market['id']]); ?></td>
+                                                            <?php } ?>
+                                                        </tr>
+                                                        <tr style="font-size:11px;">
+                                                        	<td style="text-align:left;">&nbsp;
+                                                            	<?php if($result['weight'] > 0 && $result['commodityid'] != '18'){ ?>
+                                                                	<?php echo ' 1 Kg ~'; ?>
+                                                                <?php } ?>
+                                                            </td>         
+                                                            <td class="rightalign bolded">&nbsp;
+                                                            	<?php if($result['weight'] > 0 && $result['commodityid'] != '18'){ ?>
+                                                            		<?php echo isEmptyString($result['overall_wholesale_avg']) || $result['overall_wholesale_avg'] == 0  ? '--' : formatNumber($result['overall_wholesale_avg']/$result['weight']); ?>
+                                                                <?php } ?>
+                                                            </td>
+                                                            <?php 		  	
+                                                                foreach($allmarkets as $thekey => $market){
+                                                            ?>
+                                                                <td class="rightalign">&nbsp;
+																	<?php if($result['weight'] > 0){ ?>
+                                                                        <?php echo $result['wholesaleprice_'.$market['id']] > 0 ? formatNumber($result['wholesaleprice_'.$market['id']]/$result['weight']) : '--'; ?>
+                                                                    <?php } ?>
+                                                                </td>
+                                                            <?php } ?>
+                                                        </tr>
+                                                        
+                                                     <?php } ?>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                <?php } ?>
                         	</div>
                     	</div>
                 	</div>

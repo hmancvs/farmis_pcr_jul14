@@ -66,6 +66,14 @@
                         </a>
                     </li>
                 <?php } ?>
+                <?php if ($acl->checkPermission('Market Prices', ACTION_VIEW) && isKenya()) { ?>	
+                    <li class="odd <?php echo ($controllername == 'report' && $controlleraction == 'prices') ? 'active' : ''; ?>">
+                        <a href="<?php echo $this->baseUrl('report/prices'); ?>">
+                            <span class="head-icon head-icon6"></span>
+                            <span class="headmenu-label">Market Prices</span>
+                        </a>
+                    </li>
+                <?php } ?>
                 <?php if($acl->checkPermission('Messaging', ACTION_LIST)) { ?>
                     <li class="<?php echo ($controllername == 'message') ? 'active' : ''; ?>">
                         <a href="<?php echo $this->baseUrl('message/list'); ?>">
@@ -83,6 +91,7 @@
                         </a>
                     </li>
                 <?php } ?>
+                
                 <li class="right">
                     <table class="userloggedinfo table margin0 padding0 nohover border0">
                         <tr>

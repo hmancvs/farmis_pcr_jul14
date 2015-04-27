@@ -424,7 +424,7 @@ function sendSMSMessage($to, $txt, $source = 'FARMIS') {
 		$sendsms = false;
 	}
 	
-	if(isUganda()){
+	// if(isUganda()){
 		$server = SMS_SERVER;
 		$username = SMS_USERNAME;
 		$password = SMS_PASSWORD;
@@ -436,8 +436,8 @@ function sendSMSMessage($to, $txt, $source = 'FARMIS') {
 				'mobile'=> $phone,
 				'message' => $message
 		);
-	}
-	if(isKenya()){
+	//}
+	/*if(isKenya()){
 		$server = SMS_SERVER_KENYA;
 		$username = SMS_USERNAME_KENYA;
 		$password = SMS_PASSWORD_KENYA;
@@ -447,9 +447,9 @@ function sendSMSMessage($to, $txt, $source = 'FARMIS') {
 				'msisdn' => $phone,
 				'msg' => $message
 		);
-	}
+	}*/
 	// debugMessage($parameters); exit;
-	if($sendsms && isUganda()){
+	if($sendsms){
 		$result = curlContents($server, 'GET', $parameters, false, false);
 		debugMessage($result);
 		// $result = 'SUBMIT_SUCCESS | 74f2b84c-8018-5fbf-c74c-49f7e7d10401';
@@ -1251,8 +1251,8 @@ function isKeNumber($number){
 function getPhoneProvider($number, $country = 'UG'){
 	$first3chars = substr($number, 0, 3);
 	if(strtoupper($country) == 'UG'){
-		$allowed = array("077","078","070","071","075","079");
-		$allowed_names = array("077"=>"MTN Uganda", "078"=>"MTN Uganda", "070"=>"Warid Telcom", "071"=>"Uganda Telecom", "075"=>"Airtel", "079"=>"Orange");
+		$allowed = array("077","078","070","071","075","079","072","073");
+		$allowed_names = array("077"=>"MTN Uganda", "078"=>"MTN Uganda", "070"=>"Warid Telcom", "071"=>"Uganda Telecom", "075"=>"Airtel", "079"=>"Orange", "072"=>"Vodafone", "073"=>"K2");
 		if(!in_array($first3chars, $allowed)) {
 			return 'Unknown';
 		}

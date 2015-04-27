@@ -212,12 +212,24 @@
                                             <div id="labourdetails_itemqty_<?php echo $e; ?>_error"></div></td>
                                         <td><input type="text" style="width:85%;" name="labourdetails[<?php echo md5($e); ?>][unitprice]" id="labourdetails_unitprice_<?php echo $e; ?>" class="unitprice 94width unitprice_validate_<?php echo $e; ?> useid_error isamount centeralign" value="<?php echo $labour->getunitprice(); ?>" />
                                             <div id="labourdetails_unitprice_<?php echo $e; ?>_error"></div></td>
-                                        <td><input type="text" style="width:85%;" name="labourdetails[<?php echo md5($e); ?>][amount]" id="labourdetails_amount_<?php echo $e; ?>" class="amount 94width amount_validate_<?php echo $e; ?> useid_error isamount centeralign" value="<?php echo $labour->getamount(); ?>" />
+                                        <td><input type="text" style="width:85%;" name="labourdetails[<?php echo md5($e); ?>][amount]" id="labourdetails_amount_<?php echo $e; ?>" class="amount 94width amount_validate_<?php echo $e; ?> useid_error isamount readonly centeralign" value="<?php echo $labour->getamount(); ?>" />
                                             <div id="labourdetails_amount_<?php echo $e; ?>_error"></div></td>
                                         <td><a href="javascript: doNothing();" title="<?php echo $this->translate("global_button_remove"); ?>" id="row_hired_<?php echo $e; ?>" class="removeline close button btn" rel="hired" size="20">&times;</a>
                                         	<input type="hidden" name="labourdetails[<?php echo md5($e); ?>][type]" id="labourdetails_type_<?php echo $e; ?>" value="2" />
                                             <input type="hidden" name="labourdetails[<?php echo md5($e); ?>][id]" id="labourdetails_id_<?php echo $e; ?>" value="<?php echo $labour->getID(); ?>" /></td>
                                     </tr>
+                                    <script>
+										$(document).ready(function() {
+											$("#labourdetails_itemqty_<?php echo $e; ?>, #labourdetails_unitprice_<?php echo $e; ?>").keyup(function(){
+												var qty = $("#labourdetails_itemqty_<?php echo $e; ?>").val();
+												var unitp = $("#labourdetails_unitprice_<?php echo $e; ?>").val();
+												if(!isEmptyString(qty) && !isEmptyString(unitp)){
+													$("#labourdetails_amount_<?php echo $e; ?>").val(parseFloat(qty)*parseFloat(unitp));
+												}
+											});
+											$("#labourdetails_itemqty_<?php echo $e; ?>, #labourdetails_unitprice_<?php echo $e; ?>").trigger('keyup');
+										});
+									</script>
                                 <?php $e++; $x++; } ?>
                                 <?php 
                                     $defaultlines = 11;
@@ -257,11 +269,23 @@
                                             <div id="labourdetails_itemqty_<?php echo $i; ?>_error"></div></td>
                                         <td><input type="text" style="width:85%;" name="labourdetails[<?php echo md5($i); ?>][unitprice]" id="labourdetails_unitprice_<?php echo $i; ?>" class="unitprice 94width unitprice_validate_<?php echo $i; ?> useid_error isamount centeralign" value="" />
                                             <div id="labourdetails_unitprice_<?php echo $i; ?>_error"></div></td>
-                                        <td><input type="text" style="width:85%;" name="labourdetails[<?php echo md5($i); ?>][amount]" id="labourdetails_amount_<?php echo $i; ?>" class="amount 94width amount_validate_<?php echo $i; ?> useid_error isamount centeralign" value="" />
+                                        <td><input type="text" style="width:85%;" name="labourdetails[<?php echo md5($i); ?>][amount]" id="labourdetails_amount_<?php echo $i; ?>" class="amount 94width amount_validate_<?php echo $i; ?> useid_error isamount readonly centeralign" value="" />
                                             <div id="labourdetails_amount_<?php echo $i; ?>_error"></div></td>
                                         <td><a href="javascript: doNothing();" title="<?php echo $this->translate("global_button_remove"); ?>" id="row_hired_<?php echo $i; ?>" class="removeline close button btn" rel="hired" size="20">&times;</a>
                                         	<input type="hidden" name="labourdetails[<?php echo md5($i); ?>][type]" id="labourdetails_type_<?php echo $i; ?>" value="2" /></td>
                                     </tr>
+                                    <script>
+										$(document).ready(function() {
+											$("#labourdetails_itemqty_<?php echo $i; ?>, #labourdetails_unitprice_<?php echo $i; ?>").keyup(function(){
+												var qty = $("#labourdetails_itemqty_<?php echo $i; ?>").val();
+												var unitp = $("#labourdetails_unitprice_<?php echo $i; ?>").val();
+												if(!isEmptyString(qty) && !isEmptyString(unitp)){
+													$("#labourdetails_amount_<?php echo $i; ?>").val(parseFloat(qty)*parseFloat(unitp));
+												}
+											});
+											$("#labourdetails_itemqty_<?php echo $i; ?>, #labourdetails_unitprice_<?php echo $i; ?>").trigger('keyup');
+										});
+									</script>
                                 <?php $x++; } ?>
                         	</tbody>
                             <tbody>

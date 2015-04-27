@@ -177,7 +177,7 @@
                                 <?php } else { ?>
 									<?php	
                                         foreach($labourdetails as $labour){
-                                           $sumamount += $labour->getamount();
+                                           $sumamount += ($labour->getitemqty() * $labour->getunitprice()) + $labour->getfieldcost();
                                     ?>
                                         <tr>
                                             <td><?php echo $labour->getActivityName(); ?></td>
@@ -186,7 +186,7 @@
                                             <td><?php echo $labour->getitempaid(); ?></td>
                                             <td class="centeralign"><?php echo clean_num($labour->getitemqty()); ?></td>
                                             <td class="rightalign"><?php echo $labour->getunitprice(); ?></td>
-                                            <td class="rightalign"><?php echo $labour->getamount(); ?></td>
+                                            <td class="rightalign"><?php echo $labour->getitemqty() * $labour->getunitprice(); ?></td>
                                         </tr>
                                     <?php } ?>
                                     <tbody>

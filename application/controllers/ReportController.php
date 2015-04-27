@@ -45,6 +45,10 @@ class ReportController extends SecureController   {
 		if ($resource == "crop" || $resource == "cropsearch") {
 			return "Crop Profiling Aggregated Report";
 		}
+		if ($resource == "acreage" || $resource == "acreagesearch") {
+			// return "Acreage Report";
+			return "Crop Profiling Aggregated Report";
+		}
 		if ($resource == "pia" || $resource == "piasearch") {
 			return "PIA Profiling Performance Report";
 		}
@@ -158,6 +162,15 @@ class ReportController extends SecureController   {
 		$this->_helper->redirector->gotoSimple("crop", "report", 
     											$this->getRequest()->getModuleName(),
     											array_remove_empty(array_merge_maintain_keys($this->_getAllParams(), $this->getRequest()->getQuery())));
+	}
+	
+	function acreageAction(){
+	
+	}
+	function acreagesearchAction(){
+		$this->_helper->redirector->gotoSimple("acreage", "report",
+				$this->getRequest()->getModuleName(),
+				array_remove_empty(array_merge_maintain_keys($this->_getAllParams(), $this->getRequest()->getQuery())));
 	}
 	
 	function pricesAction(){

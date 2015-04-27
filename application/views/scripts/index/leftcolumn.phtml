@@ -34,8 +34,8 @@
             <?php if($acl->checkPermission('Market Prices', ACTION_VIEW)) { ?>
             	<li><a href="<?php echo $this->baseUrl('report/prices'); ?>"><i class="icon-tags icon-white"></i> Market Prices Report</a></li>
             <?php } ?>
-			<?php if($acl->checkPermission('Commodities', ACTION_LIST)) { ?>
-                <li><a href="<?php echo $this->baseUrl('commodity/list'); ?>"><i class="icon-star-empty icon-white"></i> Commodities</a></li>
+			<?php if($acl->checkPermission('Commodities', ACTION_LIST) && false) { ?>
+                <li><a href="<?php //echo $this->baseUrl('commodity/list'); ?>"><i class="icon-star-empty icon-white"></i> Commodities</a></li>
             <?php } ?>
             <?php if($acl->checkPermission('Locations', ACTION_LIST)) { ?>
                 <li><a href="<?php echo $this->baseUrl('location/list'); ?>"><i class="icon-map-marker icon-white"></i> Locations</a></li>

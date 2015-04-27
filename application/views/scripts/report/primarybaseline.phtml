@@ -72,7 +72,7 @@ $(document).ready(function() {
                 	<td style="width:70%;"></td>
                     <td>
                     	<div class="contentArea reportsearch">
-                            <input type="text" class="search reportsearch" id="inputSearch" url="<?php echo encode($this->baseUrl('report/primarybaseline/id/')); ?>" placeholder="Start Typing Name of Farmer to Search" />
+                            <input type="text" class="search reportsearch" id="inputSearch" country="<?php echo $country; ?>" url="<?php echo encode($this->baseUrl('report/primarybaseline/id/')); ?>" placeholder="Start Typing Name of Farmer to Search" />
                             <ul id="divResult"></ul>
                         </div>
                     </td>

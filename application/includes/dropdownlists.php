@@ -985,34 +985,92 @@
 		return getOptionValuesFromDatabaseQuery($query);
 	}
 	# commodities configured for farmis 
-	function getFarmisCommodities($ignore_list = array()){
+	/*function getFarmisCommodities($ignore_list = array()){
 		$customquery = '';
 		if(is_array($ignore_list) && count($ignore_list) > 0){
 			$list = implode("','", $ignore_list);
 			$customquery = " AND c.id NOT IN('".$list."') ";
 		}
 		$valuesquery = "SELECT c.id AS optionvalue, c.`name` as optiontext FROM commodity as c WHERE c.allowfarmer = 1 AND c.categoryid <> 27 ".$customquery." ORDER BY optiontext";
-		// debugMessage($valuesquery);
+		debugMessage($valuesquery);
 		return getOptionValuesFromDatabaseQuery($valuesquery);
+	}*/
+	function getFarmisCommodities($category = '', $country ="UG"){
+		$custom_query  = " where c.id <> '' AND c.categoryid <> 27 AND c.allowfarmer = 1 ";
+		if(!isEmptyString($category)){
+			$custom_query .= " AND c.categoryid = '".$category."' "; 
+		}
+		$query = "SELECT IF(c.farmisalias <> '', c.farmisalias, c.name) AS `optiontext`,  c.id AS optionvalue FROM ".AGMIS_DB.".commodity c ".$custom_query." ORDER BY optiontext "; // debugMessage($query);
+		$conn = Doctrine_Manager::connection();
+		$all_lists = $conn->fetchAll($query); 
+		$data = array();
+		foreach($all_lists as $value){
+			$data[$value['optionvalue']] = $value['optiontext'];
+		}
+		return $data;
+	}
+	function getFarmisCommoditiesDetails($category = '', $country ="UG"){
+		$custom_query  = " where c.id <> '' AND c.categoryid <> 27 AND c.allowfarmer = 1 ";
+		if(!isEmptyString($category)){
+			$custom_query .= " AND c.categoryid = '".$category."' "; 
+		}
+		$query = "SELECT c.*, IF(c.farmisalias <> '', c.farmisalias, c.name) AS `name` FROM ".AGMIS_DB.".commodity c ".$custom_query." ORDER BY name "; // debugMessage($query);
+		$conn = Doctrine_Manager::connection();
+		$all_lists = $conn->fetchAll($query); 
+		$data = array();
+		foreach($all_lists as $value){
+			$data[$value['id']] = $value;
+		}
+		
+		return $data;
 	}
 	# commodities configured for farmis 
 	function getOtherEnterprises(){
 		$customquery = '';
-		$valuesquery = "SELECT c.id AS optionvalue, c.`name` as optiontext FROM commodity as c WHERE c.allowfarmer = 1 AND c.categoryid = 27 ".$customquery." ORDER BY optiontext";
-		// debugMessage($valuesquery);
-		return getOptionValuesFromDatabaseQuery($valuesquery);
+		$query = "SELECT c.id AS optionvalue, IF(c.farmisalias <> '', c.farmisalias, c.name) as optiontext FROM ".AGMIS_DB.".commodity as c WHERE c.allowfarmer = 1 AND c.categoryid = 27 ".$customquery." ORDER BY optiontext"; // debugMessage($query);
+		$conn = Doctrine_Manager::connection();
+		$all_lists = $conn->fetchAll($query); 
+		$data = array();
+		foreach($all_lists as $value){
+			$data[$value['optionvalue']] = $value['optiontext'];
+		}
+		return $data;
+	}
+	function getOtherEnterprisesDetails(){
+		$customquery = '';
+		$query = "SELECT c.*, IF(c.farmisalias <> '', c.farmisalias, c.name) as `name` FROM ".AGMIS_DB.".commodity as c WHERE c.allowfarmer = 1 AND c.categoryid = 27 ".$customquery." ORDER BY name "; // debugMessage($query);
+		$conn = Doctrine_Manager::connection();
+		$all_lists = $conn->fetchAll($query); 
+		$data = array();
+		foreach($all_lists as $value){
+			$data[$value['id']] = $value;
+		}
+		
+		return $data;
 	}
 	# commodities configured for a farmer 
 	function getCommoditiesForFarmer($userid){
-		$valuesquery = "SELECT fc.cropid AS optionvalue, c.`name` as optiontext FROM farmcrop fc inner join commodity c on (fc.cropid = c.id AND c.unitid <> 16) WHERE fc.userid = '".$userid."' GROUP BY fc.cropid ORDER BY optiontext";
-		// debugMessage($valuesquery);
-		return getOptionValuesFromDatabaseQuery($valuesquery);
+		$query = "SELECT fc.cropid AS optionvalue, IF(c.farmisalias <> '', c.farmisalias, c.name) as optiontext FROM farmcrop fc inner join ".AGMIS_DB.".commodity c on (fc.cropid = c.id AND c.unitid <> 16) WHERE fc.userid = '".$userid."' GROUP BY fc.cropid ORDER BY optiontext";
+		// debugMessage($query);
+		$conn = Doctrine_Manager::connection();
+		$all_lists = $conn->fetchAll($query); 
+		$data = array();
+		foreach($all_lists as $value){
+			$data[$value['optionvalue']] = $value['optiontext'];
+		}
+		return $data;
 	}
 	# commodities configured for farmis 
 	function getSeasonCommodities($seasonid){
-		$valuesquery = "SELECT s.cropid AS optionvalue, c.`name` as optiontext FROM seasondetail as s inner join commodity as c on (s.cropid = c.id) WHERE s.seasonid = ".$seasonid." ORDER BY optiontext";
-		// debugMessage($valuesquery);
-		return getOptionValuesFromDatabaseQuery($valuesquery);
+		$query = "SELECT s.cropid AS optionvalue, IF(c.farmisalias <> '', c.farmisalias, c.name) as optiontext FROM seasondetail as s inner join ".AGMIS_DB.".commodity as c on (s.cropid = c.id) WHERE s.seasonid = ".$seasonid." ORDER BY optiontext";
+		// debugMessage($query);
+		$conn = Doctrine_Manager::connection();
+		$all_lists = $conn->fetchAll($query); 
+		$data = array();
+		foreach($all_lists as $value){
+			$data[$value['optionvalue']] = $value['optiontext'];
+		}
+		return $data;
 	}
 	# production input types
 	function getAllInputTypes(){
@@ -1573,8 +1631,8 @@
 		return $array;
 	}
 	# product status values
-	function getActiveStatus($value = ''){
-		$array = array('1' => 'Enabled', '0' =>'Disabled');
+	function getServicePaymentStatus($value = ''){
+		$array = array(1 => 'Paid', 0 =>'Not Paid', 2=>'Expired');
 		if(!isEmptyString($value)){
 			return $array[$value];
 		}
@@ -1660,7 +1718,7 @@
     	return getOptionValuesFromDatabaseQuery($query);
     }
     
-    function getMarkets($regionid = '', $marketlist = ''){
+    function getMarkets($regionid = '', $marketlist = '', $country="UG"){
     	$region_query = ""; $market_query = "";
     	if(!isEmptyString($regionid)){
     		$region_query = " AND l.regionid = '".$regionid."' ";
@@ -1670,12 +1728,12 @@
     		$mark_string = implode("','", $mark_array);
     		$market_query = " AND p.id IN('".$mark_string."') ";
     	}
-    	$query = "select p.id as optionvalue, p.name as optiontext from agmis.pricesource p inner join agmis.location l on (p.districtid = l.id) where (p.type = 2 ".$region_query.") ".$market_query." group by p.id order by p.name asc";
+    	$query = "select p.id as optionvalue, p.name as optiontext from ".AGMIS_DB.".pricesource p inner join ".AGMIS_DB.".location l on (p.districtid = l.id) where (p.type = 2 ".$region_query.") AND p.country = UPPER('".$country."') ".$market_query." group by p.id order by p.name asc";
     	// debugMessage($query);
     	return getOptionValuesFromDatabaseQuery($query);
     }
     # the latest approved prices - Last approved submission for market commodities
-    function getLatestPrices($commodityid = '', $marketid='', $regionid = '', $queryallmarkets = true, $type = 2, $districtid=''){
+    function getLatestPrices($commodityid = '', $marketid='', $regionid = '', $queryallmarkets = true, $type = 2, $districtid='', $country="UG"){
     	$commodity_query = ""; $commodity_query = ""; $grouby_columns = " d.commodityid ";
     	if(!isEmptyString($commodityid)){
     		$com_array = explode(',', str_replace(' ','',$commodityid));
@@ -1731,7 +1789,7 @@
     		$noofmarkets = count($themarkets);
     		// debugMessage('no is '.$noofmarkets.' and type is '.$typeq);
     		if(isEmptyString($noofmarkets) || $noofmarkets == 0){
-    			$allmarkets = getMarkets($regionid);
+    			$allmarkets = getMarkets($regionid, '', $country);
     		}
     		if($noofmarkets > 0){
     			$data_array = array();
@@ -1778,7 +1836,18 @@
     		}
     		// debugMessage($average_query); exit();
     	}
-    
+    	
+		$country_price_query = " AND cp.retailprice > 0 ";
+		
+		$name_query = " cd.`name` as commodity, cd.`name` as name, ";
+		if($country == "UG"){
+			
+		}
+		if($country == "KE"){
+			$country_price_query = " AND cp.wholesaleprice > 0 ";
+			$name_query = " IF(cd.ke_alias <> '', cd.ke_alias, cd.name) AS `commodity`, IF(cd.ke_alias <> '', cd.ke_alias, cd.name) as name, ";
+		}
+		
     	$all_results_query = "SELECT
     	l.regionid as regionid,
     	s.districtid as districtid,
@@ -1789,41 +1858,44 @@
     	d2.datecollected AS datecollected,
     	d.commodityid as commodityid,
     	d.commodityid as id,
-    	cd.`name` as commodity,
+    	".$name_query."
     	cd.`name` as name,
     	cd.categoryid as categoryid,
     	cc.name AS `category`,
     	u.name AS `units`,
+		d.unitid as unitid,
+		d.weight as weight,
     	".$average_query."
     	ROUND(AVG(NULLIF(d.wholesaleprice,0))) AS wholesaleprice,
     	ROUND(AVG(NULLIF(d.retailprice ,0))) AS retailprice
-    	FROM agmis.price_details AS d
-    	INNER JOIN agmis.commodity cd ON d.`commodityid` = cd.`id`
-    	Inner Join agmis.commodity_category AS cc ON (cd.categoryid = cc.id)
-    	Inner Join agmis.commodity_unit AS u ON (cd.unitid = u.id)
-    	INNER JOIN agmis.pricesource AS s ON (d.sourceid = s.id)
-    	Inner Join agmis.location l on (s.districtid = l.id AND l.locationtype = 2)
+    	FROM ".AGMIS_DB.".price_details AS d
+    	INNER JOIN ".AGMIS_DB.".commodity cd ON d.`commodityid` = cd.`id`
+    	Inner Join ".AGMIS_DB.".commodity_category AS cc ON (cd.categoryid = cc.id)
+    	Inner Join ".AGMIS_DB.".commodity_unit AS u ON (cd.unitid = u.id)
+    	INNER JOIN ".AGMIS_DB.".pricesource AS s ON (d.sourceid = s.id)
+    	Inner Join ".AGMIS_DB.".location l on (s.districtid = l.id AND l.locationtype = 2)
     	INNER JOIN (SELECT
     	cp.sourceid,
     	cp.commodityid,
     	MAX(cp.datecollected) AS datecollected
-    	FROM agmis.price_details cp
-    	INNER JOIN agmis.price_submission AS cs1
-    	ON (cp.`submissionid` = cs1.`id` AND cp.pricecategoryid = ".$type." AND cs1.`status` = 3 AND cp.retailprice > 0 AND TO_DAYS(cs1.datecollected) >= TO_DAYS(DATE_SUB(NOW(), INTERVAL 1 MONTH)))
-    	INNER JOIN agmis.pricesource AS s2 ON (cp.sourceid = s2.id)
-    	Inner Join agmis.location l2 on (s2.districtid = l2.id AND l2.locationtype = 2 ".$region_query2.")
+    	FROM ".AGMIS_DB.".price_details cp
+    	INNER JOIN ".AGMIS_DB.".price_submission AS cs1
+    	ON (cp.`submissionid` = cs1.`id` AND cp.pricecategoryid = ".$type." AND cs1.`status` = 3 ".$country_price_query." AND TO_DAYS(cs1.datecollected) >= TO_DAYS(DATE_SUB(NOW(), INTERVAL 1 MONTH)))
+    	INNER JOIN ".AGMIS_DB.".pricesource AS s2 ON (cp.sourceid = s2.id)
+    	Inner Join ".AGMIS_DB.".location l2 on (s2.districtid = l2.id AND l2.locationtype = 2 ".$region_query2.")
     	where cs1.`status` = 3 AND TO_DAYS(cs1.datecollected) >= TO_DAYS(DATE_SUB(NOW(), INTERVAL 2 MONTH)) ".$region_query2." group by cp.sourceid, cp.commodityid) AS d2
     	ON (d2.datecollected = d.`datecollected` AND d2.commodityid = d.commodityid AND d2.sourceid = d.sourceid)
-    	WHERE d.pricecategoryid = ".$type." ".$commodity_query.$market_query.$dist_query.$region_query." GROUP BY ".$grouby_columns."
-    	ORDER BY cd.name ";
+    	WHERE d.pricecategoryid = ".$type." AND d.country = UPPER('".$country."') ".$commodity_query.$market_query.$dist_query.$region_query." GROUP BY ".$grouby_columns."
+    	ORDER BY name ";
     	// .$dist_query
+		// debugMessage($all_results_query);
     	// debugMessage($all_results_query); return true; exit();
     	// $conn = Doctrine_Manager::connection();
     	$conn = Doctrine_Manager::connection();
     	return $conn->fetchAll($all_results_query);
     }
     
-    function getMarketsPriorityList($regionid = '', $market_list = '') {
+    function getMarketsPriorityList($regionid = '', $market_list = '', $country = "UG") {
     	$region_query = ""; $market_query = "";
     	if(!isEmptyString($regionid)){
     		$region_query = " AND l.regionid = '".$regionid."' ";
@@ -1833,10 +1905,13 @@
     		$mark_string = implode("','", $mark_array);
     		$market_query = " AND p.id IN('".$mark_string."') ";
     	}
+		if(!isEmptyString($country)){
+			$region_query .= " AND p.country = UPPER('".$country."') ";
+		}
     	$conn = Doctrine_Manager::connection();
-    	$query = "select p.id as id, p.name as name, l.districtid, l.regionid as regionid, l.name as district, r.name as region from agmis.pricesource p inner join agmis.location l on (p.districtid = l.id) inner join agmis.location r on (l.regionid = r.id) where (p.type = 2 ".$region_query.$market_query.") group by p.id order by l.regionid asc, (case when p.priority is null then 10 else 1 end) asc";
-    	//  debugMessage($query); 
-    	 $all_lists = $conn->fetchAll($query); // debugMessage($all_lists); // exit;
+    	$query = "select p.id as id, p.name as name, l.districtid, l.regionid as regionid, l.name as district, r.name as region from ".AGMIS_DB.".pricesource p inner join ".AGMIS_DB.".location l on (p.districtid = l.id) inner join ".AGMIS_DB.".location r on (l.regionid = r.id) where (p.type = 2 ".$region_query.$market_query.") group by p.id order by l.regionid asc, (case when p.priority is null then 10 else 1 end) asc";
+    	// debugMessage($query); 
+    	$all_lists = $conn->fetchAll($query); // debugMessage($all_lists); // exit;
     	return $all_lists;
     	// return true;
     }
@@ -1850,7 +1925,17 @@
     	}
     	$query = "SELECT
     	MAX(cs1.datecollected) AS datecollected
-    	FROM agmis.price_submission AS cs1 where cs1.`status` = 3 ".$market_query." AND TO_DAYS(cs1.datecollected) >= TO_DAYS(DATE_SUB(NOW(), INTERVAL ".$duration." MONTH)) ";
+    	FROM ".AGMIS_DB.".price_submission AS cs1 where cs1.`status` = 3 ".$market_query." AND TO_DAYS(cs1.datecollected) >= TO_DAYS(DATE_SUB(NOW(), INTERVAL ".$duration." MONTH)) ";
     	return $conn->fetchOne($query);
     }
+	function getCommunityUnits(){
+		$conn = Doctrine_Manager::connection();
+		$query = "SELECT name AS optiontext, id AS optionvalue FROM ".AGMIS_DB.".commodity_unit ORDER BY optiontext";
+		$all_lists = $conn->fetchAll($query); // debugMessage($all_lists); // exit;
+    	$units = array();
+		foreach($all_lists as $value){
+			$units[$value['optionvalue']] = $value['optiontext'];
+		}
+		return $units;
+	}
 ?>

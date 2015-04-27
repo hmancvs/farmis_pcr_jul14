@@ -235,7 +235,7 @@ class ResourceController extends SecureController   {
 					} else {
 						$number_code_array[] = $key.' [Error '.$value.']';
 						$failedlist = implode(', ', $number_code_array);
-						$errormessage = 'Message sending failed for '.$failedlist; debugMessage($errormessage);
+						$errormessage = 'Message sending failed for '.$failedlist; // debugMessage($errormessage);
 					}
 				}
 				$session->setVar("custommessage", $errormessage);
@@ -274,7 +274,7 @@ class ResourceController extends SecureController   {
 			$groupjoin = ' inner ';
 		}
 		$hasdata = false;
-		// debugMessage($formvalues);
+		// debugMessage($formvalues); 
 		
     	# search seasons. available for farmers and farm groups
 		if(($type == 2 || $type == 3) && isEmptyString($this->_getParam('reporturl'))){
@@ -538,7 +538,7 @@ class ResourceController extends SecureController   {
 				left join location as l on (u.locationid = l.id)
 				WHERE 
 				u.country = UPPER('".$country."') AND 
-				u.firstname like '%".$q."%' or 
+				(u.firstname like '%".$q."%' or 
 				u.lastname like '%".$q."%' or 
 				u.othernames like '%".$q."%' or 
 				concat(u.firstname,' ',u.lastname) like '%".$q."%' or 
@@ -546,10 +546,10 @@ class ResourceController extends SecureController   {
 				concat(u.lastname,' ',u.firstname,' ',u.othernames) like '%".$q."%' or 
 				u.username like '%".$q."%' or 
 				u.email like '%".$q."%' or
-				u.phone like '%".$q."%' 
+				u.phone like '%".$q."%' )
 				GROUP BY u.id
 				order by u.firstname asc, u.lastname asc LIMIT 5 ";
-				// debugMessage($query);
+				// debugMessage($query_farmers);
 		
 			$result_farmers = $conn->fetchAll($query_farmers);
 			// debugMessage($result);

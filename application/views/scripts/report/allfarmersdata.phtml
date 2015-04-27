@@ -498,6 +498,7 @@
                         <td class="visible farmingsince"><label class="control-label">Farming Since</label></td>
                         <td class="visible acrage"><label class="control-label">Total Acrage</label></td>
                         <td class="visible activeacrage"><label class="control-label">Active Use Acrage</label></td>
+                        <td class="visible acrageunit"><label class="control-label">Acrage Unit</label></td>
                         <td class="visible acquiremethod"><label class="control-label">Acquire Method</label></td>                                
                         <td class="visible labourers"><label class="control-label">No of Labourers</label></td>
                         <td class="visible farmlands"><label class="control-label">No of Farm Lands</label></td>
@@ -592,7 +593,8 @@
                             } else {
                                 $landsize = '';
                                 if(!isEmptyString($line['landunits'])){
-                                    $landsize = clean_num($line['landsize']).'&nbsp; <span class="pagedescription"> '.$landunitlabel.' </span>';
+                                    $landsize = clean_num($line['landsize']);
+									// .'&nbsp; <span class="pagedescription"> '.$landunitlabel.' </span>';
                                 }
                             }
     
@@ -601,7 +603,8 @@
                             } else {
                                 $activeland = '';
                                 if(!isEmptyString($line['landunits'])){
-                                    $activeland = clean_num($line['landactivesize']).'&nbsp; <span class="pagedescription"> '.$landunitlabel.'</span>';
+                                    $activeland = clean_num($line['landactivesize']);
+									// .'&nbsp; <span class="pagedescription"> '.$landunitlabel.'</span>'
                                 }
                             }
     
@@ -636,43 +639,44 @@
 							}
                     ?>
                     <tr>
-                        <td class="visible ref"><span class="nullifempty"><?php echo $refno; ?></span></td>
-                        <td class="visible regno"><span class="nullifempty"><?php echo $regno; ?></span></td>
-                        <td class="visible firstname"><span class="nullifempty"><?php echo $firstname; ?></span></td>
-                        <td class="visible lastname"><span class="nullifempty"><?php echo $lastname; ?></span></td>
-                        <td class="visible farmgroup"><span class="nullifempty"><?php echo $farmgroup; ?></span></td>
-                        <td class="visible salutation"><span class="nullifempty"><?php echo $salutation; ?></span></td>
-                        <td class="visible gender"><span class="nullifempty"><?php echo $gender; ?></span></td>
-                        <td class="visible age"><span class="nullifempty"><?php echo $age; ?></span></td>
-                        <td class="visible dateofbirth"><span class="nullifempty"><?php echo $dateofbirth; ?></span></span></td>
-                        <td class="visible dateadded"><span class="nullifempty"><?php echo $dateadded; ?></span></td>
-                        <td class="visible profiler"><span class="nullifempty"><?php echo $pname; ?></span></td>
-                        <td class="visible servicestatus"><span class="nullifempty"><?php echo $servicestatus; ?></span></td>
-                        <td class="visible loginstatus"><span class="nullifempty"><?php echo $loginstatus; ?></span></td>
-                        <td class="visible phone"><span class="nullifempty"><?php echo $phone; ?></span></td>
-                        <td class="visible altphone"><span class="nullifempty"><?php echo $phone2; ?></span></td>
-                        <td class="visible email"><span class="nullifempty"><?php echo $email; ?></span></td>
-                        <td class="visible altemail"><span class="nullifempty"><?php echo $email2; ?></span></td>
-                        <td class="visible country"><span class="nullifempty"><?php echo $country; ?></span></td>
-                        <td class="visible district"><span class="nullifempty"><?php echo $district; ?></span></td>
-                        <td class="visible address"><span class="nullifempty"><?php echo $address; ?></span></td>
-                        <td class="visible gpslat"><span class="nullifempty"><?php echo $gpslat; ?></span></td>
-                        <td class="visible gpslng"><span class="nullifempty"><?php echo $gpslng; ?></span></td>
-                        <td class="visible maritalstatus"><span class="nullifempty"><?php echo $maritalstatus; ?></span></td>
-                        <td class="visible educlevel"><span class="nullifempty"><?php echo $educlevel; ?></span></td>
-                        <td class="visible noofchildren centeralign"><span class="nullifempty"><?php echo $children; ?></span></td>
-                        <td class="visible noofdependants centeralign"><span class="nullifempty"><?php echo $dependants; ?></span></td>
-                        <td class="visible nextofkin"><span class="nullifempty"><?php echo $keen; ?></span></td>
-                        <td class="visible businessname"><span class="nullifempty"><?php echo $farmname; ?></span></td>
-                        <td class="visible farmingsince"><span class="nullifempty"><?php echo $farmingdate; ?></span></td>
-                        <td class="visible acrage centeralign"><span class="nullifempty"><?php echo $landsize; ?></span></td>
-                        <td class="visible activeacrage centeralign"><span class="nullifempty"><?php echo $activeland; ?></span></td>
-                        <td class="visible acquiremethod"><span class="nullifempty"><?php echo $acquiremethod; ?></span></td>
-                        <td class="visible labourers centeralign"><span class="nullifempty"><?php echo $laborers; ?></span></td>
-                        <td class="visible farmlands centeralign"><span class="nullifempty"><?php echo $nooffarms; ?></span></td>
-                        <td class="visible cropdetails"><span class="nullifempty"><?php echo $cropslist; ?></span></td>
-                        <td class="visible contentdetails"><span class="nullifempty"><?php echo $contentlist; ?></span></td>
-                        <td class="visible languagedetails"><span class="nullifempty"><?php echo $languagelist; ?></span></td>
+                        <td class="visible ref"><span class="xnullifempty"><?php echo $refno; ?></span></td>
+                        <td class="visible regno"><span class="xnullifempty"><?php echo $regno; ?></span></td>
+                        <td class="visible firstname"><span class="xnullifempty"><?php echo $firstname; ?></span></td>
+                        <td class="visible lastname"><span class="xnullifempty"><?php echo $lastname; ?></span></td>
+                        <td class="visible farmgroup"><span class="xnullifempty"><?php echo $farmgroup; ?></span></td>
+                        <td class="visible salutation"><span class="xnullifempty"><?php echo $salutation; ?></span></td>
+                        <td class="visible gender"><span class="xnullifempty"><?php echo $gender; ?></span></td>
+                        <td class="visible age"><span class="xnullifempty"><?php echo $age; ?></span></td>
+                        <td class="visible dateofbirth"><span class="xnullifempty"><?php echo $dateofbirth; ?></span></span></td>
+                        <td class="visible dateadded"><span class="xnullifempty"><?php echo $dateadded; ?></span></td>
+                        <td class="visible profiler"><span class="xnullifempty"><?php echo $pname; ?></span></td>
+                        <td class="visible servicestatus"><span class="xnullifempty"><?php echo $servicestatus; ?></span></td>
+                        <td class="visible loginstatus"><span class="xnullifempty"><?php echo $loginstatus; ?></span></td>
+                        <td class="visible phone"><span class="xnullifempty"><?php echo $phone; ?></span></td>
+                        <td class="visible altphone"><span class="xnullifempty"><?php echo $phone2; ?></span></td>
+                        <td class="visible email"><span class="xnullifempty"><?php echo $email; ?></span></td>
+                        <td class="visible altemail"><span class="xnullifempty"><?php echo $email2; ?></span></td>
+                        <td class="visible country"><span class="xnullifempty"><?php echo $country; ?></span></td>
+                        <td class="visible district"><span class="xnullifempty"><?php echo $district; ?></span></td>
+                        <td class="visible address"><span class="xnullifempty"><?php echo $address; ?></span></td>
+                        <td class="visible gpslat"><span class="xnullifempty"><?php echo $gpslat; ?></span></td>
+                        <td class="visible gpslng"><span class="xnullifempty"><?php echo $gpslng; ?></span></td>
+                        <td class="visible maritalstatus"><span class="xnullifempty"><?php echo $maritalstatus; ?></span></td>
+                        <td class="visible educlevel"><span class="xnullifempty"><?php echo $educlevel; ?></span></td>
+                        <td class="visible noofchildren centeralign"><span class="xnullifempty"><?php echo $children; ?></span></td>
+                        <td class="visible noofdependants centeralign"><span class="xnullifempty"><?php echo $dependants; ?></span></td>
+                        <td class="visible nextofkin"><span class="xnullifempty"><?php echo $keen; ?></span></td>
+                        <td class="visible businessname"><span class="xnullifempty"><?php echo $farmname; ?></span></td>
+                        <td class="visible farmingsince"><span class="xnullifempty"><?php echo $farmingdate; ?></span></td>
+                        <td class="visible acrage centeralign"><span class="xnullifempty"><?php echo $landsize; ?></span></td>
+                        <td class="visible activeacrage centeralign"><span class="xnullifempty"><?php echo $activeland; ?></span></td>
+                        <td class="visible acrageunit centeralign"><span class="xnullifempty"><?php echo $landunitlabel; ?></span></td>
+                        <td class="visible acquiremethod"><span class="xnullifempty"><?php echo $acquiremethod; ?></span></td>
+                        <td class="visible labourers centeralign"><span class="xnullifempty"><?php echo $laborers; ?></span></td>
+                        <td class="visible farmlands centeralign"><span class="xnullifempty"><?php echo $nooffarms; ?></span></td>
+                        <td class="visible cropdetails"><span class="xnullifempty"><?php echo $cropslist; ?></span></td>
+                        <td class="visible contentdetails"><span class="xnullifempty"><?php echo $contentlist; ?></span></td>
+                        <td class="visible languagedetails"><span class="xnullifempty"><?php echo $languagelist; ?></span></td>
                     </tr>
                     <?php } ?>
                 </tbody>

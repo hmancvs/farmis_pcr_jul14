@@ -86,6 +86,11 @@
                                 <a class="list" href="<?php echo $this->baseUrl('report/crop'); ?>"><img src="<?php echo $this->baseUrl('images/benefit_report.png'); ?>" /><br /><h2>Crop Profiling<br />Aggregated Report</h2></a>
                             </li>
                        	<?php } ?>  
+                        <?php if($acl->checkPermission('Crop Profiling Aggregated Report', ACTION_VIEW)){ ?>
+                            <li>
+                                <a class="list" href="<?php echo $this->baseUrl('report/acreage'); ?>"><img src="<?php echo $this->baseUrl('images/benefit_report.png'); ?>" /><br /><h2>Farmer Acreage<br /> Report</h2></a>
+                            </li>
+                       	<?php } ?>  
                        	<?php if($acl->checkPermission('PIA Profiling Performance Report', ACTION_VIEW)){ ?>
                             <li>
                                 <a class="list" href="<?php echo $this->baseUrl('report/pia'); ?>"><img src="<?php echo $this->baseUrl('images/benefit_report.png'); ?>" /><br /><h2>PIA Profiling<br />Performance Report</h2></a>

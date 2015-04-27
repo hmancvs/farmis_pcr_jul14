@@ -306,7 +306,7 @@ class SeasonPlanting extends BaseEntity  {
 		$labourdetails = $this->getHiredLabourDetails();
 		$sumamount = 0;
 		foreach($labourdetails as $labour){
-			$sumamount += $labour->getamount();
+			$sumamount += ($labour->getitemqty() * $labour->getunitprice()) + $labour->getfieldcost();
 		}
 		return $sumamount;
 	}
